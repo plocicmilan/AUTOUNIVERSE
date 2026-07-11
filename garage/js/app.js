@@ -523,8 +523,19 @@
             '</div>';
           }
 
+          // Ukupan prihod od ovog kontakta
+          var allRelEvs = events.filter(function (e) { return e.contact_id === id; });
+          var totalByCur = {};
+          allRelEvs.forEach(function (e) {
+            (e.items || []).forEach(function (it) {
+              var cur = it.currency || "RSD";
+              totalByCur[cur] = (totalByCur[cur] || 0) + (Number(it.price) || 0) * (Number(it.qty) || 1);
+            });
+          });
+          var totalStr = Models.formatTotals(totalByCur);
+
           if (relEvs.length) {
-            historyHtml += '<div class="card"><h2>Poslednji poslovi</h2>' +
+            historyHtml += '<div class="card"><h2>Poslovi' + (totalStr ? ' — ukupno: <b>' + totalStr + '</b>' : '') + '</h2>' +
               relEvs.map(function (e) {
                 var vv = vehById[e.vehicle_id];
                 var totals = Models.formatTotals(Models.sumByCurrency(e.items));
