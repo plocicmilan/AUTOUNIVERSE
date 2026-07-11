@@ -17,6 +17,7 @@ Legenda statusa: 🔵 novo • 🟡 u analizi • 🟢 za v1.1 • ✅ urađeno 
 | 2 | **Deljena IndexedDB baza između aplikacija na istom origin-u.** Odlučiti: Garage i Driver dele bazu (platform seme) ili se razdvajaju (namespace po app-u) — pre platform faze. Ne menjati sad (obrisalo bi Markove podatke). | Claude (build) | core (store) | sve | 🟡 u analizi |
 | 3 | **Multi-user signal — jedan permission primitiv rešava sve.** (A) Marko+Pavle: ista radionica. (B) Marko+Goran: povremena saradnja. (C) Vlasnik→majstor. Sva tri = `grant(user, target, vehicle, role, [expires])`. Team je automatizam preko primitiva, ne poseban entitet. Obaveza: implementirati kao jedinstveni primitiv od dana 1 AutoHub-a. | Marko (Garage) | **platform** | Garage (sad) + AutoHub (kasnije) | 🟢 za AutoHub S6 |
 | 4 | **Reverse marketplace — "objavi potrebu → dobavljači se takmiče".** Parts, servisi, šlep, gume, polovni delovi. Nije signal sa terena, hipoteza iz razmišljanja. Puna analiza + uslovi aktivacije u `ideas/hypothesis/2026-07-11_reverse_marketplace.md`. | Desktop Claude (razmišljanje) | platform | AutoHub + Marketplace modul | ⚪ hipoteza — Faza 6+, ne pre uslova |
+| 5 | **Play Protect "Nebezbedna aplikacija" upozorenje pri instalaciji Garage PWA na Androidu.** Chrome WebAPK Minter generiše APK sa zastarelim `targetSdkVersion` koji triguje Play Protect skeniranje. Nije bug u kodu — Google-ov problem. First impression je loš. Fiksirati: dodati korak u uputstvo ("Klikni Ipak instaliraj"). | Marko (Android, Faza 3 onboarding) | docs | Garage | 🔴 blokira onboarding — uputstvo hitno |
 
 ### Detalji — Stavka #1
 
@@ -47,7 +48,7 @@ retroaktivni događaj. Istorija raste unazad postepeno, umesto zida od 20 pitanj
 ---
 
 *Otvoreno: 10.07.2026. — Garage v1 na terenu kod Marka, čeka se dalji feedback.*
-*Ažurirano: 2026-07-11 — Driver v1 live, stavka #3 (Marko + Pavle multi-user signal).*
+*Ažurirano: 2026-07-11 — Driver v1 live, stavka #3 (multi-user signal), stavka #5 (Play Protect onboarding).*
 
 ### Detalji — Stavka #3
 
