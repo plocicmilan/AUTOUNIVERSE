@@ -155,10 +155,10 @@
     /* --- Footer --- */
     var ph = doc.internal.pageSize.getHeight();
     doc.setFontSize(8).setTextColor(140);
-    doc.text(
-      (prof.name || "") + (prof.phone ? "  •  " + prof.phone : ""),
-      PW / 2, ph - 10, { align: "center" }
-    );
+    var footer1 = (prof.name || "") + (prof.phone ? "  •  " + prof.phone : "");
+    var footer2 = [prof.address, prof.email, prof.website].filter(Boolean).join("  •  ");
+    doc.text(footer1 || "Garage Toolbox", PW / 2, footer2 ? ph - 14 : ph - 10, { align: "center" });
+    if (footer2) doc.text(footer2, PW / 2, ph - 9, { align: "center" });
 
     /* --- Watermark (free tier) --- */
     if (opts.watermark) {

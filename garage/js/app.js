@@ -8,6 +8,25 @@
 
   var App = { config: null, i18n: {}, route: "home", params: null };
 
+  var CHECKLIST_TEMPLATES = [
+    { id: "prijem", name: "Prijem vozila", extras: true, items: [
+      "Saobraćajna dozvola", "Polisa osiguranja", "Vidljiva oštećenja karoserije",
+      "Stanje stakala", "Gume (vizuelno)", "Rezervna guma",
+      "Ključevi / daljinski", "Vredne stvari u vozilu"
+    ]},
+    { id: "put", name: "Priprema za put", extras: false, items: [
+      "Gume — pritisak", "Ulje motora", "Rashladna tečnost",
+      "Tečnost za brisače", "Kočiona tečnost", "Svetla i migavci",
+      "Brisači", "Rezerva i alat", "Putna apoteka i trougao"
+    ]},
+    { id: "zima", name: "Zimska priprema", extras: false, items: [
+      "Zimske gume postavljene", "Antifriz (do -30°C min.)",
+      "Akumulator (kapacitet i punjenje)", "Zimski brisači",
+      "Zimski sprej za šoferku", "Zimska putna apoteka",
+      "Lanac za sneg (po potrebi)", "Lopata za sneg"
+    ]}
+  ];
+
   var INSP_TEMPLATE = [
     { s: "Motor",      ii: ["Ulje motora", "Rashladna tečnost", "Akumulator", "Kaiš / lanac"] },
     { s: "Kočnice",    ii: ["Prednje kočnice", "Zadnje kočnice", "Ručna kočnica", "Kočiona tečnost"] },
@@ -217,6 +236,18 @@
                     '<span class="insp-badge ok">✓ ' + ic.ok + ' OK</span>' +
                   '</div>';
                 }
+                if (e.type === "checklist" && e._checklist && e._checklist.length) {
+                  var total = e._checklist.length;
+                  var okCnt = e._checklist.filter(function (it) { return it.checked; }).length;
+                  var notOk = total - okCnt;
+                  inspHtml = '<div class="insp-sum" style="margin-top:.3rem">' +
+                    '<span class="insp-badge ok">✓ ' + okCnt + '/' + total + '</span>' +
+                    (notOk ? '<span class="insp-badge hitno">✕ ' + notOk + ' nije</span>' : '') +
+                    (e._intake && e._intake.complaint
+                      ? '<span class="muted" style="font-size:.75rem;margin-left:.3rem">' + esc(e._intake.complaint.slice(0, 35)) + '</span>'
+                      : '') +
+                  '</div>';
+                }
                 return '<div class="card evt' + (e.retroactive ? " retro" : "") + '">' +
                   '<div class="evt-head"><b>' + esc(e.title || e.type) + '</b><span>' + esc(e.date) + '</span></div>' +
                   (e.mileage_km != null ? '<div class="evt-km">' + esc(e.mileage_km) + ' km' + (e.km_precision === "approx" ? " (~)" : "") + '</div>' : '') +
@@ -252,6 +283,7 @@
             '<button class="btn btn-primary" onclick="GT.go(\'new_job\',{vehicleId:\'' + esc(v.id) + '\'})" data-i18n="wo.new_for"></button>' +
             '<button class="btn btn-secondary mt8" onclick="GT.go(\'history_add\',{vehicle_id:\'' + esc(v.id) + '\'})" data-i18n="gh.add"></button>' +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'inspection_form\',{vehicle_id:\'' + esc(v.id) + '\'})">🔍 Nova inspekcija</button>' : '') +
+            (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'checklist_form\',{vehicle_id:\'' + esc(v.id) + '\'})">📋 Nova provera</button>' : '') +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'reminder_form\',{vehicle_id:\'' + esc(v.id) + '\'})" data-i18n="reminders.add"></button>' : '') +
             '<button class="btn btn-secondary mt8" onclick="GT.go(\'vehicle_form\',{id:\'' + esc(v.id) + '\'})" data-i18n="common.edit"></button>';
         });
@@ -435,6 +467,9 @@
         '<div class="card"><h2 data-i18n="settings.profile"></h2>' +
           field("s_name", "settings.name", profile.name) +
           field("s_phone", "settings.phone", profile.phone, "tel") +
+          field("s_address", "Adresa", profile.address || "", "text", "Ul. Vojvode Stepe 1, Kruševac") +
+          field("s_email", "Email", profile.email || "", "email") +
+          field("s_website", "Website", profile.website || "", "url", "https://...") +
         '</div>' +
         '<div class="card">' +
           '<label class="field"><span>' + t("settings.currency") + '</span><select id="s_currency">' + curOpts + '</select></label>' +
@@ -550,6 +585,75 @@
           '</div>' +
           '<div id="insp_summary" class="insp-summary"></div>' +
           '<button class="btn btn-primary" onclick="GT.saveInspection()">Sačuvaj inspekciju</button>';
+      });
+    },
+
+    /* ===== CHECK LISTA (🔑) ===== */
+    checklist_form: function (params) {
+      if (!licensed()) {
+        return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
+          '<h1>Provera vozila</h1>' +
+          '<div class="card locked-card"><p class="empty" data-i18n="reminders.locked"></p>' +
+          '<button class="btn btn-primary mt8" onclick="GT.go(\'settings\')" data-i18n="license.title"></button></div>';
+      }
+      var vehId  = (params && params.vehicle_id) || null;
+      var tmplId = (params && params.tmpl) || "prijem";
+      App._chkVehId  = vehId;
+      App._chkTmplId = tmplId;
+
+      var pV = vehId ? Store.get("vehicles", vehId) : Promise.resolve(null);
+      return Promise.all([pV, Store.all("vehicles")]).then(function (res) {
+        var v = res[0], vehs = res[1];
+        var tmpl = CHECKLIST_TEMPLATES.filter(function (t) { return t.id === tmplId; })[0] || CHECKLIST_TEMPLATES[0];
+
+        var tmplOpts = CHECKLIST_TEMPLATES.map(function (t) {
+          return '<option value="' + esc(t.id) + '"' + (t.id === tmplId ? " selected" : "") + '>' + esc(t.name) + '</option>';
+        }).join("");
+
+        var vehOpts = '<option value="">— Bez vozila</option>' + vehs.map(function (vv) {
+          return '<option value="' + esc(vv.id) + '"' + (v && vv.id === v.id ? " selected" : "") + '>' +
+                 esc(vv.make + " " + vv.model + (vv.plate ? " • " + vv.plate : "")) + '</option>';
+        }).join("");
+
+        var items = tmpl.items.map(function (item, i) {
+          return '<div class="chk-row">' +
+            '<input type="checkbox" id="chk_' + i + '" checked>' +
+            '<label for="chk_' + i + '">' + esc(item) + '</label>' +
+            '<button class="chk-note-btn" onclick="GT.chkNoteToggle(' + i + ')">📝</button>' +
+          '</div>' +
+          '<textarea id="chnote_' + i + '" class="chk-note" hidden placeholder="Beleška..."></textarea>';
+        }).join("");
+
+        var extras = tmpl.extras
+          ? '<div class="card"><h2>Prijem</h2>' +
+              '<label class="field"><span>Gorivo pri preuzimanju</span>' +
+                '<select id="chk_fuel"><option value="">—</option>' +
+                ['Prazan', '1/4', '1/2', '3/4', 'Pun'].map(function (f) {
+                  return '<option value="' + f + '">' + f + '</option>';
+                }).join("") +
+              '</select></label>' +
+              field("chk_km", "common.mileage", "", "number") +
+              '<label class="field"><span>Prigovor mušterije</span>' +
+                '<textarea id="chk_complaint" rows="2" placeholder="Šta kaže mušterija..."></textarea></label>' +
+              field("chk_pickup", "Rok preuzimanja", "", "date") +
+            '</div>'
+          : '';
+
+        var back = vehId
+          ? 'GT.go(\'vehicle_card\',{id:\'' + esc(vehId) + '\'})'
+          : 'GT.go(\'home\')';
+
+        return '<button class="linkback" onclick="' + back + '" data-i18n="common.back"></button>' +
+          '<h1>Provera vozila</h1>' +
+          '<div class="card">' +
+            '<label class="field"><span>Tip provere</span>' +
+              '<select id="chk_tmpl" onchange="GT.chkTemplate(this.value,\'' + esc(vehId || '') + '\')">' + tmplOpts + '</select></label>' +
+            '<label class="field"><span data-i18n="wo.pick_vehicle"></span>' +
+              '<select id="chk_vehicle" onchange="App._chkVehId=this.value">' + vehOpts + '</select></label>' +
+          '</div>' +
+          '<div class="card">' + items + '</div>' +
+          extras +
+          '<button class="btn btn-primary" onclick="GT.saveChecklist()">Sačuvaj proveru</button>';
       });
     },
 
@@ -1077,7 +1181,10 @@
     },
 
     saveSettings: function () {
-      Store.settings.set("profile", { name: val("s_name"), phone: val("s_phone") });
+      Store.settings.set("profile", {
+        name: val("s_name"), phone: val("s_phone"),
+        address: val("s_address"), email: val("s_email"), website: val("s_website")
+      });
       Store.settings.set("currency", el("s_currency").value);
       Store.settings.set("signature", el("s_signature").checked);
       var newLang = el("s_lang").value;
@@ -1353,6 +1460,49 @@
     deleteReminder: function (id) {
       if (!confirm(t("common.confirm_delete"))) return;
       Store.remove("reminders", id).then(function () { render("reminders"); });
+    },
+
+    /* ----- Check liste ----- */
+    chkNoteToggle: function (i) {
+      var ta = el("chnote_" + i);
+      if (ta) { ta.hidden = !ta.hidden; if (!ta.hidden) ta.focus(); }
+    },
+    chkTemplate: function (tmplId, vehId) {
+      render("checklist_form", { vehicle_id: vehId || App._chkVehId, tmpl: tmplId });
+    },
+    saveChecklist: function () {
+      var vehId = (el("chk_vehicle") && el("chk_vehicle").value) || App._chkVehId;
+      if (!vehId) { toast("Odaberi vozilo"); return; }
+      var tmpl = CHECKLIST_TEMPLATES.filter(function (t) { return t.id === App._chkTmplId; })[0] || CHECKLIST_TEMPLATES[0];
+      var items = tmpl.items.map(function (item, i) {
+        return {
+          item: item,
+          checked: !!(el("chk_" + i) && el("chk_" + i).checked),
+          note: el("chnote_" + i) ? el("chnote_" + i).value.trim() : ""
+        };
+      });
+      var okCount = items.filter(function (it) { return it.checked; }).length;
+      var title = tmpl.name + " — " + okCount + "/" + tmpl.items.length + " ✓";
+      var intake = null;
+      if (tmpl.extras) {
+        intake = {
+          fuel: el("chk_fuel") ? el("chk_fuel").value : "",
+          complaint: el("chk_complaint") ? el("chk_complaint").value.trim() : "",
+          pickup_date: el("chk_pickup") ? el("chk_pickup").value : ""
+        };
+        var complaint = intake.complaint;
+        if (complaint) title += " • " + complaint.slice(0, 30);
+      }
+      var ev = Models.createEvent({
+        vehicle_id: vehId, type: "checklist", title: title, source: "mechanic", app: "garage",
+        mileage_km: el("chk_km") && el("chk_km").value ? parseInt(el("chk_km").value, 10) : null
+      });
+      ev._checklist = items;
+      if (intake) ev._intake = intake;
+      Store.put("events", ev).then(function () {
+        toast("Provera sačuvana");
+        render("vehicle_card", { id: vehId });
+      });
     }
   };
 
