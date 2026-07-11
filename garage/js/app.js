@@ -525,11 +525,17 @@
         // 4. PDV
         '<div class="card">' +
           '<h2>PDV (20%)</h2>' +
-          '<div class="calc-row">' +
-            '<label class="field"><span>Cena bez PDV</span><input id="c_base" type="number" inputmode="decimal" placeholder="10000" oninput="GT.calcPDV()"></label>' +
-            '<label class="field"><span>PDV stopa (%)</span><input id="c_vat" type="number" inputmode="decimal" value="20" oninput="GT.calcPDV()"></label>' +
+          '<label class="field"><span>PDV stopa (%)</span><input id="c_vat" type="number" inputmode="decimal" value="20" oninput="GT.calcPDV();GT.calcPDVrev()"></label>' +
+          '<div class="calc-row" style="margin-top:.5rem">' +
+            '<div>' +
+              '<label class="field"><span>Cena BEZ PDV →</span><input id="c_base" type="number" inputmode="decimal" placeholder="10000" oninput="GT.calcPDV()"></label>' +
+              '<div class="calc-result" id="c_pdv_out"></div>' +
+            '</div>' +
+            '<div>' +
+              '<label class="field"><span>Cena SA PDV →</span><input id="c_gross" type="number" inputmode="decimal" placeholder="12000" oninput="GT.calcPDVrev()"></label>' +
+              '<div class="calc-result" id="c_pdv_rev_out"></div>' +
+            '</div>' +
           '</div>' +
-          '<div class="calc-result" id="c_pdv_out"></div>' +
         '</div>';
     },
 
@@ -1105,11 +1111,24 @@
       var out  = document.getElementById("c_pdv_out");
       if (!base) { out.innerHTML = ""; return; }
       var vatAmt = base * vat / 100;
-      var total  = base + vatAmt;
       var cur    = Store.settings.get("currency", "RSD");
       out.innerHTML =
-        '<div class="calc-line">PDV (' + vat + '%): <b>' + Models.formatAmount(vatAmt, cur) + '</b></div>' +
-        '<div class="calc-line">Ukupno sa PDV: <b>' + Models.formatAmount(total, cur) + '</b></div>';
+        '<div class="calc-line">PDV: <b>' + Models.formatAmount(vatAmt, cur) + '</b></div>' +
+        '<div class="calc-line">Sa PDV: <b>' + Models.formatAmount(base + vatAmt, cur) + '</b></div>';
+    },
+
+    calcPDVrev: function () {
+      var gross = parseFloat(document.getElementById("c_gross").value) || 0;
+      var vat   = parseFloat(document.getElementById("c_vat").value);
+      if (isNaN(vat)) vat = 20;
+      var out   = document.getElementById("c_pdv_rev_out");
+      if (!gross) { out.innerHTML = ""; return; }
+      var base   = gross / (1 + vat / 100);
+      var vatAmt = gross - base;
+      var cur    = Store.settings.get("currency", "RSD");
+      out.innerHTML =
+        '<div class="calc-line">Bez PDV: <b>' + Models.formatAmount(base, cur) + '</b></div>' +
+        '<div class="calc-line">PDV: <b>' + Models.formatAmount(vatAmt, cur) + '</b></div>';
     },
 
     /* ----- Predračuni ----- */
