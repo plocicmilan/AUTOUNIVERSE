@@ -151,10 +151,14 @@
       return Promise.all([
         Store.all("vehicles"), Store.all("contacts"),
         Store.all("events"), Store.all("reminders"),
-        Store.all("documents")
+        Store.all("documents"), Store.all("appointments")
       ]).then(function (res) {
         var nV = res[0].length, nC = res[1].length, nE = res[2].length;
         App._vehById = {}; res[0].forEach(function (v) { App._vehById[v.id] = v; });
+        var todayStr = new Date().toISOString().slice(0, 10);
+        var nToday = res[5].filter(function (a) {
+          return a.status === "scheduled" && (a.scheduled_at || "").slice(0, 10) === todayStr;
+        }).length;
 
         var remCard;
         if (!licensed()) {
@@ -179,6 +183,7 @@
           '<div class="statrow">' +
             '<button class="stat" onclick="GT.go(\'vehicles\')"><b>' + nV + '</b><span data-i18n="nav.vehicles"></span></button>' +
             '<button class="stat" onclick="GT.go(\'contacts\')"><b>' + nC + '</b><span data-i18n="nav.contacts"></span></button>' +
+            '<button class="stat" onclick="GT.go(\'dnevnik\')"><b>' + nToday + '</b><span>Danas</span></button>' +
             '<button class="stat" onclick="GT.go(\'estimates\')"><b>' + nEst + '</b><span>Predračuni</span></button>' +
           '</div>' +
           remCard +
@@ -248,13 +253,13 @@
                       : '') +
                   '</div>';
                 }
-                return '<div class="card evt' + (e.retroactive ? " retro" : "") + '">' +
+                return '<button class="card evt' + (e.retroactive ? " retro" : "") + '" onclick="GT.go(\'event_detail\',{id:\'' + esc(e.id) + '\'})" style="width:100%;text-align:left;cursor:pointer">' +
                   '<div class="evt-head"><b>' + esc(e.title || e.type) + '</b><span>' + esc(e.date) + '</span></div>' +
                   (e.mileage_km != null ? '<div class="evt-km">' + esc(e.mileage_km) + ' km' + (e.km_precision === "approx" ? " (~)" : "") + '</div>' : '') +
                   (e.retroactive ? '<div class="trust">' + t("d.retro_tag") + '</div>' : '') +
                   (totals ? '<div class="evt-total">' + t("common.total") + ': ' + totals + '</div>' : '') +
                   inspHtml +
-                  '</div>';
+                  '</button>';
               }).join("")
             : '<div class="card"><p class="empty" data-i18n="history.empty"></p></div>';
 
@@ -284,6 +289,7 @@
             '<button class="btn btn-secondary mt8" onclick="GT.go(\'history_add\',{vehicle_id:\'' + esc(v.id) + '\'})" data-i18n="gh.add"></button>' +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'inspection_form\',{vehicle_id:\'' + esc(v.id) + '\'})">🔍 Nova inspekcija</button>' : '') +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'checklist_form\',{vehicle_id:\'' + esc(v.id) + '\'})">📋 Nova provera</button>' : '') +
+            (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'tires_form\',{vehicle_id:\'' + esc(v.id) + '\'})">🔧 Gume</button>' : '') +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'reminder_form\',{vehicle_id:\'' + esc(v.id) + '\'})" data-i18n="reminders.add"></button>' : '') +
             '<button class="btn btn-secondary mt8" onclick="GT.go(\'vehicle_form\',{id:\'' + esc(v.id) + '\'})" data-i18n="common.edit"></button>';
         });
@@ -430,14 +436,51 @@
     contact_form: function (params) {
       var id = params && params.id;
       var p = id ? Store.get("contacts", id) : Promise.resolve(null);
-      return p.then(function (c) {
-        App._editingContact = c || null;
+      return Promise.all([p, id ? Store.all("vehicles") : Promise.resolve([]), id ? Store.all("events") : Promise.resolve([])]).then(function (res) {
+        var c = res[0]; App._editingContact = c || null;
         c = c || Models.createContact({});
+        var vehicles = res[1], events = res[2];
+
         var roles = Models.CONTACT_ROLES.map(function (r) {
           var on = c.roles.indexOf(r) !== -1;
           return '<label class="chk"><input type="checkbox" id="role_' + r + '"' + (on ? " checked" : "") + '> ' +
                  t("contacts.role_" + r) + '</label>';
         }).join("");
+
+        var historyHtml = "";
+        if (id) {
+          var ownedVehs = vehicles.filter(function (v) { return v.owner_contact_id === id; });
+          var relEvs = events.filter(function (e) { return e.contact_id === id; })
+            .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); })
+            .slice(0, 5);
+          var vehById = {}; vehicles.forEach(function (v) { vehById[v.id] = v; });
+
+          if (ownedVehs.length) {
+            historyHtml += '<div class="card"><h2>Vozila</h2>' +
+              ownedVehs.map(function (v) {
+                return '<button class="card vehrow" onclick="GT.go(\'vehicle_card\',{id:\'' + esc(v.id) + '\'})">' +
+                  '<b>' + esc(v.make + " " + v.model) + (v.year ? " (" + v.year + ")" : "") + '</b>' +
+                  '<span class="muted">' + esc(v.plate || "—") + '</span>' +
+                '</button>';
+              }).join("") +
+            '</div>';
+          }
+
+          if (relEvs.length) {
+            historyHtml += '<div class="card"><h2>Poslednji poslovi</h2>' +
+              relEvs.map(function (e) {
+                var vv = vehById[e.vehicle_id];
+                var totals = Models.formatTotals(Models.sumByCurrency(e.items));
+                return '<div class="evt-head" style="padding:.35rem 0;border-bottom:1px solid var(--c-border,#e5e7eb)">' +
+                  '<b>' + esc(e.title || e.type) + '</b>' +
+                  '<span>' + esc(e.date || "") + '</span>' +
+                  '</div>' +
+                  (vv ? '<div class="muted" style="font-size:.78rem">' + esc(vv.make + " " + vv.model) + (totals ? ' • ' + totals : '') + '</div>' : '');
+              }).join("") +
+            '</div>';
+          }
+        }
+
         return '' +
           '<button class="linkback" onclick="GT.go(\'contacts\')" data-i18n="common.back"></button>' +
           '<h1>' + (id ? t("common.edit") : t("contacts.add").replace("+ ", "")) + '</h1>' +
@@ -447,7 +490,8 @@
             '<div class="field"><span data-i18n="contacts.roles"></span>' + roles + '</div>' +
           '</div>' +
           '<button class="btn btn-primary" onclick="GT.saveContact()" data-i18n="common.save"></button>' +
-          (id ? '<button class="btn btn-danger mt8" onclick="GT.deleteContact(\'' + esc(id) + '\')" data-i18n="common.delete"></button>' : '');
+          (id ? '<button class="btn btn-danger mt8" onclick="GT.deleteContact(\'' + esc(id) + '\')" data-i18n="common.delete"></button>' : '') +
+          historyHtml;
       });
     },
 
@@ -585,6 +629,52 @@
           '</div>' +
           '<div id="insp_summary" class="insp-summary"></div>' +
           '<button class="btn btn-primary" onclick="GT.saveInspection()">Sačuvaj inspekciju</button>';
+      });
+    },
+
+    /* ===== GUME (🔑) ===== */
+    tires_form: function (params) {
+      if (!licensed()) {
+        return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
+          '<h1>Gume</h1>' +
+          '<div class="card locked-card"><p class="empty" data-i18n="reminders.locked"></p>' +
+          '<button class="btn btn-primary mt8" onclick="GT.go(\'settings\')" data-i18n="license.title"></button></div>';
+      }
+      var vehId = params && params.vehicle_id;
+      return Store.get("vehicles", vehId).then(function (v) {
+        if (!v) return '<div class="card"><p class="empty">Vozilo nije nađeno.</p></div>';
+        var tires = v.tires || {};
+        var seasonOpts = [
+          { v: "summer", l: "Letnje" },
+          { v: "winter", l: "Zimske" },
+          { v: "allseason", l: "All-season" }
+        ].map(function (o) {
+          return '<option value="' + o.v + '"' + (tires.current_season === o.v ? " selected" : "") + '>' + o.l + '</option>';
+        }).join("");
+        var storageOpts = ["—", "Kod vlasnika", "Kod majstora", "Servis", "Vulkanizer"].map(function (s) {
+          return '<option' + (tires.other_set_location === s ? " selected" : "") + '>' + esc(s) + '</option>';
+        }).join("");
+
+        return '<button class="linkback" onclick="GT.go(\'vehicle_card\',{id:\'' + esc(vehId) + '\'})" data-i18n="common.back"></button>' +
+          '<h1>Gume — ' + esc(v.make + " " + v.model) + '</h1>' +
+          '<div class="card"><h2>Trenutne gume</h2>' +
+            '<label class="field"><span>Sezona na autu</span><select id="t_season">' + seasonOpts + '</select></label>' +
+            field("t_front", "Dimenzija (prednje)", tires.size_front || "", "text", "205/55 R16") +
+            field("t_rear", "Dimenzija (zadnje)", tires.size_rear || "", "text", "205/55 R16") +
+            field("t_brand", "Marka guma", tires.current_brand || "", "text", "Michelin, Nokian...") +
+            field("t_purchased", "Kupljene (mesec/god)", tires.current_purchased || "", "text", "05/2025") +
+          '</div>' +
+          '<div class="card"><h2>Drugi set</h2>' +
+            '<label class="field"><span>Gde se čuva</span><select id="t_storage">' + storageOpts + '</select></label>' +
+            field("t_other_brand", "Marka drugog seta", tires.other_brand || "") +
+            field("t_other_size", "Dimenzija drugog seta", tires.other_size || "", "text", "205/55 R16") +
+          '</div>' +
+          '<div class="card"><h2>Zamena guma</h2>' +
+            field("t_km", "Km pri zameni", "", "number") +
+            '<p class="muted" style="font-size:.8rem;margin:.3rem 0">Snima zamenu kao događaj i ažurira koji set je na autu.</p>' +
+            '<button class="btn btn-secondary" onclick="GT.saveTireSwap(\'' + esc(vehId) + '\')">Sačuvaj zamenu</button>' +
+          '</div>' +
+          '<button class="btn btn-primary mt8" onclick="GT.saveTires(\'' + esc(vehId) + '\')">Sačuvaj podatke o gumama</button>';
       });
     },
 
@@ -947,6 +1037,95 @@
           '</div>' +
           '<button class="btn btn-primary" onclick="GT.saveAppointment()" data-i18n="common.save"></button>' +
           (id ? '<button class="btn btn-danger mt8" onclick="GT.deleteAppointment(\'' + esc(id) + '\')">Obriši termin</button>' : '');
+      });
+    },
+
+    /* ===== DETALJI DOGAĐAJA ===== */
+    event_detail: function (params) {
+      var id = params && params.id;
+      return Promise.all([
+        Store.get("events", id),
+        Store.all("vehicles"),
+        Store.all("contacts")
+      ]).then(function (res) {
+        var ev = res[0];
+        if (!ev) return '<div class="card"><p class="empty">Događaj nije nađen.</p></div>';
+        var vehById = {}; res[1].forEach(function (v) { vehById[v.id] = v; });
+        var conById = {}; res[2].forEach(function (c) { conById[c.id] = c; });
+        var v = vehById[ev.vehicle_id];
+        var c = conById[ev.contact_id];
+
+        var back = v
+          ? 'GT.go(\'vehicle_card\',{id:\'' + esc(ev.vehicle_id) + '\'})'
+          : 'GT.go(\'home\')';
+
+        var itemsHtml = (ev.items && ev.items.length)
+          ? '<div class="card"><h2>Stavke</h2>' +
+              ev.items.map(function (it) {
+                var qty = it.qty != null ? it.qty : 1;
+                var line = (Number(it.price) || 0) * qty;
+                var kindLabel = it.kind === "labor" ? '<span class="muted" style="font-size:.75rem">[rad]</span> ' : '';
+                return '<div class="evt-item-row">' +
+                  '<span class="evt-item-name">' + kindLabel + esc(it.name || "—") + '</span>' +
+                  '<span class="evt-item-detail">' + qty + (it.unit ? " " + it.unit : "") + ' × ' + Models.formatAmount(Number(it.price) || 0, it.currency) + '</span>' +
+                  '<span class="evt-item-sum">' + Models.formatAmount(line, it.currency) + '</span>' +
+                '</div>';
+              }).join("") +
+              '<div class="evt-item-row total"><b>Ukupno</b><span></span><b>' + Models.formatTotals(Models.sumByCurrency(ev.items)) + '</b></div>' +
+            '</div>'
+          : '';
+
+        var photosHtml = (ev.photos && ev.photos.length)
+          ? '<div class="card"><h2>Slike</h2><div class="photostrip">' +
+              ev.photos.map(function (p) { return '<div class="photocell"><img src="' + p + '"></div>'; }).join("") +
+            '</div></div>'
+          : '';
+
+        var chkHtml = "";
+        if (ev.type === "checklist" && ev._checklist && ev._checklist.length) {
+          var rows = ev._checklist.map(function (it) {
+            return '<div class="chk-row" style="pointer-events:none">' +
+              '<input type="checkbox"' + (it.checked ? " checked" : "") + ' disabled>' +
+              '<label>' + esc(it.item) + (it.note ? ' — <em>' + esc(it.note) + '</em>' : '') + '</label>' +
+            '</div>';
+          }).join("");
+          var intakeHtml = ev._intake
+            ? (ev._intake.fuel ? '<div class="techrow"><span>Gorivo</span><b>' + esc(ev._intake.fuel) + '</b></div>' : '') +
+              (ev._intake.complaint ? '<div class="techrow"><span>Prigovor</span><b>' + esc(ev._intake.complaint) + '</b></div>' : '') +
+              (ev._intake.pickup_date ? '<div class="techrow"><span>Rok preuzimanja</span><b>' + esc(ev._intake.pickup_date) + '</b></div>' : '')
+            : '';
+          chkHtml = '<div class="card"><h2>Stavke provere</h2>' + rows + (intakeHtml ? '<div style="margin-top:.5rem">' + intakeHtml + '</div>' : '') + '</div>';
+        }
+
+        var inspHtml2 = "";
+        if (ev.type === "inspection" && ev._inspection && ev._inspection.length) {
+          var sGroups = {};
+          ev._inspection.forEach(function (it) {
+            if (!sGroups[it.system]) sGroups[it.system] = [];
+            sGroups[it.system].push(it);
+          });
+          var ST = { ok: "✓ OK", prati: "! Prati", hitno: "✕ Hitno" };
+          var SC = { ok: "#166534", prati: "#92400e", hitno: "#991b1b" };
+          inspHtml2 = '<div class="card"><h2>Inspekcija</h2>' +
+            Object.keys(sGroups).map(function (sys) {
+              return '<b style="font-size:.82rem;display:block;margin:.4rem 0 .2rem">' + esc(sys) + '</b>' +
+                sGroups[sys].map(function (it) {
+                  return '<div style="display:flex;justify-content:space-between;padding:.2rem 0;font-size:.84rem">' +
+                    '<span>' + esc(it.item) + '</span>' +
+                    '<span style="font-weight:600;color:' + (SC[it.status] || "#333") + '">' + (ST[it.status] || it.status) + '</span>' +
+                  '</div>';
+                }).join("");
+            }).join("") +
+          '</div>';
+        }
+
+        return '<button class="linkback" onclick="' + back + '" data-i18n="common.back"></button>' +
+          '<h1>' + esc(ev.title || ev.type) + '</h1>' +
+          '<p class="sub">' + esc(ev.date || "—") + (ev.mileage_km != null ? ' • ' + esc(ev.mileage_km) + ' km' : '') + '</p>' +
+          (v ? '<p class="sub">Vozilo: <b>' + esc(v.make + " " + v.model + (v.plate ? " • " + v.plate : "")) + '</b></p>' : '') +
+          (c ? '<a class="card ownerrow" href="tel:' + esc(c.phone) + '"><span>Klijent: <b>' + esc(c.name) + '</b></span><span class="callpill">☎</span></a>' : '') +
+          (ev.description ? '<div class="card"><h2>Opis</h2><p style="font-size:.9rem;line-height:1.5">' + esc(ev.description) + '</p></div>' : '') +
+          itemsHtml + chkHtml + inspHtml2 + photosHtml;
       });
     },
 
@@ -1460,6 +1639,57 @@
     deleteReminder: function (id) {
       if (!confirm(t("common.confirm_delete"))) return;
       Store.remove("reminders", id).then(function () { render("reminders"); });
+    },
+
+    /* ----- Gume ----- */
+    saveTires: function (vehId) {
+      Store.get("vehicles", vehId).then(function (v) {
+        if (!v) return;
+        v.tires = Object.assign({}, v.tires, {
+          size_front:       val("t_front"),
+          size_rear:        val("t_rear"),
+          current_brand:    val("t_brand"),
+          current_purchased: val("t_purchased"),
+          current_season:   el("t_season") ? el("t_season").value : (v.tires && v.tires.current_season),
+          other_brand:      val("t_other_brand"),
+          other_size:       val("t_other_size"),
+          other_set_location: el("t_storage") ? el("t_storage").value : "",
+          current_set: [el("t_season") ? {summer:"Letnje",winter:"Zimske",allseason:"All-season"}[el("t_season").value] : "", val("t_brand"), val("t_purchased")].filter(Boolean).join(", ")
+        });
+        return Store.put("vehicles", v);
+      }).then(function () {
+        toast("Podaci o gumama sačuvani");
+        render("vehicle_card", { id: vehId });
+      });
+    },
+    saveTireSwap: function (vehId) {
+      Store.get("vehicles", vehId).then(function (v) {
+        if (!v) return;
+        var season = el("t_season") ? el("t_season").value : "summer";
+        var seasonLabel = { summer: "letnje", winter: "zimske", allseason: "all-season" }[season] || season;
+        var km = el("t_km") && el("t_km").value ? parseInt(el("t_km").value, 10) : null;
+        var brand = val("t_brand");
+        var title = "Zamena guma — postavljene " + seasonLabel + (brand ? " (" + brand + ")" : "");
+        var ev = Models.createEvent({
+          vehicle_id: vehId, type: "tires", title: title,
+          mileage_km: km, source: "mechanic", app: "garage"
+        });
+        v.tires = Object.assign({}, v.tires, {
+          size_front:       val("t_front") || (v.tires && v.tires.size_front),
+          size_rear:        val("t_rear")  || (v.tires && v.tires.size_rear),
+          current_brand:    val("t_brand"),
+          current_purchased: val("t_purchased"),
+          current_season:   season,
+          other_brand:      val("t_other_brand"),
+          other_size:       val("t_other_size"),
+          other_set_location: el("t_storage") ? el("t_storage").value : "",
+          current_set: [seasonLabel, val("t_brand"), val("t_purchased")].filter(Boolean).join(", ")
+        });
+        return Promise.all([Store.put("events", ev), Store.put("vehicles", v)]);
+      }).then(function () {
+        toast("Zamena guma sačuvana");
+        render("vehicle_card", { id: vehId });
+      });
     },
 
     /* ----- Check liste ----- */
