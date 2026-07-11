@@ -66,5 +66,11 @@
     "provider": "gumroad",
     "product_id": "",
     "test_key": "TEST-UNLOCK"
+  },
+
+  "platform": {
+    "site_url": "",
+    "show_footer_link": false,
+    "footer_text": "Deo Auto Universe ekosistema"
   }
 }
