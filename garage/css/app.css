@@ -2,4 +2,17 @@
    Pravilo: ovde ide SAMO ono što je jedinstveno za Garage.
    Sve što bi i Driver koristio ide u ../core/css/core.css.  */
 
-/* zasad prazno — boje stižu iz config/garage_v1.json preko app.js */
+/* Dnevnik — termini */
+.apt-row { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; padding: .75rem; }
+.apt-row .rowmain { flex: 1; background: none; border: none; color: inherit; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: .2rem; padding: 0; }
+.apt-row .rowmain b { font-size: .95rem; }
+.apt-row .rowmain .muted { font-size: .78rem; color: var(--c-muted, #888); }
+
+.apt-scheduled { border-left: 3px solid var(--c-primary, #3b82f6); }
+.apt-active     { border-left: 3px solid #f59e0b; background: rgba(245,158,11,.06); }
+.apt-done       { border-left: 3px solid var(--c-ok, #22c55e); opacity: .65; }
+.apt-cancelled  { border-left: 3px solid #ef4444; opacity: .5; }
+
+.aptbtn { border: none; border-radius: 5px; padding: .3rem .6rem; font-size: .78rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.aptbtn.start { background: #f59e0b; color: #fff; }
+.aptbtn.done  { background: var(--c-ok, #22c55e); color: #fff; }

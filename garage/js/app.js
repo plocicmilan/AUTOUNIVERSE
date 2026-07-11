@@ -408,6 +408,115 @@
       });
     },
 
+    /* ===== DNEVNIK — zakazivanje i aktivni radovi ===== */
+    dnevnik: function () {
+      return Promise.all([
+        Store.all("appointments"),
+        Store.all("vehicles"),
+        Store.all("contacts")
+      ]).then(function (res) {
+        var apts = res[0];
+        App._vehById = {}; res[1].forEach(function (v) { App._vehById[v.id] = v; });
+        App._contactsById = {}; res[2].forEach(function (c) { App._contactsById[c.id] = c; });
+
+        var now = new Date();
+        var todayStr = now.toISOString().slice(0, 10);
+        var weekEnd = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+
+        var active = apts.filter(function (a) { return a.status === "active"; })
+          .sort(function (a, b) { return (a.scheduled_at || "").localeCompare(b.scheduled_at || ""); });
+
+        var upcoming = apts.filter(function (a) {
+          if (a.status !== "scheduled") return false;
+          var d = (a.scheduled_at || "").slice(0, 10);
+          return d >= todayStr && d <= weekEnd;
+        }).sort(function (a, b) { return (a.scheduled_at || "").localeCompare(b.scheduled_at || ""); });
+
+        function aptRowHTML(a, showStart) {
+          var v = a.vehicle_id && App._vehById[a.vehicle_id];
+          var vLabel = v ? esc(v.make + " " + v.model + (v.plate ? " • " + v.plate : "")) : "";
+          var name = esc(a.customer_name || (App._contactsById[a.contact_id] && App._contactsById[a.contact_id].name) || "—");
+          var phone = a.customer_phone || (App._contactsById[a.contact_id] && App._contactsById[a.contact_id].phone) || "";
+          var time = a.scheduled_at ? a.scheduled_at.slice(0, 16).replace("T", " ") : "";
+          var dur = a.duration_min ? a.duration_min + " min" : "";
+          return '<div class="card apt-row apt-' + esc(a.status) + '">' +
+            '<button class="rowmain" onclick="GT.go(\'appointment_form\',{id:\'' + esc(a.id) + '\'})">' +
+              '<b>' + name + (a.service_type ? ' — ' + esc(a.service_type) : '') + '</b>' +
+              '<span class="muted">' + time + (dur ? ' • ' + dur : '') + '</span>' +
+              (vLabel ? '<span class="muted">' + vLabel + '</span>' : '') +
+            '</button>' +
+            '<div style="display:flex;gap:.4rem;align-items:center">' +
+              (phone ? '<a class="callpill" href="tel:' + esc(phone) + '">☎</a>' : '') +
+              (showStart
+                ? '<button class="aptbtn start" onclick="GT.aptStatus(\'' + esc(a.id) + '\',\'active\')">▶ Start</button>'
+                : '<button class="aptbtn done" onclick="GT.aptStatus(\'' + esc(a.id) + '\',\'done\')">✓ Done</button>') +
+            '</div>' +
+          '</div>';
+        }
+
+        var activeHtml = active.length
+          ? active.map(function (a) { return aptRowHTML(a, false); }).join("")
+          : '<div class="card"><p class="empty">Nema aktivnih radova</p></div>';
+
+        var upcomingHtml = upcoming.length
+          ? upcoming.map(function (a) { return aptRowHTML(a, true); }).join("")
+          : '<div class="card"><p class="empty">Nema zakazanih za ovu nedelju</p></div>';
+
+        return '<h1>Dnevnik</h1>' +
+          '<h2 class="secttitle">🔧 Aktivni radovi</h2>' +
+          activeHtml +
+          '<h2 class="secttitle">📅 Zakazano (danas + 7 dana)</h2>' +
+          upcomingHtml +
+          '<button class="btn btn-primary mt8" onclick="GT.go(\'appointment_form\')">+ Zakaži termin</button>';
+      });
+    },
+
+    appointment_form: function (params) {
+      var id = params && params.id;
+      var p = id ? Store.get("appointments", id) : Promise.resolve(null);
+      return Promise.all([p, Store.all("vehicles"), Store.all("contacts")]).then(function (res) {
+        var a = res[0]; App._editingAppointment = a || null;
+        a = a || Models.createAppointment({});
+        var vehicles = res[1], contacts = res[2];
+
+        var vehOpts = '<option value="">— (bez vozila)</option>' + vehicles.map(function (v) {
+          return '<option value="' + esc(v.id) + '"' + (a.vehicle_id === v.id ? " selected" : "") + '>' +
+                 esc(v.make + " " + v.model + (v.plate ? " • " + v.plate : "")) + '</option>';
+        }).join("");
+
+        var conOpts = '<option value="">— (brzi unos)</option>' + contacts.map(function (c) {
+          return '<option value="' + esc(c.id) + '"' + (a.contact_id === c.id ? " selected" : "") + '>' +
+                 esc(c.name) + (c.phone ? " • " + c.phone : "") + '</option>';
+        }).join("");
+
+        var durOpts = [30, 60, 90, 120, 180, 240, 480].map(function (m) {
+          var label = m < 60 ? m + " min" : (m % 60 === 0 ? (m / 60) + " h" : Math.floor(m/60) + "h " + (m%60) + "min");
+          return '<option value="' + m + '"' + (a.duration_min === m ? " selected" : "") + '>' + label + '</option>';
+        }).join("");
+
+        var statusOpts = Models.APPOINTMENT_STATUSES.map(function (s) {
+          var labels = { scheduled: "Zakazano", active: "U radu", done: "Završeno", cancelled: "Otkazano" };
+          return '<option value="' + s + '"' + (a.status === s ? " selected" : "") + '>' + (labels[s] || s) + '</option>';
+        }).join("");
+
+        return '<button class="linkback" onclick="GT.go(\'dnevnik\')" data-i18n="common.back"></button>' +
+          '<h1>' + (id ? "Izmena termina" : "Novi termin") + '</h1>' +
+          '<div class="card">' +
+            '<label class="field"><span>Mušterija (kontakt)</span><select id="ap_contact" onchange="GT.aptContactFill()">' + conOpts + '</select></label>' +
+            field("ap_name", "contacts.name", a.customer_name, "text", "Ime i prezime") +
+            field("ap_phone", "contacts.phone", a.customer_phone, "tel", "+381...") +
+            field("ap_service", "Vrsta posla", a.service_type, "text", "servis, registracija, dijagnostika...") +
+            '<label class="field"><span>Vozilo</span><select id="ap_vehicle">' + vehOpts + '</select></label>' +
+            field("ap_time", "Datum i vreme", a.scheduled_at.slice(0, 16), "datetime-local") +
+            '<label class="field"><span>Trajanje</span><select id="ap_dur">' + durOpts + '</select></label>' +
+            (id ? '<label class="field"><span>Status</span><select id="ap_status">' + statusOpts + '</select></label>' : '') +
+            '<label class="field"><span>Napomena</span><textarea id="ap_notes" rows="2">' + esc(a.notes) + '</textarea></label>' +
+          '</div>' +
+          '<button class="btn btn-primary" onclick="GT.saveAppointment()" data-i18n="common.save"></button>' +
+          (id ? '<button class="btn btn-danger mt8" onclick="GT.deleteAppointment(\'' + esc(id) + '\')">Obriši termin</button>' : '');
+      });
+    },
+
     /* ===== RANIJI UNOS — retroaktivni istorijski događaj (Marko feedback #1) ===== */
     history_add: function (params) {
       var vehId = params && params.vehicle_id;
@@ -698,6 +807,47 @@
       if (!confirm(t("common.confirm_delete"))) return;
       License.deactivate(Store);
       render("settings");
+    },
+
+    /* ----- Dnevnik / Termini ----- */
+    aptContactFill: function () {
+      var sel = el("ap_contact");
+      if (!sel || !sel.value) return;
+      var c = App._contactsById && App._contactsById[sel.value];
+      if (!c) return;
+      var n = el("ap_name"); if (n && !n.value) n.value = c.name;
+      var p = el("ap_phone"); if (p && !p.value) p.value = c.phone || "";
+    },
+
+    saveAppointment: function () {
+      var base = App._editingAppointment || Models.createAppointment({});
+      base.contact_id = el("ap_contact") ? (el("ap_contact").value || null) : null;
+      base.customer_name = val("ap_name");
+      base.customer_phone = val("ap_phone");
+      base.service_type = val("ap_service");
+      base.vehicle_id = el("ap_vehicle") ? (el("ap_vehicle").value || null) : null;
+      base.scheduled_at = val("ap_time") || Models.nowISO().slice(0, 16);
+      base.duration_min = el("ap_dur") ? parseInt(el("ap_dur").value, 10) : 60;
+      if (el("ap_status")) base.status = el("ap_status").value;
+      base.notes = el("ap_notes") ? el("ap_notes").value.trim() : "";
+      if (!base.customer_name && !base.contact_id) { toast("Unesite ime mušterije ili odaberite kontakt"); return; }
+      Store.put("appointments", base).then(function () {
+        toast(t("common.saved"));
+        render("dnevnik");
+      });
+    },
+
+    deleteAppointment: function (id) {
+      if (!confirm(t("common.confirm_delete"))) return;
+      Store.remove("appointments", id).then(function () { render("dnevnik"); });
+    },
+
+    aptStatus: function (id, newStatus) {
+      Store.get("appointments", id).then(function (a) {
+        if (!a) return;
+        a.status = newStatus;
+        return Store.put("appointments", a);
+      }).then(function () { render("dnevnik"); });
     },
 
     /* ----- Podsetnici ----- */

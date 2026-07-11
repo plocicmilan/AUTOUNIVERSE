@@ -175,6 +175,25 @@
     });
   }
 
+  // APPOINTMENT_STATUSES: scheduled → active (u radu) → done | cancelled
+  var APPOINTMENT_STATUSES = ["scheduled", "active", "done", "cancelled"];
+
+  function createAppointment(data) {
+    data = data || {};
+    return stamp({
+      id: data.id || newId("apt"),
+      vehicle_id: data.vehicle_id || null,
+      contact_id: data.contact_id || null,
+      customer_name: data.customer_name || "",
+      customer_phone: data.customer_phone || "",
+      service_type: data.service_type || "",
+      scheduled_at: data.scheduled_at || nowISO().slice(0, 16),  // "YYYY-MM-DDTHH:MM"
+      duration_min: data.duration_min != null ? Number(data.duration_min) : 60,
+      status: APPOINTMENT_STATUSES.indexOf(data.status) !== -1 ? data.status : "scheduled",
+      notes: data.notes || ""
+    });
+  }
+
   /* ---------- Broj dokumenta: GT-0001 ---------- */
 
   function nextDocNumber(prefix, lastNumber) {
@@ -253,12 +272,14 @@
     ITEM_KINDS: ITEM_KINDS,
     CURRENCIES: CURRENCIES,
     CONTACT_ROLES: CONTACT_ROLES,
+    APPOINTMENT_STATUSES: APPOINTMENT_STATUSES,
     createVehicle: createVehicle,
     createEvent: createEvent,
     createItem: createItem,
     createContact: createContact,
     createDocument: createDocument,
     createReminder: createReminder,
+    createAppointment: createAppointment,
     nextDocNumber: nextDocNumber,
     sumByCurrency: sumByCurrency,
     formatAmount: formatAmount,

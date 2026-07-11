@@ -9,8 +9,8 @@
   "use strict";
 
   var DB_NAME = "auto_universe";
-  var DB_VERSION = 1;
-  var STORES = ["vehicles", "events", "contacts", "documents", "reminders"];
+  var DB_VERSION = 2;
+  var STORES = ["vehicles", "events", "contacts", "documents", "reminders", "appointments"];
   var SETTINGS_PREFIX = "au_";
 
   var _db = null;
@@ -33,6 +33,10 @@
             }
             if (name === "reminders") {
               os.createIndex("vehicle_id", "vehicle_id", { unique: false });
+            }
+            if (name === "appointments") {
+              os.createIndex("scheduled_at", "scheduled_at", { unique: false });
+              os.createIndex("status", "status", { unique: false });
             }
           }
         });
