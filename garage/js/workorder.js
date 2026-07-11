@@ -164,7 +164,8 @@
     },
 
     items: function () {
-      return '<div class="card">' +
+      return '<datalist id="parts_hist"></datalist>' +
+        '<div class="card">' +
         '<div id="wo_items">' + itemsHTML() + '</div>' +
         '<button class="btn btn-secondary" onclick="WOgo.addItem()" data-i18n="wo.add_item"></button>' +
         '<div class="wo-runningtotal" id="wo_total">' + totalHTML() + '</div>' +
@@ -207,6 +208,20 @@
     signature: function () {
       bindSigPad("customer");
       bindSigPad("technician");
+    },
+    items: function () {
+      window.Store.all("events").then(function (evs) {
+        var seen = {}, names = [];
+        evs.forEach(function (e) {
+          (e.items || []).forEach(function (it) {
+            if (it.name && !seen[it.name]) { seen[it.name] = true; names.push(it.name); }
+          });
+        });
+        var dl = document.getElementById("parts_hist");
+        if (dl) dl.innerHTML = names.map(function (n) {
+          return '<option value="' + window.GT.esc(n) + '">';
+        }).join("");
+      });
     }
   };
 
@@ -231,7 +246,7 @@
         '<option value="part"' + (it.kind === "part" ? " selected" : "") + '>' + t("wo.item_kind_part") + '</option>' +
         '<option value="labor"' + (it.kind === "labor" ? " selected" : "") + '>' + t("wo.item_kind_labor") + '</option>';
       return '<div class="itemrow" data-idx="' + i + '">' +
-        '<input class="it-name" placeholder="' + t("wo.item_name") + '" value="' + esc(it.name) + '" oninput="WOgo.editItem(' + i + ',\'name\',this.value)">' +
+        '<input class="it-name" list="parts_hist" placeholder="' + t("wo.item_name") + '" value="' + esc(it.name) + '" oninput="WOgo.editItem(' + i + ',\'name\',this.value)">' +
         '<div class="itemrow-line">' +
           '<select class="it-kind" onchange="WOgo.editItem(' + i + ',\'kind\',this.value)">' + kindOpts + '</select>' +
           '<input class="it-qty" type="number" inputmode="decimal" placeholder="' + t("wo.item_qty") + '" value="' + esc(it.qty) + '" oninput="WOgo.editItem(' + i + ',\'qty\',this.value)">' +
