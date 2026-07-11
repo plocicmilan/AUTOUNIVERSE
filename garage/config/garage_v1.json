@@ -1,0 +1,70 @@
+{
+  "app": "garage",
+  "config_version": "1.0",
+  "name": "Garage Toolbox",
+  "doc_prefix": "GT",
+
+  "colors": {
+    "primary": "#D5281B",
+    "accent": "#1C1F24",
+    "bg": "#F4F3EF",
+    "surface": "#FFFFFF",
+    "ok": "#1E8A4C",
+    "locked": "#9AA0A6"
+  },
+
+  "language_default": "sr",
+  "languages": ["en", "sr"],
+
+  "currency_default": "RSD",
+  "currencies": ["RSD", "EUR"],
+  "currency_totals_rule": "per_currency_no_conversion",
+
+  "signature_default": false,
+
+  "nav": ["home", "vehicles", "new_job", "contacts", "settings"],
+
+  "modules": {
+    "vehicles_card": { "tier": "basic" },
+    "tech_card": { "tier": "basic" },
+    "work_order": { "tier": "basic", "watermark_when_free": true },
+    "invoice_pdf": { "tier": "basic", "watermark_when_free": true },
+    "photos": { "tier": "basic" },
+    "contacts": { "tier": "basic" },
+    "backup_export": { "tier": "basic" },
+    "estimate": { "tier": "key" },
+    "reminders": { "tier": "key" },
+    "calculators": { "tier": "key" },
+    "parts_log": { "tier": "key" },
+    "inventory": { "tier": "key" },
+    "inspection_dvi": { "tier": "key" },
+    "no_watermark": { "tier": "key" },
+    "stats": { "tier": "key" },
+    "business_card_qr": { "tier": "key" },
+    "sync": { "tier": "platform" },
+    "share_history": { "tier": "platform" },
+    "vehicle_qr": { "tier": "platform" },
+    "booking": { "tier": "platform" }
+  },
+
+  "quick_services": [
+    "Mali servis",
+    "Veliki servis",
+    "Kočnice",
+    "Dijagnostika",
+    "Zamena kvačila",
+    "Trap / vešanje",
+    "Zamena zupčastog kaiša",
+    "Klima servis",
+    "Akumulator",
+    "Elektrika"
+  ],
+
+  "wo_steps": ["vehicle", "client", "description", "photos", "items", "signature", "pdf"],
+
+  "license": {
+    "provider": "gumroad",
+    "product_id": "",
+    "test_key": "TEST-UNLOCK"
+  }
+}

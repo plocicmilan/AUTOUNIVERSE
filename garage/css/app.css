@@ -1,0 +1,5 @@
+/* GARAGE TOOLBOX — app-specifični stilovi.
+   Pravilo: ovde ide SAMO ono što je jedinstveno za Garage.
+   Sve što bi i Driver koristio ide u ../core/css/core.css.  */
+
+/* zasad prazno — boje stižu iz config/garage_v1.json preko app.js */

@@ -1,0 +1,63 @@
+{
+  "app": "driver",
+  "config_version": "1.0",
+  "name": "Driver Toolbox",
+  "doc_prefix": "DT",
+
+  "colors": {
+    "primary": "#0F766E",
+    "accent": "#0B5750",
+    "bg": "#F1F5F6",
+    "surface": "#FFFFFF",
+    "ok": "#1E8A4C",
+    "locked": "#9AA0A6"
+  },
+
+  "language_default": "sr",
+  "languages": ["en", "sr"],
+
+  "currency_default": "RSD",
+  "currencies": ["RSD", "EUR"],
+  "currency_totals_rule": "per_currency_no_conversion",
+
+  "signature_default": false,
+
+  "nav": ["vehicle", "history", "documents", "reminders", "settings"],
+
+  "modules": {
+    "vehicles_card": { "tier": "basic" },
+    "tech_card": { "tier": "basic" },
+    "history": { "tier": "basic" },
+    "photos": { "tier": "basic" },
+    "documents": { "tier": "basic" },
+    "reminders": { "tier": "basic" },
+    "tires": { "tier": "basic" },
+    "backup_export": { "tier": "basic" },
+    "multi_vehicle": { "tier": "key" },
+    "costs_fuel": { "tier": "key" },
+    "calculators": { "tier": "key" },
+    "checklists": { "tier": "key" },
+    "stats": { "tier": "key" },
+    "pdf_dossier": { "tier": "key" },
+    "sync": { "tier": "platform" },
+    "link_mechanic": { "tier": "platform" },
+    "verified_history": { "tier": "platform" },
+    "vehicle_qr": { "tier": "platform" }
+  },
+
+  "event_quick_types": [
+    "service",
+    "repair",
+    "tires",
+    "inspection",
+    "fuel",
+    "expense",
+    "note"
+  ],
+
+  "license": {
+    "provider": "gumroad",
+    "product_id": "",
+    "test_key": "TEST-UNLOCK"
+  }
+}

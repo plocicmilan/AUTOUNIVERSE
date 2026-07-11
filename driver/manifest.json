@@ -1,0 +1,16 @@
+{
+  "name": "Driver Toolbox",
+  "short_name": "Driver",
+  "description": "Sve o mom vozilu u džepu — istorija, servisi, gume, dokumenta, podsetnici. Radi offline.",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F1F5F6",
+  "theme_color": "#0F766E",
+  "lang": "sr",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

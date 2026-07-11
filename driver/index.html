@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0F766E">
+  <title>Driver Toolbox</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="../core/css/core.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <span class="topbar-brand" id="brandName">DRIVER TOOLBOX</span>
+    <span class="topbar-badge" id="offlineBadge" hidden>OFFLINE</span>
+  </header>
+
+  <main id="screen" class="screen">
+    <!-- ekrani se renderuju ovde -->
+  </main>
+
+  <nav class="bottomnav" id="bottomNav">
+    <button class="nav-btn" data-route="vehicle">
+      <span class="nav-ico">🚗</span><span class="nav-label" data-i18n="d.nav_vehicle">Moje vozilo</span>
+    </button>
+    <button class="nav-btn" data-route="history">
+      <span class="nav-ico">🕓</span><span class="nav-label" data-i18n="d.nav_history">Istorija</span>
+    </button>
+    <button class="nav-btn" data-route="documents">
+      <span class="nav-ico">📄</span><span class="nav-label" data-i18n="d.nav_documents">Dokumenta</span>
+    </button>
+    <button class="nav-btn" data-route="reminders">
+      <span class="nav-ico">🔔</span><span class="nav-label" data-i18n="reminders.title">Podsetnici</span>
+    </button>
+    <button class="nav-btn" data-route="settings">
+      <span class="nav-ico">⚙</span><span class="nav-label" data-i18n="nav.settings">Podešavanja</span>
+    </button>
+  </nav>
+
+  <script src="../core/vendor/jspdf.umd.min.js"></script>
+  <script src="../core/vendor/font-dejavu.js"></script>
+  <script src="../core/js/models.js"></script>
+  <script src="../core/js/store.js"></script>
+  <script src="../core/js/photos.js"></script>
+  <script src="../core/js/pdf.js"></script>
+  <script src="../core/js/license.js"></script>
+  <script src="../core/js/reminders.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
