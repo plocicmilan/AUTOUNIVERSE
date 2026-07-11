@@ -187,6 +187,22 @@
             '<button class="stat" onclick="GT.go(\'estimates\')"><b>' + nEst + '</b><span>Predračuni</span></button>' +
           '</div>' +
           remCard +
+          (function () {
+            var todayApts = res[5].filter(function (a) {
+              return (a.status === "scheduled" || a.status === "active") && (a.scheduled_at || "").slice(0, 10) === todayStr;
+            }).sort(function (a, b) { return (a.scheduled_at || "").localeCompare(b.scheduled_at || ""); });
+            if (!todayApts.length) return '';
+            return '<div class="card"><h2>Danas (' + todayApts.length + ')</h2>' +
+              todayApts.map(function (a) {
+                var time = a.scheduled_at ? a.scheduled_at.slice(11, 16) : "";
+                return '<div class="evt-head" style="padding:.3rem 0">' +
+                  '<b>' + esc(a.customer_name || "—") + (a.service_type ? ' — ' + esc(a.service_type) : '') + '</b>' +
+                  '<span>' + time + '</span>' +
+                '</div>';
+              }).join("") +
+              '<button class="btn btn-secondary mt8" onclick="GT.go(\'dnevnik\')">Otvori Dnevnik</button>' +
+            '</div>';
+          })() +
           '<button class="btn btn-primary mt8" onclick="GT.go(\'new_job\')" data-i18n="home.new_job"></button>' +
           (licensed()
             ? '<div style="display:flex;gap:.5rem;margin-top:.5rem">' +
@@ -281,7 +297,10 @@
               row("tech.brake_notes", sd.brake_notes) +
               row("tech.tires_front", tires.size_front) +
               row("tech.tires_rear", tires.size_rear) +
-              row("tech.tires_set", tires.current_set) +
+              (tires.current_season ? row("Na autu", { summer: "Letnje", winter: "Zimske", allseason: "All-season" }[tires.current_season] || tires.current_season) : "") +
+              (tires.current_brand ? row("Marka", tires.current_brand) : "") +
+              (tires.other_set_location && tires.other_set_location !== "—" ? row("Drugi set", tires.other_set_location) : "") +
+              (!tires.current_season && tires.current_set ? row("tech.tires_set", tires.current_set) : "") +
             '</div>' +
             '<h2 class="secttitle" data-i18n="history.title"></h2>' +
             evHtml +
@@ -290,6 +309,7 @@
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'inspection_form\',{vehicle_id:\'' + esc(v.id) + '\'})">🔍 Nova inspekcija</button>' : '') +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'checklist_form\',{vehicle_id:\'' + esc(v.id) + '\'})">📋 Nova provera</button>' : '') +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'tires_form\',{vehicle_id:\'' + esc(v.id) + '\'})">🔧 Gume</button>' : '') +
+            (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.exportDossier(\'' + esc(v.id) + '\')">📄 Dosije vozila PDF</button>' : '') +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'reminder_form\',{vehicle_id:\'' + esc(v.id) + '\'})" data-i18n="reminders.add"></button>' : '') +
             '<button class="btn btn-secondary mt8" onclick="GT.go(\'vehicle_form\',{id:\'' + esc(v.id) + '\'})" data-i18n="common.edit"></button>';
         });
@@ -417,18 +437,10 @@
     contacts: function () {
       return Store.all("contacts").then(function (contacts) {
         contacts.sort(function (a, b) { return a.name.localeCompare(b.name); });
-        var list = contacts.length
-          ? contacts.map(function (c) {
-              return '<div class="card contactrow">' +
-                '<button class="rowmain" onclick="GT.go(\'contact_form\',{id:\'' + esc(c.id) + '\'})">' +
-                  '<b>' + esc(c.name) + '</b>' +
-                  '<span class="muted">' + esc(c.phone || "") + ' • ' + c.roles.map(function (r) { return t("contacts.role_" + r); }).join(", ") + '</span>' +
-                '</button>' +
-                (c.phone ? '<a class="callpill" href="tel:' + esc(c.phone) + '">☎</a>' : '') +
-                '</div>';
-            }).join("")
-          : '<div class="card"><p class="empty" data-i18n="contacts.empty"></p></div>';
-        return '<h1 data-i18n="nav.contacts"></h1>' + list +
+        App._contacts = contacts;
+        return '<h1 data-i18n="nav.contacts"></h1>' +
+          '<input id="conSearch" class="search" placeholder="Pretraži po imenu ili telefonu..." oninput="GT.conSearch()">' +
+          '<div id="conList">' + contactListHTML(contacts) + '</div>' +
           '<button class="btn btn-primary" onclick="GT.go(\'contact_form\')" data-i18n="contacts.add"></button>';
       });
     },
@@ -1236,6 +1248,19 @@
 
   /* ---------- Akcije ---------- */
 
+  function contactListHTML(contacts) {
+    if (!contacts.length) return '<div class="card"><p class="empty" data-i18n="contacts.empty"></p></div>';
+    return contacts.map(function (c) {
+      return '<div class="card contactrow">' +
+        '<button class="rowmain" onclick="GT.go(\'contact_form\',{id:\'' + esc(c.id) + '\'})">' +
+          '<b>' + esc(c.name) + '</b>' +
+          '<span class="muted">' + esc(c.phone || "") + (c.roles.length ? ' • ' + c.roles.map(function (r) { return t("contacts.role_" + r); }).join(", ") : '') + '</span>' +
+        '</button>' +
+        (c.phone ? '<a class="callpill" href="tel:' + esc(c.phone) + '">☎</a>' : '') +
+      '</div>';
+    }).join("");
+  }
+
   function vehicleListHTML(vehicles) {
     if (!vehicles.length) {
       return '<div class="card"><p class="empty">' + t("vehicles.empty") + '</p></div>';
@@ -1294,6 +1319,15 @@
         toast(t("common.saved"));
         render("vehicle_card", { id: vehId });
       });
+    },
+
+    conSearch: function () {
+      var q = (val("conSearch") || "").toLowerCase();
+      var filtered = (App._contacts || []).filter(function (c) {
+        return !q || (c.name || "").toLowerCase().indexOf(q) !== -1 || (c.phone || "").indexOf(q) !== -1;
+      });
+      var box = el("conList");
+      if (box) box.innerHTML = contactListHTML(filtered);
     },
 
     vehSearch: function () {
@@ -1639,6 +1673,42 @@
     deleteReminder: function (id) {
       if (!confirm(t("common.confirm_delete"))) return;
       Store.remove("reminders", id).then(function () { render("reminders"); });
+    },
+
+    /* ----- Dosije vozila ----- */
+    exportDossier: function (vehId) {
+      Promise.all([
+        Store.get("vehicles", vehId),
+        Store.byIndex("events", "vehicle_id", vehId)
+      ]).then(function (res) {
+        var v = res[0], events = res[1];
+        if (!v) { toast("Vozilo nije nađeno"); return; }
+        var profile = window.Store.settings.get("profile", { name: "", phone: "" });
+        var lang = window.Store.settings.get("lang", "sr");
+        var sd = v.service_data || {}, tires = v.tires || {};
+        var doc = window.PDFEngine.buildDossier({
+          lang: lang,
+          profile: profile,
+          vehicle: {
+            make: v.make, model: v.model, year: v.year,
+            plate: v.plate, vin: v.vin, type_label: v.type_label, category: v.category
+          },
+          techCard: {
+            oil_type: sd.oil_type ? (sd.oil_type + (sd.oil_qty_l ? ", " + sd.oil_qty_l + "L" : "")) : "",
+            oil_filter: sd.oil_filter,
+            battery: sd.battery,
+            tires: [tires.size_front, tires.current_brand, tires.current_season && ({ summer: "letnje", winter: "zimske", allseason: "all-season" }[tires.current_season])].filter(Boolean).join(", ")
+          },
+          events: events,
+          currentKm: (function () {
+            var max = null;
+            events.forEach(function (e) { if (e.mileage_km != null && (max == null || e.mileage_km > max)) max = e.mileage_km; });
+            return max;
+          })()
+        });
+        var fname = [v.make, v.model, v.plate, "dosije"].filter(Boolean).join("_").replace(/\s+/g, "_") + ".pdf";
+        doc.save(fname);
+      });
     },
 
     /* ----- Gume ----- */
