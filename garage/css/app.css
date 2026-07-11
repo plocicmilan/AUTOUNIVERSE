@@ -33,3 +33,9 @@
 .month-bar { width: 100%; background: var(--c-primary, #D5281B); border-radius: 3px 3px 0 0; min-height: 2px; opacity: .55; transition: height .3s; }
 .month-col.active .month-bar { opacity: 1; }
 .month-label { font-size: .68rem; color: var(--c-muted, #888); }
+
+/* Kalkulatori */
+.calc-row { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.calc-result { margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--c-border, #e5e7eb); min-height: 1rem; }
+.calc-line { font-size: .9rem; margin: .2rem 0; }
+.calc-line b { color: var(--c-primary, #D5281B); }

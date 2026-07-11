@@ -155,7 +155,12 @@
           '</div>' +
           remCard +
           '<button class="btn btn-primary mt8" onclick="GT.go(\'new_job\')" data-i18n="home.new_job"></button>' +
-          (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'stats\')">📊 Statistike</button>' : '');
+          (licensed()
+            ? '<div style="display:flex;gap:.5rem;margin-top:.5rem">' +
+                '<button class="btn btn-secondary" style="flex:1" onclick="GT.go(\'stats\')">📊 Statistike</button>' +
+                '<button class="btn btn-secondary" style="flex:1" onclick="GT.go(\'calculators\')">🧮 Kalkulatori</button>' +
+              '</div>'
+            : '');
       });
     },
 
@@ -471,6 +476,61 @@
           '<button class="btn btn-primary" onclick="GT.saveReminder()" data-i18n="common.save"></button>' +
           (id ? '<button class="btn btn-danger mt8" onclick="GT.deleteReminder(\'' + esc(id) + '\')" data-i18n="common.delete"></button>' : '');
       });
+    },
+
+    /* ===== KALKULATORI (🔑) ===== */
+    calculators: function () {
+      if (!licensed()) {
+        return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
+          '<h1>Kalkulatori</h1>' +
+          '<div class="card locked-card"><p class="empty" data-i18n="reminders.locked"></p>' +
+          '<button class="btn btn-primary mt8" onclick="GT.go(\'settings\')" data-i18n="license.title"></button></div>';
+      }
+      var currency = Store.settings.get("currency", "RSD");
+      return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
+        '<h1>Kalkulatori</h1>' +
+
+        // 1. Marža
+        '<div class="card">' +
+          '<h2>Marža</h2>' +
+          '<div class="calc-row">' +
+            '<label class="field"><span>Nabavna cena (' + currency + ')</span><input id="c_cost" type="number" inputmode="decimal" placeholder="0" oninput="GT.calcMarza()"></label>' +
+            '<label class="field"><span>Marža (%)</span><input id="c_pct" type="number" inputmode="decimal" placeholder="30" oninput="GT.calcMarza()"></label>' +
+          '</div>' +
+          '<div class="calc-result" id="c_marza_out"></div>' +
+        '</div>' +
+
+        // 2. Sledeći servis
+        '<div class="card">' +
+          '<h2>Sledeći servis</h2>' +
+          '<div class="calc-row">' +
+            '<label class="field"><span>Poslednji servis (km)</span><input id="c_last_km" type="number" inputmode="numeric" placeholder="120000" oninput="GT.calcServis()"></label>' +
+            '<label class="field"><span>Interval (km)</span><input id="c_interval" type="number" inputmode="numeric" placeholder="10000" oninput="GT.calcServis()"></label>' +
+          '</div>' +
+          '<label class="field"><span>Datum poslednjeg servisa</span><input id="c_last_date" type="date" oninput="GT.calcServis()"></label>' +
+          '<label class="field"><span>Interval po vremenu (meseci)</span><input id="c_months" type="number" inputmode="numeric" placeholder="12" oninput="GT.calcServis()"></label>' +
+          '<div class="calc-result" id="c_servis_out"></div>' +
+        '</div>' +
+
+        // 3. Cena rada
+        '<div class="card">' +
+          '<h2>Cena rada</h2>' +
+          '<div class="calc-row">' +
+            '<label class="field"><span>Sati rada</span><input id="c_hours" type="number" inputmode="decimal" placeholder="2" oninput="GT.calcRad()"></label>' +
+            '<label class="field"><span>Cena sat (' + currency + ')</span><input id="c_rate" type="number" inputmode="decimal" placeholder="1500" oninput="GT.calcRad()"></label>' +
+          '</div>' +
+          '<div class="calc-result" id="c_rad_out"></div>' +
+        '</div>' +
+
+        // 4. PDV
+        '<div class="card">' +
+          '<h2>PDV (20%)</h2>' +
+          '<div class="calc-row">' +
+            '<label class="field"><span>Cena bez PDV</span><input id="c_base" type="number" inputmode="decimal" placeholder="10000" oninput="GT.calcPDV()"></label>' +
+            '<label class="field"><span>PDV stopa (%)</span><input id="c_vat" type="number" inputmode="decimal" value="20" oninput="GT.calcPDV()"></label>' +
+          '</div>' +
+          '<div class="calc-result" id="c_pdv_out"></div>' +
+        '</div>';
     },
 
     /* ===== STATS (🔑) ===== */
@@ -995,6 +1055,61 @@
       if (!confirm(t("common.confirm_delete"))) return;
       License.deactivate(Store);
       render("settings");
+    },
+
+    /* ----- Kalkulatori ----- */
+    calcMarza: function () {
+      var cost = parseFloat(document.getElementById("c_cost").value) || 0;
+      var pct  = parseFloat(document.getElementById("c_pct").value);
+      if (isNaN(pct)) pct = 30;
+      var out = document.getElementById("c_marza_out");
+      if (!cost) { out.innerHTML = ""; return; }
+      var sell   = cost * (1 + pct / 100);
+      var profit = sell - cost;
+      var cur    = Store.settings.get("currency", "RSD");
+      out.innerHTML =
+        '<div class="calc-line">Prodajna cena: <b>' + Models.formatAmount(sell, cur) + '</b></div>' +
+        '<div class="calc-line">Zarada: <b>' + Models.formatAmount(profit, cur) + '</b></div>';
+    },
+
+    calcServis: function () {
+      var lastKm   = parseInt(document.getElementById("c_last_km").value) || 0;
+      var interval = parseInt(document.getElementById("c_interval").value) || 0;
+      var lastDate = document.getElementById("c_last_date").value;
+      var months   = parseInt(document.getElementById("c_months").value) || 0;
+      var out = document.getElementById("c_servis_out");
+      if (!lastKm && !lastDate) { out.innerHTML = ""; return; }
+      var lines = [];
+      if (lastKm && interval) lines.push('Sledeći servis: <b>' + (lastKm + interval).toLocaleString("sr-RS") + ' km</b>');
+      if (lastDate && months) {
+        var d = new Date(lastDate);
+        d.setMonth(d.getMonth() + months);
+        lines.push('Rok po datumu: <b>' + d.toISOString().slice(0, 10) + '</b>');
+      }
+      out.innerHTML = lines.map(function (l) { return '<div class="calc-line">' + l + '</div>'; }).join("");
+    },
+
+    calcRad: function () {
+      var hours = parseFloat(document.getElementById("c_hours").value) || 0;
+      var rate  = parseFloat(document.getElementById("c_rate").value) || 0;
+      var out   = document.getElementById("c_rad_out");
+      if (!hours || !rate) { out.innerHTML = ""; return; }
+      var cur   = Store.settings.get("currency", "RSD");
+      out.innerHTML = '<div class="calc-line">Ukupno za rad: <b>' + Models.formatAmount(hours * rate, cur) + '</b></div>';
+    },
+
+    calcPDV: function () {
+      var base = parseFloat(document.getElementById("c_base").value) || 0;
+      var vat  = parseFloat(document.getElementById("c_vat").value);
+      if (isNaN(vat)) vat = 20;
+      var out  = document.getElementById("c_pdv_out");
+      if (!base) { out.innerHTML = ""; return; }
+      var vatAmt = base * vat / 100;
+      var total  = base + vatAmt;
+      var cur    = Store.settings.get("currency", "RSD");
+      out.innerHTML =
+        '<div class="calc-line">PDV (' + vat + '%): <b>' + Models.formatAmount(vatAmt, cur) + '</b></div>' +
+        '<div class="calc-line">Ukupno sa PDV: <b>' + Models.formatAmount(total, cur) + '</b></div>';
     },
 
     /* ----- Predračuni ----- */
