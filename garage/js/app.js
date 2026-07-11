@@ -236,10 +236,21 @@
 
     /* ===== VOZILA — lista + pretraga ===== */
     vehicles: function () {
-      return Promise.all([Store.all("vehicles"), Store.all("contacts")]).then(function (res) {
-        App._vehicles = res[0];
+      return Promise.all([Store.all("vehicles"), Store.all("contacts"), Store.all("events")]).then(function (res) {
         App._contactsById = {};
         res[1].forEach(function (c) { App._contactsById[c.id] = c; });
+        var lastEvtDate = {};
+        res[2].forEach(function (e) {
+          if (!e.vehicle_id) return;
+          if (!lastEvtDate[e.vehicle_id] || (e.date || "") > lastEvtDate[e.vehicle_id]) {
+            lastEvtDate[e.vehicle_id] = e.date || "";
+          }
+        });
+        App._vehicles = res[0].slice().sort(function (a, b) {
+          var da = lastEvtDate[a.id] || a.created_at || "";
+          var db = lastEvtDate[b.id] || b.created_at || "";
+          return db.localeCompare(da);
+        });
         return '' +
           '<h1 data-i18n="nav.vehicles"></h1>' +
           '<input id="vehSearch" class="search" placeholder="' + t("vehicles.search") + '" oninput="GT.vehSearch()">' +
@@ -325,6 +336,7 @@
               (tires.other_set_location && tires.other_set_location !== "—" ? row("Drugi set", tires.other_set_location) : "") +
               (!tires.current_season && tires.current_set ? row("tech.tires_set", tires.current_set) : "") +
             '</div>' +
+            (v.notes ? '<div class="card"><h2>Beleška</h2><p style="font-size:.9rem;line-height:1.5">' + esc(v.notes) + '</p></div>' : '') +
             '<h2 class="secttitle" data-i18n="history.title"></h2>' +
             evHtml +
             '<button class="btn btn-primary" onclick="GT.go(\'new_job\',{vehicleId:\'' + esc(v.id) + '\'})" data-i18n="wo.new_for"></button>' +
@@ -389,6 +401,9 @@
             field("f_tires_front", "tech.tires_front", tires.size_front, "text", "205/55 R16") +
             field("f_tires_rear", "tech.tires_rear", tires.size_rear) +
             field("f_tires_set", "tech.tires_set", tires.current_set) +
+          '</div>' +
+          '<div class="card"><h2>Beleške</h2>' +
+            '<label class="field"><textarea id="f_notes" rows="3" placeholder="Interne beleške (alarm kod, posebni zahtevi...)">' + esc(v.notes || "") + '</textarea></label>' +
           '</div>' +
           '<button class="btn btn-primary" onclick="GT.saveVehicle()" data-i18n="common.save"></button>' +
           (id ? '<button class="btn btn-danger mt8" onclick="GT.deleteVehicle(\'' + esc(id) + '\')" data-i18n="common.delete"></button>' : '');
@@ -548,6 +563,10 @@
       var langOpts = App.config.languages.map(function (l) {
         return '<option value="' + l + '"' + (l === lang ? " selected" : "") + '>' + l.toUpperCase() + '</option>';
       }).join("");
+      var logoHtml = profile.logoDataUrl
+        ? '<div style="margin:.3rem 0"><img src="' + profile.logoDataUrl + '" style="max-height:60px;border-radius:.3rem">' +
+          '<button class="photodel" onclick="GT.logoClear()" style="margin-left:.5rem">Ukloni</button></div>'
+        : '';
       return '' +
         '<h1 data-i18n="nav.settings"></h1>' +
         '<div class="card"><h2 data-i18n="settings.profile"></h2>' +
@@ -556,6 +575,14 @@
           field("s_address", "Adresa", profile.address || "", "text", "Ul. Vojvode Stepe 1, Kruševac") +
           field("s_email", "Email", profile.email || "", "email") +
           field("s_website", "Website", profile.website || "", "url", "https://...") +
+          '<div class="field"><span>Logo (za PDF)</span>' +
+            logoHtml +
+            '<label class="btn btn-secondary filelabel" style="display:inline-block">' +
+              '<span>📷 ' + (profile.logoDataUrl ? 'Promeni logo' : 'Dodaj logo') + '</span>' +
+              '<input type="file" accept="image/*" onchange="GT.logoUpload(this)" hidden>' +
+            '</label>' +
+          '</div>' +
+          '<button class="btn btn-secondary mt8" onclick="GT.go(\'biz_card\')">👤 Vizit karta</button>' +
         '</div>' +
         '<div class="card">' +
           '<label class="field"><span>' + t("settings.currency") + '</span><select id="s_currency">' + curOpts + '</select></label>' +
@@ -569,6 +596,35 @@
             '<input type="file" accept=".json,application/json" onchange="GT.importBackup(this)" hidden></label>' +
         '</div>' +
         '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>';
+    },
+
+    /* ===== VIZIT KARTA (🔑) ===== */
+    biz_card: function () {
+      if (!licensed()) {
+        return '<button class="linkback" onclick="GT.go(\'settings\')" data-i18n="common.back"></button>' +
+          '<h1>Vizit karta</h1>' +
+          '<div class="card locked-card"><p class="empty" data-i18n="reminders.locked"></p>' +
+          '<button class="btn btn-primary mt8" onclick="GT.go(\'settings\')" data-i18n="license.title"></button></div>';
+      }
+      var prof = Store.settings.get("profile", { name: "", phone: "" });
+      var lines = [
+        (prof.name ? '<div class="biz-name">' + esc(prof.name) + '</div>' : ''),
+        (prof.phone ? '<div class="biz-line">📞 <a href="tel:' + esc(prof.phone) + '">' + esc(prof.phone) + '</a></div>' : ''),
+        (prof.email ? '<div class="biz-line">✉ <a href="mailto:' + esc(prof.email) + '">' + esc(prof.email) + '</a></div>' : ''),
+        (prof.website ? '<div class="biz-line">🌐 <a href="' + esc(prof.website) + '" target="_blank">' + esc(prof.website.replace(/^https?:\/\//, "")) + '</a></div>' : ''),
+        (prof.address ? '<div class="biz-line">📍 ' + esc(prof.address) + '</div>' : '')
+      ].filter(Boolean).join("");
+      var cardText = [prof.name, prof.phone, prof.email, prof.website, prof.address].filter(Boolean).join("\n");
+      return '<button class="linkback" onclick="GT.go(\'settings\')" data-i18n="common.back"></button>' +
+        '<h1>Vizit karta</h1>' +
+        '<div class="card biz-card">' +
+          (prof.logoDataUrl ? '<img class="biz-logo" src="' + prof.logoDataUrl + '" alt="Logo">' : '') +
+          (lines || '<p class="empty">Popuni profil u Podešavanjima da biste videli vizit kartu.</p>') +
+        '</div>' +
+        (cardText
+          ? '<button class="btn btn-secondary" onclick="GT.bizCopy()">📋 Kopiraj podatke</button>' +
+            (navigator.share ? '<button class="btn btn-secondary mt8" onclick="GT.bizShare()">↑ Podeli</button>' : '')
+          : '');
     },
 
     /* ===== PODSETNICI (🔑) ===== */
@@ -1391,6 +1447,7 @@
         size_rear: val("f_tires_rear"),
         current_set: val("f_tires_set")
       });
+      base.notes = el("f_notes") ? el("f_notes").value.trim() : (base.notes || "");
       if (App._vehPhotoNew !== undefined) {
         base.photos = App._vehPhotoNew ? [App._vehPhotoNew] : [];
         delete App._vehPhotoNew;
@@ -1707,6 +1764,36 @@
     deleteReminder: function (id) {
       if (!confirm(t("common.confirm_delete"))) return;
       Store.remove("reminders", id).then(function () { render("reminders"); });
+    },
+
+    /* ----- Logo + Vizit karta ----- */
+    logoUpload: function (input) {
+      var file = input.files && input.files[0]; if (!file) return;
+      Photos.compress(file, 300, 0.9).then(function (dataUrl) {
+        var prof = Store.settings.get("profile", {});
+        prof.logoDataUrl = dataUrl;
+        Store.settings.set("profile", prof);
+        toast("Logo sačuvan");
+        render("settings");
+      });
+    },
+    logoClear: function () {
+      var prof = Store.settings.get("profile", {});
+      delete prof.logoDataUrl;
+      Store.settings.set("profile", prof);
+      render("settings");
+    },
+    bizCopy: function () {
+      var prof = Store.settings.get("profile", {});
+      var text = [prof.name, prof.phone, prof.email, prof.website, prof.address].filter(Boolean).join("\n");
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function () { toast("Kopirano"); });
+      } else { toast("Kopiranje nije podržano"); }
+    },
+    bizShare: function () {
+      var prof = Store.settings.get("profile", {});
+      var text = [prof.name, prof.phone, prof.email, prof.website, prof.address].filter(Boolean).join("\n");
+      if (navigator.share) navigator.share({ title: prof.name || "Garage Toolbox", text: text });
     },
 
     /* ----- Foto vozila ----- */
