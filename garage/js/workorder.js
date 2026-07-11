@@ -24,23 +24,49 @@
 
   /* ---------- Start ---------- */
 
-  function start(prefillVehicleId) {
+  function start(prefillVehicleId, prefillDocType) {
     var cfg = window.GT.config();
     WO.steps = cfg.wo_steps.slice();
-    // ako je potpis OFF u settings, izbaci korak signature iz toka
     var sigOn = window.Store.settings.get("signature", cfg.signature_default);
-    if (!sigOn) WO.steps = WO.steps.filter(function (s) { return s !== "signature"; });
+    // predračun nikad nema potpis
+    if (!sigOn || prefillDocType === "estimate") {
+      WO.steps = WO.steps.filter(function (s) { return s !== "signature"; });
+    }
 
     WO.step = 0;
     WO.sigPads = {};
     WO.draft = {
       vehicle_id: prefillVehicleId || null,
       contact_id: null,
-      docType: "work_order",
+      docType: prefillDocType || "work_order",
       description: "",
       mileage_km: "",
       photos: [],
       items: [],
+      signature: { customer: null, technician: null }
+    };
+    return Promise.all([window.Store.all("vehicles"), window.Store.all("contacts")])
+      .then(function (r) {
+        WO.vehicles = r[0]; WO.contacts = r[1];
+        renderStep();
+      });
+  }
+
+  function startFromEstimate(ev) {
+    var cfg = window.GT.config();
+    WO.steps = cfg.wo_steps.slice();
+    var sigOn = window.Store.settings.get("signature", cfg.signature_default);
+    if (!sigOn) WO.steps = WO.steps.filter(function (s) { return s !== "signature"; });
+    WO.step = 0;
+    WO.sigPads = {};
+    WO.draft = {
+      vehicle_id: ev.vehicle_id || null,
+      contact_id: ev.contact_id || null,
+      docType: "work_order",
+      description: ev.description || "",
+      mileage_km: ev.mileage_km || "",
+      photos: [],
+      items: (ev.items || []).map(function (it) { return Object.assign({}, it); }),
       signature: { customer: null, technician: null }
     };
     return Promise.all([window.Store.all("vehicles"), window.Store.all("contacts")])
@@ -469,6 +495,6 @@
     }
   }
 
-  window.WorkOrder = { start: start };
+  window.WorkOrder = { start: start, startFromEstimate: startFromEstimate };
   window.WOgo = Actions;
 })();

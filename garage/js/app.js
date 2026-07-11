@@ -122,7 +122,8 @@
     home: function () {
       return Promise.all([
         Store.all("vehicles"), Store.all("contacts"),
-        Store.all("events"), Store.all("reminders")
+        Store.all("events"), Store.all("reminders"),
+        Store.all("documents")
       ]).then(function (res) {
         var nV = res[0].length, nC = res[1].length, nE = res[2].length;
         App._vehById = {}; res[0].forEach(function (v) { App._vehById[v.id] = v; });
@@ -142,13 +143,15 @@
             '<button class="btn btn-secondary" onclick="GT.go(\'reminders\')" data-i18n="reminders.title"></button>';
         }
 
+        var nEst = res[4] ? res[4].filter(function (d) { return d.doc_type === "estimate" && d.est_status !== "rejected"; }).length : 0;
+
         return '' +
           '<h1 data-i18n="nav.home"></h1>' +
           '<p class="sub">Garage Toolbox v1</p>' +
           '<div class="statrow">' +
             '<button class="stat" onclick="GT.go(\'vehicles\')"><b>' + nV + '</b><span data-i18n="nav.vehicles"></span></button>' +
             '<button class="stat" onclick="GT.go(\'contacts\')"><b>' + nC + '</b><span data-i18n="nav.contacts"></span></button>' +
-            '<div class="stat"><b>' + nE + '</b><span data-i18n="history.title"></span></div>' +
+            '<button class="stat" onclick="GT.go(\'estimates\')"><b>' + nEst + '</b><span>Predračuni</span></button>' +
           '</div>' +
           remCard +
           '<button class="btn btn-primary mt8" onclick="GT.go(\'new_job\')" data-i18n="home.new_job"></button>';
@@ -277,11 +280,72 @@
       });
     },
 
-    /* ===== NOVI POSAO — WO Snap tok (workorder.js) ===== */
+    /* ===== NOVI POSAO — izbor tipa dokumenta, pa WO Snap tok ===== */
     new_job: function () {
-      // WO modul sam renderuje u #screen; vrati prazno da render() ne pregazi
-      setTimeout(function () { window.WorkOrder.start(App.params && App.params.vehicleId); }, 0);
+      var params = App.params || {};
+      if (!params.docType) {
+        var vid = params.vehicleId ? esc(params.vehicleId) : '';
+        return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
+          '<h1 data-i18n="nav.new_job"></h1>' +
+          '<div class="card">' +
+            '<button class="btn btn-primary" onclick="GT.startWO(\'' + vid + '\',\'work_order\')">📋 Radni nalog</button>' +
+            '<button class="btn btn-secondary mt8" onclick="GT.startWO(\'' + vid + '\',\'estimate\')">📄 Predračun</button>' +
+          '</div>';
+      }
+      setTimeout(function () { window.WorkOrder.start(params.vehicleId, params.docType); }, 0);
       return '<div class="card"><p class="empty">…</p></div>';
+    },
+
+    /* ===== PREDRAČUNI — lista i status ===== */
+    estimates: function () {
+      return Promise.all([
+        Store.all("documents"), Store.all("events"),
+        Store.all("vehicles"), Store.all("contacts")
+      ]).then(function (res) {
+        var docs = res[0], evs = res[1], vehs = res[2], cons = res[3];
+        var evById = {}; evs.forEach(function (e) { evById[e.id] = e; });
+        var vehById = {}; vehs.forEach(function (v) { vehById[v.id] = v; });
+        var conById = {}; cons.forEach(function (c) { conById[c.id] = c; });
+
+        var estimates = docs
+          .filter(function (d) { return d.doc_type === "estimate"; })
+          .sort(function (a, b) { return (b.date || b.created_at || "").localeCompare(a.date || a.created_at || ""); });
+
+        var SL = { draft: "Nacrt", sent: "Poslato", accepted: "Prihvaćeno", rejected: "Odbijeno" };
+        var SC = { draft: "var(--c-muted,#888)", sent: "#3b82f6", accepted: "var(--c-ok,#22c55e)", rejected: "#ef4444" };
+
+        var list = estimates.length ? estimates.map(function (d) {
+          var ev = evById[d.event_id];
+          var v = ev && vehById[ev.vehicle_id];
+          var c = ev && conById[ev.contact_id];
+          var totals = ev ? Models.formatTotals(Models.sumByCurrency(ev.items)) : "";
+          var st = d.est_status || "draft";
+          return '<div class="card">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+              '<div>' +
+                '<b>' + esc(d.number || "—") + '</b>' +
+                (v ? ' <span class="muted">• ' + esc(v.make + ' ' + v.model) + '</span>' : '') +
+                '<br><span class="muted" style="font-size:.78rem">' + esc(d.date || "—") + (c ? ' • ' + esc(c.name) : '') + '</span>' +
+              '</div>' +
+              '<span style="font-size:.75rem;color:' + SC[st] + ';font-weight:600">' + (SL[st] || st) + '</span>' +
+            '</div>' +
+            (totals ? '<div style="font-size:.85rem;margin-top:.3rem">' + t("common.total") + ': <b>' + totals + '</b></div>' : '') +
+            '<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem">' +
+              (st === "draft" ? '<button class="aptbtn start" onclick="GT.estStatus(\'' + esc(d.id) + '\',\'sent\')">Pošalji</button>' : '') +
+              (st === "sent"
+                ? '<button class="aptbtn done" onclick="GT.estStatus(\'' + esc(d.id) + '\',\'accepted\')">✓ Prihvaćeno</button>' +
+                  '<button class="aptbtn" style="background:#ef4444;color:#fff" onclick="GT.estStatus(\'' + esc(d.id) + '\',\'rejected\')">✕ Odbijeno</button>'
+                : '') +
+              (st === "accepted"
+                ? '<button class="aptbtn done" onclick="GT.convertToWO(\'' + esc(d.id) + '\')">→ Radni nalog</button>'
+                : '') +
+            '</div>' +
+          '</div>';
+        }).join("") : '<div class="card"><p class="empty">Nema predračuna</p></div>';
+
+        return '<h1>Predračuni</h1>' + list +
+          '<button class="btn btn-primary mt8" onclick="GT.startWO(\'\',\'estimate\')">+ Novi predračun</button>';
+      });
     },
 
     /* ===== KONTAKTI ===== */
@@ -807,6 +871,34 @@
       if (!confirm(t("common.confirm_delete"))) return;
       License.deactivate(Store);
       render("settings");
+    },
+
+    /* ----- Predračuni ----- */
+    startWO: function (vehicleId, docType) {
+      render("new_job", { vehicleId: vehicleId || null, docType: docType });
+    },
+
+    estStatus: function (docId, status) {
+      Store.get("documents", docId).then(function (d) {
+        if (!d) return;
+        d.est_status = status;
+        return Store.put("documents", d);
+      }).then(function () { render("estimates"); });
+    },
+
+    convertToWO: function (docId) {
+      Store.get("documents", docId).then(function (d) {
+        if (!d || !d.event_id) { toast("Nema vezanog događaja"); return; }
+        return Store.get("events", d.event_id);
+      }).then(function (ev) {
+        if (!ev) { toast("Dogadjaj nije nađen"); return; }
+        App.route = "new_job";
+        App.params = { docType: "work_order" };
+        document.querySelectorAll(".nav-btn").forEach(function (btn) {
+          btn.classList.toggle("active", btn.getAttribute("data-route") === "new_job");
+        });
+        window.WorkOrder.startFromEstimate(ev);
+      });
     },
 
     /* ----- Dnevnik / Termini ----- */
