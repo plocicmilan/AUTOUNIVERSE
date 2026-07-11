@@ -4,3 +4,12 @@ autohub/
 node_modules/
 *.db
 *.log
+
+# Interna dokumentacija — ne ide na GitHub (public repo)
+BRIEFING.md
+CLAUDE_CONTEXT.md
+LINKS.md
+sessions/
+ideas/
+docs/AUTO_UNIVERSE_MAPA_SVETA_v1.md
+docs/MARKET_RESEARCH.md
