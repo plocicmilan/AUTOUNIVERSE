@@ -154,7 +154,8 @@
             '<button class="stat" onclick="GT.go(\'estimates\')"><b>' + nEst + '</b><span>Predračuni</span></button>' +
           '</div>' +
           remCard +
-          '<button class="btn btn-primary mt8" onclick="GT.go(\'new_job\')" data-i18n="home.new_job"></button>';
+          '<button class="btn btn-primary mt8" onclick="GT.go(\'new_job\')" data-i18n="home.new_job"></button>' +
+          (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'stats\')">📊 Statistike</button>' : '');
       });
     },
 
@@ -469,6 +470,129 @@
           '</div>' +
           '<button class="btn btn-primary" onclick="GT.saveReminder()" data-i18n="common.save"></button>' +
           (id ? '<button class="btn btn-danger mt8" onclick="GT.deleteReminder(\'' + esc(id) + '\')" data-i18n="common.delete"></button>' : '');
+      });
+    },
+
+    /* ===== STATS (🔑) ===== */
+    stats: function () {
+      if (!licensed()) {
+        return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
+          '<h1>Statistike</h1>' +
+          '<div class="card locked-card"><p class="empty" data-i18n="reminders.locked"></p>' +
+          '<button class="btn btn-primary mt8" onclick="GT.go(\'settings\')" data-i18n="license.title"></button></div>';
+      }
+      return Promise.all([
+        Store.all("documents"), Store.all("events"), Store.all("vehicles"), Store.all("contacts")
+      ]).then(function (res) {
+        var docs = res[0], evs = res[1], vehs = res[2];
+        var evById = {}; evs.forEach(function (e) { evById[e.id] = e; });
+        var vehById = {}; vehs.forEach(function (v) { vehById[v.id] = v; });
+
+        // Samo završeni nalozi (work_order + invoice), ne predračuni
+        var woDocs = docs.filter(function (d) {
+          return d.doc_type === "work_order" || d.doc_type === "invoice";
+        });
+
+        var today = new Date();
+        var thisMonth = today.toISOString().slice(0, 7); // "YYYY-MM"
+
+        // Prihod po valuti — sve stavke svih RN događaja
+        var totalByCur = {}, monthByCur = {};
+        var woCount = 0, monthCount = 0;
+        var vehiclesSeen = {};
+        var titleFreq = {};
+
+        woDocs.forEach(function (d) {
+          var ev = evById[d.event_id];
+          if (!ev) return;
+          woCount++;
+          var docMonth = (d.date || d.created_at || "").slice(0, 7);
+          var isThisMonth = docMonth === thisMonth;
+          if (isThisMonth) monthCount++;
+          if (ev.vehicle_id) vehiclesSeen[ev.vehicle_id] = true;
+
+          // Frekvencija naslova
+          var key = ev.title || ev.type || "Ostalo";
+          titleFreq[key] = (titleFreq[key] || 0) + 1;
+
+          // Prihod
+          (ev.items || []).forEach(function (it) {
+            var cur = it.currency || "RSD";
+            var line = (Number(it.price) || 0) * (Number(it.qty) || 1);
+            totalByCur[cur] = (totalByCur[cur] || 0) + line;
+            if (isThisMonth) monthByCur[cur] = (monthByCur[cur] || 0) + line;
+          });
+        });
+
+        var totalStr = Models.formatTotals(totalByCur) || "0 RSD";
+        var monthStr = Models.formatTotals(monthByCur) || "0 RSD";
+        var vehCount = Object.keys(vehiclesSeen).length;
+
+        // Top 5 servisa
+        var topServices = Object.keys(titleFreq)
+          .sort(function (a, b) { return titleFreq[b] - titleFreq[a]; })
+          .slice(0, 5);
+
+        var topHtml = topServices.length
+          ? topServices.map(function (k) {
+              var pct = Math.round(titleFreq[k] / woCount * 100);
+              return '<div class="stat-bar-row">' +
+                '<span class="stat-bar-label">' + esc(k) + '</span>' +
+                '<div class="stat-bar-track"><div class="stat-bar-fill" style="width:' + pct + '%"></div></div>' +
+                '<span class="stat-bar-val">' + titleFreq[k] + '</span>' +
+              '</div>';
+            }).join("")
+          : '<p class="empty">Nema podataka</p>';
+
+        // Mesečni prihod — poslednjih 6 meseci (RSD)
+        var months = [];
+        for (var m = 5; m >= 0; m--) {
+          var d = new Date(today.getFullYear(), today.getMonth() - m, 1);
+          months.push(d.toISOString().slice(0, 7));
+        }
+        var monthlyRSD = {};
+        months.forEach(function (mo) { monthlyRSD[mo] = 0; });
+        woDocs.forEach(function (d) {
+          var ev = evById[d.event_id]; if (!ev) return;
+          var mo = (d.date || d.created_at || "").slice(0, 7);
+          if (!(mo in monthlyRSD)) return;
+          (ev.items || []).forEach(function (it) {
+            if ((it.currency || "RSD") === "RSD") {
+              monthlyRSD[mo] += (Number(it.price) || 0) * (Number(it.qty) || 1);
+            }
+          });
+        });
+        var maxRSD = Math.max.apply(null, months.map(function (mo) { return monthlyRSD[mo]; })) || 1;
+        var chartHtml = months.map(function (mo) {
+          var pct = Math.round(monthlyRSD[mo] / maxRSD * 100);
+          var label = mo.slice(5); // "MM"
+          var isActive = mo === thisMonth;
+          return '<div class="month-col' + (isActive ? " active" : "") + '">' +
+            '<div class="month-bar-wrap"><div class="month-bar" style="height:' + pct + '%"></div></div>' +
+            '<span class="month-label">' + label + '</span>' +
+          '</div>';
+        }).join("");
+
+        return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
+          '<h1>Statistike</h1>' +
+          '<div class="statrow">' +
+            '<div class="stat"><b>' + woCount + '</b><span>Radnih naloga</span></div>' +
+            '<div class="stat"><b>' + monthCount + '</b><span>Ovaj mesec</span></div>' +
+            '<div class="stat"><b>' + vehCount + '</b><span>Vozila</span></div>' +
+          '</div>' +
+          '<div class="card">' +
+            '<h2>Ukupan prihod</h2>' +
+            '<div class="stat-big">' + esc(totalStr) + '</div>' +
+            '<div class="stat-sub">Ovaj mesec: <b>' + esc(monthStr) + '</b></div>' +
+          '</div>' +
+          '<div class="card">' +
+            '<h2>Prihod po mesecima (RSD, zadnjih 6)</h2>' +
+            '<div class="month-chart">' + chartHtml + '</div>' +
+          '</div>' +
+          '<div class="card">' +
+            '<h2>Najčešći servisi</h2>' +
+            topHtml +
+          '</div>';
       });
     },
 
