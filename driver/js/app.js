@@ -552,7 +552,7 @@
 
   function hubConnected() { return !!(window.Platform && Platform.getSession()); }
 
-  function autohubCardHTML() {
+  function autohubCardHTML(mode) {
     if (!window.Platform) {
       return '<h2>AutoHub</h2><p class="empty">Platform modul nije učitan.</p>';
     }
@@ -565,14 +565,28 @@
         '<button class="btn btn-primary mt8" onclick="DR.hubSync()">Sync sada</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.hubLogout()">Odjavi se</button>';
     }
+    if (mode === 'register') {
+      return '<h2>AutoHub</h2>' +
+        '<p class="empty" style="margin-bottom:.8rem">Kreiraj nalog — admin mora da te odobri.</p>' +
+        '<label class="field"><span>Ime</span>' +
+          '<input id="hub_name" type="text" autocomplete="name" placeholder="Tvoje ime"></label>' +
+        '<label class="field"><span>Email</span>' +
+          '<input id="hub_email" type="email" autocomplete="email" placeholder="tvoj@email.com"></label>' +
+        '<label class="field"><span>Lozinka</span>' +
+          '<input id="hub_pass" type="password" autocomplete="new-password"></label>' +
+        '<div id="hubRegErr" style="color:#f87171;font-size:.82rem;margin:.3rem 0"></div>' +
+        '<button class="btn btn-primary mt8" onclick="DR.hubRegister()">Registruj se</button>' +
+        '<button class="btn btn-secondary mt8" onclick="DR.showHubLogin()">Već imaš nalog? Prijavi se</button>';
+    }
     return '<h2>AutoHub</h2>' +
       '<p class="empty" style="margin-bottom:.8rem">Poveži Driver sa serverom za backup i deljenje.</p>' +
       '<label class="field"><span>Email</span>' +
         '<input id="hub_email" type="email" autocomplete="email" placeholder="tvoj@email.com"></label>' +
       '<label class="field"><span>Lozinka</span>' +
         '<input id="hub_pass" type="password" autocomplete="current-password"></label>' +
-      '<div id="hubLoginErr" class="empty" style="color:#f87171;margin:.3rem 0"></div>' +
-      '<button class="btn btn-primary mt8" onclick="DR.hubLogin()">Poveži</button>';
+      '<div id="hubLoginErr" style="color:#f87171;font-size:.82rem;margin:.3rem 0"></div>' +
+      '<button class="btn btn-primary mt8" onclick="DR.hubLogin()">Poveži</button>' +
+      '<button class="btn btn-secondary mt8" onclick="DR.showHubRegister()">Nemaš nalog? Registruj se</button>';
   }
 
   /* ---------- License helperi ---------- */
@@ -904,6 +918,41 @@
         })
         .catch(function (e) {
           if (errEl) errEl.textContent = e.message || "Greška pri povezivanju.";
+        });
+    },
+
+    showHubRegister: function () {
+      var card = el("autohubCard");
+      if (card) card.innerHTML = autohubCardHTML("register");
+    },
+
+    showHubLogin: function () {
+      var card = el("autohubCard");
+      if (card) card.innerHTML = autohubCardHTML("login");
+    },
+
+    hubRegister: function () {
+      if (!window.Platform) return;
+      var name  = val("hub_name");
+      var email = val("hub_email");
+      var pass  = val("hub_pass");
+      var errEl = el("hubRegErr");
+      if (!name || !email || !pass) { if (errEl) errEl.textContent = "Sva polja su obavezna."; return; }
+      if (pass.length < 6) { if (errEl) errEl.textContent = "Lozinka mora imati najmanje 6 karaktera."; return; }
+      if (errEl) errEl.textContent = "";
+
+      Platform.apiCall("POST", "/auth/register", { name: name, email: email, password: pass })
+        .then(function () {
+          var card = el("autohubCard");
+          if (card) card.innerHTML =
+            '<h2>AutoHub</h2>' +
+            '<p class="lic-ok">✓ Nalog kreiran</p>' +
+            '<p class="empty" style="margin:.6rem 0">Admin mora da te odobri pre prvog logina.</p>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.showHubLogin()">Prijavi se</button>';
+        })
+        .catch(function (e) {
+          var msg = e.status === 409 ? "Email već postoji." : (e.message || "Greška pri registraciji.");
+          if (errEl) errEl.textContent = msg;
         });
     },
 
