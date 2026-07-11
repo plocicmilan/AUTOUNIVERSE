@@ -209,7 +209,28 @@
                 '<button class="btn btn-secondary" style="flex:1" onclick="GT.go(\'stats\')">📊 Statistike</button>' +
                 '<button class="btn btn-secondary" style="flex:1" onclick="GT.go(\'calculators\')">🧮 Kalkulatori</button>' +
               '</div>'
-            : '');
+            : '') +
+          (function () {
+            var vehById2 = {}; res[0].forEach(function (v) { vehById2[v.id] = v; });
+            var recent = res[2].filter(function (e) { return e.type !== "reminder_done"; })
+              .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); })
+              .slice(0, 4);
+            if (!recent.length) return '';
+            return '<div class="card mt16"><h2>Poslednji poslovi</h2>' +
+              recent.map(function (e) {
+                var vv = vehById2[e.vehicle_id];
+                var totals = Models.formatTotals(Models.sumByCurrency(e.items));
+                return '<div class="evt-head" style="padding:.3rem 0;border-bottom:1px solid var(--c-border,#e5e7eb)">' +
+                  '<b>' + esc(e.title || e.type) + '</b>' +
+                  '<span>' + esc(e.date || "") + '</span>' +
+                '</div>' +
+                '<div class="muted" style="font-size:.77rem;padding-bottom:.2rem">' +
+                  (vv ? esc(vv.make + " " + vv.model + (vv.plate ? " • " + vv.plate : "")) : "") +
+                  (totals ? ' • ' + totals : '') +
+                '</div>';
+              }).join("") +
+            '</div>';
+          })();
       });
     },
 
@@ -279,8 +300,10 @@
               }).join("")
             : '<div class="card"><p class="empty" data-i18n="history.empty"></p></div>';
 
+          var coverPhoto = v.photos && v.photos[0];
           return '' +
             '<button class="linkback" onclick="GT.go(\'vehicles\')" data-i18n="common.back"></button>' +
+            (coverPhoto ? '<div class="veh-cover"><img src="' + coverPhoto + '" alt=""></div>' : '') +
             '<h1>' + esc(v.make + " " + v.model) + (v.year ? ' <span class="muted">(' + v.year + ')</span>' : '') + '</h1>' +
             '<p class="sub">' + esc(v.plate || "—") + ' • ' + esc(v.type_label || v.category) + '</p>' +
             (owner
@@ -346,6 +369,13 @@
             '<label class="field"><span>' + t("vehicles.category") + '</span><select id="f_category">' + catOpts + '</select></label>' +
             '<label class="field"><span>' + t("vehicles.owner") + '</span><select id="f_owner">' + ownerOpts + '</select></label>' +
             field("f_vin", "vehicles.vin", v.vin) +
+            '<div class="field"><span>Foto vozila</span>' +
+              '<label class="btn btn-secondary filelabel" style="display:inline-block;margin:.3rem 0">' +
+                '<span>📷 Odaberi sliku</span>' +
+                '<input type="file" accept="image/*" onchange="GT.vehPhotoUpload(this)" hidden>' +
+              '</label>' +
+              (v.photos && v.photos[0] ? '<div id="vehPhotoPreview"><img src="' + v.photos[0] + '" style="max-height:100px;border-radius:.4rem;margin-top:.3rem"><button class="photodel" onclick="GT.vehPhotoClear()" style="margin-left:.4rem">Ukloni</button></div>' : '<div id="vehPhotoPreview"></div>') +
+            '</div>' +
           '</div>' +
           '<div class="card"><h2 data-i18n="tech.title"></h2>' +
             field("f_oil_type", "tech.oil_type", sd.oil_type, "text", "5W-30 507.00") +
@@ -1361,6 +1391,10 @@
         size_rear: val("f_tires_rear"),
         current_set: val("f_tires_set")
       });
+      if (App._vehPhotoNew !== undefined) {
+        base.photos = App._vehPhotoNew ? [App._vehPhotoNew] : [];
+        delete App._vehPhotoNew;
+      }
       if (!base.make && !base.model) { toast("Marka ili model je obavezan"); return; }
       Store.put("vehicles", base).then(function (v) {
         toast(t("common.saved"));
@@ -1673,6 +1707,21 @@
     deleteReminder: function (id) {
       if (!confirm(t("common.confirm_delete"))) return;
       Store.remove("reminders", id).then(function () { render("reminders"); });
+    },
+
+    /* ----- Foto vozila ----- */
+    vehPhotoUpload: function (input) {
+      var file = input.files && input.files[0]; if (!file) return;
+      Photos.compress(file).then(function (dataUrl) {
+        App._vehPhotoNew = dataUrl;
+        var box = el("vehPhotoPreview");
+        if (box) box.innerHTML = '<img src="' + dataUrl + '" style="max-height:100px;border-radius:.4rem;margin-top:.3rem">' +
+          '<button class="photodel" onclick="GT.vehPhotoClear()" style="margin-left:.4rem">Ukloni</button>';
+      });
+    },
+    vehPhotoClear: function () {
+      App._vehPhotoNew = null;
+      var box = el("vehPhotoPreview"); if (box) box.innerHTML = '';
     },
 
     /* ----- Dosije vozila ----- */
