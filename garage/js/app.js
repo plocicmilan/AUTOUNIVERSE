@@ -8,6 +8,15 @@
 
   var App = { config: null, i18n: {}, route: "home", params: null };
 
+  var INSP_TEMPLATE = [
+    { s: "Motor",      ii: ["Ulje motora", "Rashladna tečnost", "Akumulator", "Kaiš / lanac"] },
+    { s: "Kočnice",    ii: ["Prednje kočnice", "Zadnje kočnice", "Ručna kočnica", "Kočiona tečnost"] },
+    { s: "Gume",       ii: ["Guma PP", "Guma PD", "Guma ZL", "Guma ZD", "Rezervna"] },
+    { s: "Svetla",     ii: ["Farovi", "Stop svetla", "Migavci", "Unutrašnje svetlo"] },
+    { s: "Podvozje",   ii: ["Amortizeri", "Poluvratila / kardani", "Upravljač"] },
+    { s: "Karoserija", ii: ["Karoserija (vizuelno)", "Stakla", "Brisači"] }
+  ];
+
   /* ---------- Pomoćne ---------- */
 
   function t(key) { return App.i18n[key] || key; }
@@ -198,11 +207,22 @@
           var evHtml = events.length
             ? events.map(function (e) {
                 var totals = Models.formatTotals(Models.sumByCurrency(e.items));
+                var inspHtml = "";
+                if (e.type === "inspection" && e._inspection && e._inspection.length) {
+                  var ic = { ok: 0, prati: 0, hitno: 0 };
+                  e._inspection.forEach(function (it) { ic[it.status] = (ic[it.status] || 0) + 1; });
+                  inspHtml = '<div class="insp-sum" style="margin-top:.3rem">' +
+                    (ic.hitno ? '<span class="insp-badge hitno">✕ ' + ic.hitno + ' hitno</span>' : '') +
+                    (ic.prati ? '<span class="insp-badge prati">! ' + ic.prati + ' prati</span>' : '') +
+                    '<span class="insp-badge ok">✓ ' + ic.ok + ' OK</span>' +
+                  '</div>';
+                }
                 return '<div class="card evt' + (e.retroactive ? " retro" : "") + '">' +
                   '<div class="evt-head"><b>' + esc(e.title || e.type) + '</b><span>' + esc(e.date) + '</span></div>' +
                   (e.mileage_km != null ? '<div class="evt-km">' + esc(e.mileage_km) + ' km' + (e.km_precision === "approx" ? " (~)" : "") + '</div>' : '') +
                   (e.retroactive ? '<div class="trust">' + t("d.retro_tag") + '</div>' : '') +
                   (totals ? '<div class="evt-total">' + t("common.total") + ': ' + totals + '</div>' : '') +
+                  inspHtml +
                   '</div>';
               }).join("")
             : '<div class="card"><p class="empty" data-i18n="history.empty"></p></div>';
@@ -231,6 +251,7 @@
             evHtml +
             '<button class="btn btn-primary" onclick="GT.go(\'new_job\',{vehicleId:\'' + esc(v.id) + '\'})" data-i18n="wo.new_for"></button>' +
             '<button class="btn btn-secondary mt8" onclick="GT.go(\'history_add\',{vehicle_id:\'' + esc(v.id) + '\'})" data-i18n="gh.add"></button>' +
+            (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'inspection_form\',{vehicle_id:\'' + esc(v.id) + '\'})">🔍 Nova inspekcija</button>' : '') +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'reminder_form\',{vehicle_id:\'' + esc(v.id) + '\'})" data-i18n="reminders.add"></button>' : '') +
             '<button class="btn btn-secondary mt8" onclick="GT.go(\'vehicle_form\',{id:\'' + esc(v.id) + '\'})" data-i18n="common.edit"></button>';
         });
@@ -475,6 +496,60 @@
           '</div>' +
           '<button class="btn btn-primary" onclick="GT.saveReminder()" data-i18n="common.save"></button>' +
           (id ? '<button class="btn btn-danger mt8" onclick="GT.deleteReminder(\'' + esc(id) + '\')" data-i18n="common.delete"></button>' : '');
+      });
+    },
+
+    /* ===== INSPEKCIJA DVI (🔑) ===== */
+    inspection_form: function (params) {
+      if (!licensed()) {
+        return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
+          '<h1>Inspekcija vozila</h1>' +
+          '<div class="card locked-card"><p class="empty" data-i18n="reminders.locked"></p>' +
+          '<button class="btn btn-primary mt8" onclick="GT.go(\'settings\')" data-i18n="license.title"></button></div>';
+      }
+      var vehId = params && params.vehicle_id;
+      App._inspVehId = vehId || null;
+      App._inspData = [];
+      INSP_TEMPLATE.forEach(function (grp, si) {
+        grp.ii.forEach(function (item, ii) {
+          App._inspData.push({ si: si, ii: ii, status: "ok" });
+        });
+      });
+
+      var pV = vehId ? Store.get("vehicles", vehId) : Promise.resolve(null);
+      return Promise.all([pV, Store.all("vehicles")]).then(function (res) {
+        var v = res[0], vehs = res[1];
+        var vehOpts = '<option value="">— Bez vozila</option>' + vehs.map(function (vv) {
+          return '<option value="' + esc(vv.id) + '"' + (v && vv.id === v.id ? " selected" : "") + '>' +
+                 esc(vv.make + " " + vv.model + (vv.plate ? " • " + vv.plate : "")) + '</option>';
+        }).join("");
+
+        var sections = INSP_TEMPLATE.map(function (grp, si) {
+          var rows = grp.ii.map(function (item, ii) {
+            return '<div class="insp-row" id="insp_' + si + '_' + ii + '">' +
+              '<span class="insp-label">' + esc(item) + '</span>' +
+              '<div class="insp-btns">' +
+                '<button class="insp-btn ok sel" data-st="ok"   onclick="GT.inspSet(' + si + ',' + ii + ',\'ok\')">✓</button>' +
+                '<button class="insp-btn prati"    data-st="prati" onclick="GT.inspSet(' + si + ',' + ii + ',\'prati\')">!</button>' +
+                '<button class="insp-btn hitno"    data-st="hitno" onclick="GT.inspSet(' + si + ',' + ii + ',\'hitno\')">✕</button>' +
+              '</div>' +
+            '</div>';
+          }).join("");
+          return '<div class="card"><h2>' + esc(grp.s) + '</h2>' + rows + '</div>';
+        }).join("");
+
+        return '<button class="linkback" onclick="GT.go(' + (vehId ? '\'vehicle_card\',{id:\'' + esc(vehId) + '\'}' : '\'home\'') + ')" data-i18n="common.back"></button>' +
+          '<h1>Inspekcija vozila</h1>' +
+          '<div class="card">' +
+            '<label class="field"><span data-i18n="wo.pick_vehicle"></span><select id="insp_vehicle" onchange="App._inspVehId=this.value">' + vehOpts + '</select></label>' +
+            '<label class="field"><span>Kilometraža</span><input id="insp_km" type="number" inputmode="numeric" placeholder="km"></label>' +
+          '</div>' +
+          sections +
+          '<div class="card">' +
+            '<label class="field"><span>Napomene</span><textarea id="insp_notes" rows="3" placeholder="Opšte napomene..."></textarea></label>' +
+          '</div>' +
+          '<div id="insp_summary" class="insp-summary"></div>' +
+          '<button class="btn btn-primary" onclick="GT.saveInspection()">Sačuvaj inspekciju</button>';
       });
     },
 
@@ -1061,6 +1136,57 @@
       if (!confirm(t("common.confirm_delete"))) return;
       License.deactivate(Store);
       render("settings");
+    },
+
+    /* ----- Inspekcija DVI ----- */
+    inspSet: function (si, ii, status) {
+      App._inspData.forEach(function (d) {
+        if (d.si === si && d.ii === ii) d.status = status;
+      });
+      var row = document.getElementById("insp_" + si + "_" + ii);
+      if (row) row.querySelectorAll(".insp-btn").forEach(function (btn) {
+        btn.classList.toggle("sel", btn.getAttribute("data-st") === status);
+      });
+      // live summary
+      var counts = { ok: 0, prati: 0, hitno: 0 };
+      App._inspData.forEach(function (d) { counts[d.status]++; });
+      var sum = document.getElementById("insp_summary");
+      if (sum) sum.innerHTML = counts.hitno || counts.prati
+        ? '<div class="insp-sum">' +
+            (counts.hitno ? '<span class="insp-badge hitno">✕ Hitno: ' + counts.hitno + '</span>' : '') +
+            (counts.prati ? '<span class="insp-badge prati">! Prati: ' + counts.prati + '</span>' : '') +
+            '<span class="insp-badge ok">✓ OK: ' + counts.ok + '</span>' +
+          '</div>'
+        : '';
+    },
+
+    saveInspection: function () {
+      var vehId = (document.getElementById("insp_vehicle") && document.getElementById("insp_vehicle").value) || App._inspVehId;
+      if (!vehId) { toast("Odaberi vozilo"); return; }
+      var km    = document.getElementById("insp_km");
+      var notes = document.getElementById("insp_notes");
+      var counts = { ok: 0, prati: 0, hitno: 0 };
+      App._inspData.forEach(function (d) { counts[d.status]++; });
+      var title = "Inspekcija" +
+        (counts.hitno ? " — " + counts.hitno + "✕ hitno" : "") +
+        (counts.prati ? " — " + counts.prati + "! prati" : "") +
+        (!counts.hitno && !counts.prati ? " — sve OK ✓" : "");
+      var ev = Models.createEvent({
+        vehicle_id: vehId,
+        type: "inspection",
+        title: title,
+        description: notes ? notes.value.trim() : "",
+        mileage_km: km && km.value ? parseInt(km.value, 10) : null,
+        source: "mechanic",
+        app: "garage"
+      });
+      ev._inspection = App._inspData.map(function (d) {
+        return { system: INSP_TEMPLATE[d.si].s, item: INSP_TEMPLATE[d.si].ii[d.ii], status: d.status };
+      });
+      Store.put("events", ev).then(function () {
+        toast("Inspekcija sačuvana");
+        render("vehicle_card", { id: vehId });
+      });
     },
 
     /* ----- Kalkulatori ----- */

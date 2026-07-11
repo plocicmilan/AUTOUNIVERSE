@@ -34,6 +34,25 @@
 .month-col.active .month-bar { opacity: 1; }
 .month-label { font-size: .68rem; color: var(--c-muted, #888); }
 
+/* Inspekcija DVI */
+.insp-row { display: flex; justify-content: space-between; align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--c-border, #e5e7eb); }
+.insp-row:last-child { border-bottom: none; }
+.insp-label { font-size: .85rem; flex: 1; }
+.insp-btns { display: flex; gap: .2rem; flex-shrink: 0; }
+.insp-btn { width: 34px; height: 30px; border: 1px solid #ccc; border-radius: 5px; background: #f4f4f4; cursor: pointer; font-weight: 700; font-size: .8rem; opacity: .35; transition: opacity .1s; }
+.insp-btn.sel { opacity: 1; color: #fff; border-color: transparent; }
+.insp-btn.ok.sel    { background: var(--c-ok, #22c55e); }
+.insp-btn.prati.sel { background: #f59e0b; }
+.insp-btn.hitno.sel { background: #ef4444; }
+
+.insp-sum { display: flex; gap: .4rem; flex-wrap: wrap; }
+.insp-badge { font-size: .73rem; font-weight: 600; padding: .15rem .5rem; border-radius: 999px; }
+.insp-badge.ok    { background: #dcfce7; color: #166534; }
+.insp-badge.prati { background: #fef3c7; color: #92400e; }
+.insp-badge.hitno { background: #fee2e2; color: #991b1b; }
+
+.insp-summary { margin-bottom: .5rem; min-height: 1.5rem; }
+
 /* Kalkulatori */
 .calc-row { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
 .calc-result { margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--c-border, #e5e7eb); min-height: 1rem; }
