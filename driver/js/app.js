@@ -542,9 +542,38 @@
           '<label class="btn btn-secondary mt8 filelabel"><span data-i18n="backup.import"></span>' +
             '<input type="file" accept=".json,application/json" onchange="DR.importBackup(this)" hidden></label>' +
         '</div>' +
-        '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>';
+        '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>' +
+        '<div class="card mt16" id="autohubCard">' + autohubCardHTML() + '</div>';
     }
   };
+
+  /* ---------- AutoHub helperi ---------- */
+  var HUB_MAP_KEY = "autohub_vehicle_map";
+
+  function hubConnected() { return !!(window.Platform && Platform.getSession()); }
+
+  function autohubCardHTML() {
+    if (!window.Platform) {
+      return '<h2>AutoHub</h2><p class="empty">Platform modul nije učitan.</p>';
+    }
+    if (hubConnected()) {
+      var lastSync = localStorage.getItem("autohub_last_sync");
+      return '<h2>AutoHub</h2>' +
+        '<p class="lic-ok">✓ Povezan</p>' +
+        (lastSync ? '<p class="muted" style="font-size:.8rem;margin:.4rem 0">Poslednji sync: ' + esc(lastSync.slice(0, 16).replace("T", " ")) + '</p>' : '') +
+        '<div id="hubSyncStatus"></div>' +
+        '<button class="btn btn-primary mt8" onclick="DR.hubSync()">Sync sada</button>' +
+        '<button class="btn btn-secondary mt8" onclick="DR.hubLogout()">Odjavi se</button>';
+    }
+    return '<h2>AutoHub</h2>' +
+      '<p class="empty" style="margin-bottom:.8rem">Poveži Driver sa serverom za backup i deljenje.</p>' +
+      '<label class="field"><span>Email</span>' +
+        '<input id="hub_email" type="email" autocomplete="email" placeholder="tvoj@email.com"></label>' +
+      '<label class="field"><span>Lozinka</span>' +
+        '<input id="hub_pass" type="password" autocomplete="current-password"></label>' +
+      '<div id="hubLoginErr" class="empty" style="color:#f87171;margin:.3rem 0"></div>' +
+      '<button class="btn btn-primary mt8" onclick="DR.hubLogin()">Poveži</button>';
+  }
 
   /* ---------- License helperi ---------- */
   function licensed() { return License.isLicensed(Store); }
@@ -858,6 +887,117 @@
     deleteReminder: function (id) {
       if (!confirm(t("common.confirm_delete"))) return;
       Store.remove("reminders", id).then(function () { render("reminders"); });
+    },
+
+    /* ----- AutoHub ----- */
+    hubLogin: function () {
+      if (!window.Platform) return;
+      var email = val("hub_email"), pass = val("hub_pass");
+      var errEl = el("hubLoginErr");
+      if (!email || !pass) { if (errEl) errEl.textContent = "Email i lozinka su obavezni."; return; }
+      if (errEl) errEl.textContent = "";
+      Platform.apiCall("POST", "/auth/login", { email: email, password: pass })
+        .then(function (data) {
+          Platform.setSession(data.session);
+          toast("Povezano sa AutoHub-om!");
+          render("settings");
+        })
+        .catch(function (e) {
+          if (errEl) errEl.textContent = e.message || "Greška pri povezivanju.";
+        });
+    },
+
+    hubLogout: function () {
+      if (!window.Platform) return;
+      Platform.setSession(null);
+      localStorage.removeItem(HUB_MAP_KEY);
+      localStorage.removeItem("autohub_last_sync");
+      toast("Odjavljeno.");
+      render("settings");
+    },
+
+    hubSync: function () {
+      if (!window.Platform || !hubConnected()) { toast("Nisi povezan sa AutoHub-om."); return; }
+      var statusEl = el("hubSyncStatus");
+      if (statusEl) statusEl.textContent = "Sinkronizujem...";
+
+      var vehicleMap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+
+      Store.all("vehicles").then(function (vehicles) {
+        // Korak 1 — resolve server vehicle IDs (kreiraj ako ne postoji)
+        var mapOps = vehicles.map(function (v) {
+          if (vehicleMap[v.id]) return Promise.resolve();
+          return Platform.apiCall("POST", "/vehicles", {
+            make: v.make, model: v.model, year: v.year || null,
+            plate: v.plate || null, vin: v.vin || null
+          }).then(function (r) { vehicleMap[v.id] = r.id; });
+        });
+
+        return Promise.all(mapOps).then(function () {
+          localStorage.setItem(HUB_MAP_KEY, JSON.stringify(vehicleMap));
+          return Store.all("events");
+        });
+      })
+      .then(function (events) {
+        var unsynced = events.filter(function (e) { return !e.synced_at; });
+        if (!unsynced.length) {
+          if (statusEl) statusEl.textContent = "";
+          toast("Sve je već synkovano.");
+          return;
+        }
+
+        // Korak 2 — grupiši po server vehicle ID
+        var byServer = {};
+        unsynced.forEach(function (e) {
+          var sid = vehicleMap[e.vehicle_id];
+          if (!sid) return;
+          if (!byServer[sid]) byServer[sid] = [];
+          byServer[sid].push({
+            type: e.type || "other",
+            data: {
+              title: e.title || null,
+              description: e.description || null,
+              km: e.mileage_km || null,
+              source: e.source || null,
+              photos_count: (e.photos || []).length
+            },
+            event_date: e.date || new Date().toISOString(),
+            retroactive: !!e.retroactive,
+            source: e.source || "app",
+            app: "driver",
+            local_id: e.id
+          });
+        });
+
+        // Korak 3 — batch upload po vozilu
+        var syncOps = Object.keys(byServer).map(function (sid) {
+          return Platform.syncEvents(Number(sid), byServer[sid])
+            .then(function (res) {
+              var synced = res.synced || [];
+              var syncedIds = {};
+              synced.forEach(function (s) { if (s.local_id && !s.error) syncedIds[s.local_id] = true; });
+              var markOps = unsynced
+                .filter(function (e) { return syncedIds[e.id]; })
+                .map(function (e) {
+                  e.synced_at = new Date().toISOString();
+                  return Store.put("events", e);
+                });
+              return Promise.all(markOps).then(function () { return synced.length; });
+            });
+        });
+
+        return Promise.all(syncOps).then(function (counts) {
+          var total = counts.reduce(function (s, n) { return s + n; }, 0);
+          localStorage.setItem("autohub_last_sync", new Date().toISOString());
+          if (statusEl) statusEl.textContent = "";
+          toast("Sync završen: " + total + " događaja poslano.");
+          render("settings");
+        });
+      })
+      .catch(function (e) {
+        if (statusEl) statusEl.textContent = "";
+        toast("Sync greška: " + (e.message || "nepoznata greška"));
+      });
     }
   };
 
