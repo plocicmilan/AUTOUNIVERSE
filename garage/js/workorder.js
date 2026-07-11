@@ -198,7 +198,10 @@
         (totals ? '<div class="techrow"><span data-i18n="common.total"></span><b>' + totals + '</b></div>' : '') +
       '</div>' +
       '<button class="btn btn-secondary" onclick="WOgo.preview()" data-i18n="wo.review"></button>' +
-      '<button class="btn btn-primary mt8" onclick="WOgo.share()" data-i18n="wo.share"></button>';
+      '<button class="btn btn-primary mt8" onclick="WOgo.share()" data-i18n="wo.share"></button>' +
+      (WO.draft.vehicle_id
+        ? '<button class="btn btn-secondary mt8" onclick="window.GT.go(\'reminder_form\',{vehicle_id:\'' + esc(WO.draft.vehicle_id) + '\'})">🔔 Dodaj podsetnik</button>'
+        : '');
     }
   };
 
