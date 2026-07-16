@@ -18,6 +18,8 @@ Legenda statusa: 🔵 novo • 🟡 u analizi • 🟢 za v1.1 • ✅ urađeno 
 | 3 | **Multi-user signal — jedan permission primitiv rešava sve.** (A) Marko+Pavle: ista radionica. (B) Marko+Goran: povremena saradnja. (C) Vlasnik→majstor. Sva tri = `grant(user, target, vehicle, role, [expires])`. Team je automatizam preko primitiva, ne poseban entitet. Obaveza: implementirati kao jedinstveni primitiv od dana 1 AutoHub-a. | Marko (Garage) | **platform** | Garage (sad) + AutoHub (kasnije) | 🟢 za AutoHub S6 |
 | 4 | **Reverse marketplace — "objavi potrebu → dobavljači se takmiče".** Parts, servisi, šlep, gume, polovni delovi. Nije signal sa terena, hipoteza iz razmišljanja. Puna analiza + uslovi aktivacije u `ideas/hypothesis/2026-07-11_reverse_marketplace.md`. | Desktop Claude (razmišljanje) | platform | AutoHub + Marketplace modul | ⚪ hipoteza — Faza 6+, ne pre uslova |
 | 5 | **Play Protect "Nebezbedna aplikacija" upozorenje pri instalaciji Garage PWA na Androidu.** Chrome WebAPK Minter generiše APK sa zastarelim `targetSdkVersion` koji triguje Play Protect skeniranje. Nije bug u kodu — Google-ov problem. First impression je loš. Fiksirati: dodati korak u uputstvo ("Klikni Ipak instaliraj"). | Marko (Android, Faza 3 onboarding) | docs | Garage | 🔴 blokira onboarding — uputstvo hitno |
+| 6 | **Nikola — prvi realni Driver tester van autora projekta.** Aktivan od 2026-07-11. Do sada je Driver imao samo Milana kao planiranog testera. Nikola je prvi čovek koji nije autor koji koristi aplikaciju — ovo je signal da app ima vrednost van razvojnog tima. Uređaj: Android/Chrome. | Nikola | — | Driver | 🟢 aktivan tester |
+| 7 | **Katalog marki i modela vozila — padajući meni umesto slobodnog kucanja.** Nikola kao Driver korisnik signalizirao korist od autocomplete/kataloga pri unosu vozila (Dacia → Sandero → …). Analiza (Milan): JSON katalog ~100 KB u `core/data/vehicles.json`, offline-first, radi u obe aplikacije, bez servera. Alternativa: VIN dekoder (AutoHub Faza 4+). Čeka potvrdu od Nikole. | Nikola + Milan diskusija | **core** | Driver + Garage | 🔵 novo — čeka Nikolinu potvrdu |
 
 ### Detalji — Stavka #1
 
@@ -47,8 +49,32 @@ retroaktivni događaj. Istorija raste unazad postepeno, umesto zida od 20 pitanj
 
 ---
 
+### Detalji — Stavka #7 (Katalog vozila)
+
+**Problem:** Slobodni tekst za marku/model vozila je pogrešan UI za strukturirani podatak. Korisnik kuca "dacia", "Dacia", "DACIA" — tri ista vozila u bazi. Nikola signalizirao korist od catalog-driven UI.
+
+**Iste koristi za Garage:** Marko u WO Snap koraku 1 takođe kuca marku i model ručno. Katalog u `core/` rešava oba.
+
+**Tri opcije (procena Milan, 2026-07-11):**
+
+| Opcija | Opis | Status |
+|---|---|---|
+| **A — Lokalni JSON katalog** | `core/data/vehicles.json`: marka → modeli → godišta. Offline. ~100 KB. Uvek postoji "Drugo" za retke marke. | ✅ preporuka za v1.1 |
+| **B — VIN dekoder** | AutoHub proxuje NHTSA vPIC API. Korisnik unese VIN → automatski popuni sve. | ⏳ Faza 4+ (AutoHub) |
+| **C — Server katalog** | AutoHub kao izvor kataloga. | ❌ krši offline-first princip |
+
+**Pitanja za Nikolu pre kodiranja:**
+1. Koje vozilo ima? (Marka + model)
+2. Šta ga je gnjavilo pri unosu — kucanje marke, modela, ili nešto treće?
+3. Da li je uneo više od jednog vozila?
+4. Da li bi voleo godište iz padajućeg, ili je okej da se kuca?
+
+**Status:** 🔵 novo → čeka odgovore od Nikole → ako potvrdi: `ideas/accepted/katalog_vozila.md` → v1.1 patch
+
+---
+
 *Otvoreno: 10.07.2026. — Garage v1 na terenu kod Marka, čeka se dalji feedback.*
-*Ažurirano: 2026-07-11 — Driver v1 live, stavka #3 (multi-user signal), stavka #5 (Play Protect onboarding).*
+*Ažurirano: 2026-07-11 — Driver v1 live, stavka #3 (multi-user signal), stavka #5 (Play Protect), stavka #6 (Nikola — prvi realni Driver tester), stavka #7 (katalog vozila).*
 
 ### Detalji — Stavka #3
 

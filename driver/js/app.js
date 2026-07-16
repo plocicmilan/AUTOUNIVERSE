@@ -35,6 +35,7 @@
 
   /* ---------- Boot ---------- */
   function boot() {
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function(){});
     fetch("config/driver_v1.json")
       .then(function (r) { return r.json(); })
       .then(function (cfg) {
