@@ -1805,7 +1805,7 @@
     bizShare: function () {
       var prof = Store.settings.get("profile", {});
       var text = [prof.name, prof.phone, prof.email, prof.website, prof.address].filter(Boolean).join("\n");
-      if (navigator.share) navigator.share({ title: prof.name || "Garage Toolbox", text: text });
+      if (navigator.share) navigator.share({ title: prof.name || "Garage Toolbox", text: text }).catch(function(){});
     },
 
     /* ----- Foto vozila ----- */

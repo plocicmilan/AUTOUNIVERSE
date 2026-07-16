@@ -1,86 +1,47 @@
 /* ============================================================
-   AUTO UNIVERSE — CORE / STORE  (Nivo 0)
-   - IndexedDB: vehicles, events, contacts, documents, reminders
-   - localStorage: settings (mali podaci, sinhron pristup)
-   - Backup/Export: SVI podaci u jedan JSON fajl (kritično za iOS)
-   Čiste funkcije (serialize/parse/filter) rade i u Node testovima.
+   AUTO UNIVERSE — CORE / STORE  (Nivo 0 — FASADA)
+   Isti javni API kao ranije. Iznutra: bira Web ili Native impl
+   preko Platform.isNative(). Aplikacije NE menjaju pozive.
+
+   Ucitavanje u index.html mora biti ovim redosledom:
+     platform.js  -> store.web.js  -> store.native.js  -> store.js
    ============================================================ */
 (function (global) {
   "use strict";
 
-  var DB_NAME = "auto_universe";
-  var DB_VERSION = 2;
   var STORES = ["vehicles", "events", "contacts", "documents", "reminders", "appointments"];
   var SETTINGS_PREFIX = "au_";
 
-  var _db = null;
-  var _app = "garage";
+  var _app  = "garage";
+  var _impl = null;
+
+  function chooseImpl() {
+    var isNative = global.Platform && global.Platform.isNative && global.Platform.isNative();
+    var impl = isNative ? global.StoreNative : global.StoreWeb;
+    if (!impl) throw new Error("Store impl nije ucitan (StoreWeb/StoreNative)");
+    return impl;
+  }
 
   /* ---------- Init ---------- */
 
   function init(appName) {
-    _app = appName || "garage";
-    return new Promise(function (resolve, reject) {
-      var req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = function (e) {
-        var db = e.target.result;
-        STORES.forEach(function (name) {
-          if (!db.objectStoreNames.contains(name)) {
-            var os = db.createObjectStore(name, { keyPath: "id" });
-            if (name === "events") {
-              os.createIndex("vehicle_id", "vehicle_id", { unique: false });
-              os.createIndex("contact_id", "contact_id", { unique: false });
-            }
-            if (name === "reminders") {
-              os.createIndex("vehicle_id", "vehicle_id", { unique: false });
-            }
-            if (name === "appointments") {
-              os.createIndex("scheduled_at", "scheduled_at", { unique: false });
-              os.createIndex("status", "status", { unique: false });
-            }
-          }
-        });
-      };
-      req.onsuccess = function (e) { _db = e.target.result; resolve(_db); };
-      req.onerror = function (e) { reject(e.target.error); };
-    });
+    _app  = appName || "garage";
+    _impl = chooseImpl();
+    return _impl.init(_app, STORES);
   }
 
-  function tx(storeName, mode) {
-    return _db.transaction(storeName, mode || "readonly").objectStore(storeName);
-  }
+  /* ---------- Delegated CRUD ---------- */
 
-  function reqToPromise(req) {
-    return new Promise(function (resolve, reject) {
-      req.onsuccess = function () { resolve(req.result); };
-      req.onerror = function () { reject(req.error); };
-    });
-  }
+  function put(s, o)             { return _impl.put(s, o); }
+  function get(s, id)            { return _impl.get(s, id); }
+  function all(s)                { return _impl.all(s); }
+  function remove(s, id)         { return _impl.remove(s, id); }
+  function byIndex(s, idx, val)  { return _impl.byIndex(s, idx, val); }
 
-  /* ---------- CRUD ---------- */
-
-  function put(storeName, obj) {
-    obj.updated_at = new Date().toISOString();
-    return reqToPromise(tx(storeName, "readwrite").put(obj)).then(function () { return obj; });
-  }
-
-  function get(storeName, id) {
-    return reqToPromise(tx(storeName).get(id));
-  }
-
-  function all(storeName) {
-    return reqToPromise(tx(storeName).getAll());
-  }
-
-  function remove(storeName, id) {
-    return reqToPromise(tx(storeName, "readwrite").delete(id));
-  }
-
-  function byIndex(storeName, indexName, value) {
-    return reqToPromise(tx(storeName).index(indexName).getAll(value));
-  }
-
-  /* ---------- Settings (localStorage, per-app prefix) ---------- */
+  /* ---------- Settings (localStorage, per-app prefix) ----------
+     Napomena: localStorage postoji i u browseru i u Capacitor WebView-u.
+     Ako se u Paketu B pokaze da Android eviction i localStorage brise,
+     zamenice se Capacitor Preferences plugin-om, transparentno ovde. */
 
   var settings = {
     key: function (k) { return SETTINGS_PREFIX + _app + "_" + k; },
@@ -110,10 +71,9 @@
     }
   };
 
-  /* ---------- Backup / Export — ČISTE funkcije + IO ---------- */
+  /* ---------- Pure functions (nezavisne od impl-a) ---------- */
 
   function serializeBackup(appName, data, settingsObj) {
-    // data: { vehicles: [], events: [], ... }
     return JSON.stringify({
       format: "auto_universe_backup",
       format_version: 1,
@@ -126,13 +86,13 @@
 
   function parseBackup(jsonString) {
     var b = JSON.parse(jsonString);
-    if (b.format !== "auto_universe_backup") {
-      throw new Error("Fajl nije Auto Universe backup.");
-    }
+    if (b.format !== "auto_universe_backup") throw new Error("Fajl nije Auto Universe backup.");
     if (!b.data) throw new Error("Backup nema podatke.");
     STORES.forEach(function (s) { b.data[s] = b.data[s] || []; });
     return b;
   }
+
+  /* ---------- Orkestrirane operacije (koriste delegated CRUD) ---------- */
 
   function exportAll() {
     var out = {};
@@ -149,15 +109,13 @@
     return Promise.all(STORES.map(function (s) {
       return Promise.all(b.data[s].map(function (row) {
         total++;
-        return reqToPromise(tx(s, "readwrite").put(row));
+        return put(s, row);
       }));
     })).then(function () {
       if (b.settings) settings.restoreRaw(b.settings);
       return { imported: total, exported_at: b.exported_at };
     });
   }
-
-  /* ---------- Pretraga vozila — čista funkcija (testabilna) ---------- */
 
   function filterVehicles(vehicles, query, contactsById) {
     var q = (query || "").trim().toLowerCase();
@@ -190,8 +148,6 @@
     filterVehicles: filterVehicles
   };
 
-  if (typeof module !== "undefined" && module.exports) {
-    module.exports = Store;   // Node — samo čiste funkcije
-  }
-  global.Store = Store;       // Browser
+  if (typeof module !== "undefined" && module.exports) module.exports = Store;
+  global.Store = Store;
 })(typeof window !== "undefined" ? window : globalThis);

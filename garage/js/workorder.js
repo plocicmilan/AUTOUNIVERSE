@@ -429,15 +429,7 @@
         if (!doc) return;
         var fileName = number + "-" + WO.draft.docType.toUpperCase() + ".pdf";
         var blob = doc.output("blob");
-        var file = new File([blob], fileName, { type: "application/pdf" });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          navigator.share({ files: [file], title: fileName }).catch(function () {});
-        } else {
-          var a = document.createElement("a");
-          a.href = URL.createObjectURL(blob); a.download = fileName;
-          document.body.appendChild(a); a.click();
-          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-        }
+        window.Share.share({ blob: blob, fileName: fileName, title: fileName }).catch(function () {});
         toast(t("wo.saved_event"));
         setTimeout(function () { window.GT.go("vehicle_card", { id: WO.draft.vehicle_id }); }, 600);
       });

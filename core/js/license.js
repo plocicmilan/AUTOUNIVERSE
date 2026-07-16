@@ -4,6 +4,11 @@
    TEST-UNLOCK = razvojni ključ (uvek prolazi, bez mreže).
    Čista logika (tier gate, state) testabilna u Node-u; mrežni
    poziv se izoluje u verifyRemote().
+
+   ⚠️ PAKET B — Google Play distribucija:
+   U Play verziji app-e NE sme postojati link ka Gumroad-u (krsi Play politiku).
+   Play Billing implementacija dolazi kao alternativa (activate/isUnlocked
+   ostaju isti interfejs — implementacija ispod se granata na Platform.isNative()).
    ============================================================ */
 (function (global) {
   "use strict";
