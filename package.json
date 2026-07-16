@@ -1,0 +1,33 @@
+{
+  "name": "autouniverse",
+  "version": "1.0.0",
+  "description": "Auto Universe — PWA ekosistem za auto industriju (Garage + Driver Toolbox). Capacitor za Android APK, isti vanilla JS kod za PWA i native.",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "node tests/run-all.js",
+    "build:garage": "node scripts/build.js garage",
+    "build:driver": "node scripts/build.js driver",
+    "cap:sync:garage": "npm run build:garage && cd platforms/garage && npx cap sync android",
+    "cap:sync:driver": "npm run build:driver && cd platforms/driver && npx cap sync android",
+    "cap:open:garage": "cd platforms/garage && npx cap open android",
+    "cap:open:driver": "cd platforms/driver && npx cap open android"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plocicmilan/AUTOUNIVERSE.git"
+  },
+  "author": "Milan Plocic (Belora Ventures Studio)",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/camera": "^6.1.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/filesystem": "^6.0.3",
+    "@capacitor/preferences": "^6.0.3",
+    "@capacitor/share": "^6.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

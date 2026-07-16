@@ -1,0 +1,11 @@
+{
+  "appId": "rs.autouniverse.garage",
+  "appName": "Garage Toolbox",
+  "webDir": "../../build/garage",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

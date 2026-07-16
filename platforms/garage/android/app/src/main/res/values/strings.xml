@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Garage Toolbox</string>
+    <string name="title_activity_main">Garage Toolbox</string>
+    <string name="package_name">rs.autouniverse.garage</string>
+    <string name="custom_url_scheme">rs.autouniverse.garage</string>
+</resources>

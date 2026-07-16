@@ -5,6 +5,20 @@ node_modules/
 *.db
 *.log
 
+# Capacitor build outputs (regenerabilno)
+build/
+platforms/*/android/app/build/
+platforms/*/android/.gradle/
+platforms/*/android/build/
+platforms/*/android/local.properties
+platforms/*/android/app/release/
+platforms/*/android/app/debug/
+*.apk
+*.aab
+*.keystore
+package-lock.json
+inst_user_settings.tmp
+
 # Interna dokumentacija — ne ide na GitHub (public repo)
 BRIEFING.md
 CLAUDE_CONTEXT.md

@@ -42,6 +42,7 @@
         App.config = cfg;
         applyTheme(cfg.colors);
         el("brandName").textContent = cfg.name.toUpperCase();
+        if (window.Photos && window.Photos.setApp) window.Photos.setApp(cfg.app);
         return Store.init(cfg.app);
       })
       .then(function () {

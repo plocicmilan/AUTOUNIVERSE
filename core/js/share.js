@@ -68,12 +68,59 @@
     return { shared: true, method: "download" };
   }
 
-  /* ---------- Native (stub — Paket B) ---------- */
+  /* ---------- Native (Capacitor Share + Filesystem) ---------- */
 
-  function shareNative(_p) {
-    return Promise.reject(new Error(
-      "Native Share nije jos implementiran (Paket B — @capacitor/share)"
-    ));
+  function shareNative(p) {
+    var C = global.Capacitor && global.Capacitor.Plugins;
+    if (!C || !C.Share) return shareWeb(p); // fallback ako plugin nije dostupan
+
+    // Za nativni share fajla treba fizicki fajl na disku.
+    // Ako imamo blob, prvo ga upisujemo u Cache direktorijum pa share.
+    var blob = p.blob || (p.file ? p.file : null);
+    var fileName = p.fileName || ("share-" + Date.now() + ".bin");
+
+    if (blob && C.Filesystem) {
+      return blobToBase64(blob).then(function (base64) {
+        return C.Filesystem.writeFile({
+          path: fileName,
+          data: base64,
+          directory: "CACHE"
+        });
+      }).then(function (writeRes) {
+        return C.Share.share({
+          title: p.title || fileName,
+          text:  p.text  || "",
+          url:   writeRes.uri,
+          dialogTitle: p.title || fileName
+        });
+      }).then(function () {
+        return { shared: true, method: "native-share" };
+      });
+    }
+
+    // Bez fajla — samo tekst / URL
+    return C.Share.share({
+      title: p.title || "",
+      text:  p.text  || "",
+      url:   p.url   || "",
+      dialogTitle: p.title || "Share"
+    }).then(function () {
+      return { shared: true, method: "native-share-text" };
+    });
+  }
+
+  function blobToBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var s = String(reader.result || "");
+        // reader.result je "data:mime;base64,XXX" — Filesystem trazi samo XXX
+        var comma = s.indexOf(",");
+        resolve(comma !== -1 ? s.slice(comma + 1) : s);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   var Share = { share: share };
