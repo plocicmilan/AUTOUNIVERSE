@@ -551,11 +551,11 @@
   /* ---------- AutoHub helperi ---------- */
   var HUB_MAP_KEY = "autohub_vehicle_map";
 
-  function hubConnected() { return !!(window.Platform && Platform.getSession()); }
+  function hubConnected() { return !!(window.AutoHub && AutoHub.getSession()); }
 
   function autohubCardHTML(mode) {
-    if (!window.Platform) {
-      return '<h2>AutoHub</h2><p class="empty">Platform modul nije učitan.</p>';
+    if (!window.AutoHub) {
+      return '<h2>AutoHub</h2><p class="empty">AutoHub modul nije učitan.</p>';
     }
     if (hubConnected()) {
       var lastSync = localStorage.getItem("autohub_last_sync");
@@ -906,14 +906,14 @@
 
     /* ----- AutoHub ----- */
     hubLogin: function () {
-      if (!window.Platform) return;
+      if (!window.AutoHub) return;
       var email = val("hub_email"), pass = val("hub_pass");
       var errEl = el("hubLoginErr");
       if (!email || !pass) { if (errEl) errEl.textContent = "Email i lozinka su obavezni."; return; }
       if (errEl) errEl.textContent = "";
-      Platform.apiCall("POST", "/auth/login", { email: email, password: pass })
+      AutoHub.apiCall("POST", "/auth/login", { email: email, password: pass })
         .then(function (data) {
-          Platform.setSession(data.session);
+          AutoHub.setSession(data.session);
           toast("Povezano sa AutoHub-om!");
           render("settings");
         })
@@ -933,7 +933,7 @@
     },
 
     hubRegister: function () {
-      if (!window.Platform) return;
+      if (!window.AutoHub) return;
       var name  = val("hub_name");
       var email = val("hub_email");
       var pass  = val("hub_pass");
@@ -942,7 +942,7 @@
       if (pass.length < 6) { if (errEl) errEl.textContent = "Lozinka mora imati najmanje 6 karaktera."; return; }
       if (errEl) errEl.textContent = "";
 
-      Platform.apiCall("POST", "/auth/register", { name: name, email: email, password: pass })
+      AutoHub.apiCall("POST", "/auth/register", { name: name, email: email, password: pass })
         .then(function () {
           var card = el("autohubCard");
           if (card) card.innerHTML =
@@ -958,8 +958,8 @@
     },
 
     hubLogout: function () {
-      if (!window.Platform) return;
-      Platform.setSession(null);
+      if (!window.AutoHub) return;
+      AutoHub.setSession(null);
       localStorage.removeItem(HUB_MAP_KEY);
       localStorage.removeItem("autohub_last_sync");
       toast("Odjavljeno.");
@@ -967,7 +967,7 @@
     },
 
     hubSync: function () {
-      if (!window.Platform || !hubConnected()) { toast("Nisi povezan sa AutoHub-om."); return; }
+      if (!window.AutoHub || !hubConnected()) { toast("Nisi povezan sa AutoHub-om."); return; }
       var statusEl = el("hubSyncStatus");
       if (statusEl) statusEl.textContent = "Sinkronizujem...";
 
@@ -977,7 +977,7 @@
         // Korak 1 — resolve server vehicle IDs (kreiraj ako ne postoji)
         var mapOps = vehicles.map(function (v) {
           if (vehicleMap[v.id]) return Promise.resolve();
-          return Platform.apiCall("POST", "/vehicles", {
+          return AutoHub.apiCall("POST", "/vehicles", {
             make: v.make, model: v.model, year: v.year || null,
             plate: v.plate || null, vin: v.vin || null
           }).then(function (r) { vehicleMap[v.id] = r.id; });
@@ -1021,7 +1021,7 @@
 
         // Korak 3 — batch upload po vozilu
         var syncOps = Object.keys(byServer).map(function (sid) {
-          return Platform.syncEvents(Number(sid), byServer[sid])
+          return AutoHub.syncEvents(Number(sid), byServer[sid])
             .then(function (res) {
               var synced = res.synced || [];
               var syncedIds = {};

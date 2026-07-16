@@ -1,7 +1,9 @@
 /* ============================================================
-   AUTO UNIVERSE — CORE / PLATFORM  (Nivo 0)
+   AUTO UNIVERSE — CORE / AUTOHUB CLIENT  (Nivo 0)
    - Čita platform-url.json sa GitHub Pages → zna gde je AutoHub server
    - Pruža apiCall, syncEvents i session management za Garage/Driver
+   Napomena: ovaj modul je odgovoran ZA KOMUNIKACIJU SA SERVEROM.
+   Environment detection (web vs native) je u core/js/platform.js.
    ============================================================ */
 (function (global) {
   "use strict";
@@ -78,6 +80,6 @@ async function syncEvents(vehicleId, events) {
   return apiCall('POST', `/vehicles/${vehicleId}/events/batch`, events);
 }
 
-  global.Platform = { getPlatformUrl, apiCall, isServerAvailable, getSession, setSession, syncEvents };
+  global.AutoHub = { getPlatformUrl, apiCall, isServerAvailable, getSession, setSession, syncEvents };
 
 }(typeof window !== 'undefined' ? window : this));
