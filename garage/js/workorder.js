@@ -18,6 +18,30 @@
     sigPads: {}      // canvas potpisi
   };
 
+  var SVC_CATS = [
+    { id: "motor",        label: "Motor 🔧" },
+    { id: "fluidi",       label: "Fluidi 💧" },
+    { id: "kocnice",      label: "Kočnice 🛑" },
+    { id: "klima",        label: "Klima ❄️" },
+    { id: "elektro",      label: "Elektro ⚡" },
+    { id: "dijagnostika", label: "Dijagnostika 🔍" }
+  ];
+
+  var KLIMA_SUBS = [
+    { id: "freon",     label: "Punjenje freonom" },
+    { id: "kompresor", label: "Servis kompresora" },
+    { id: "kabinski",  label: "Kabinski filter" }
+  ];
+
+  var VELIKI_SERVIS_ITEMS = [
+    { kind: "part",  name: "Ulje motora",         qty: 1 },
+    { kind: "part",  name: "Filter ulja",          qty: 1 },
+    { kind: "part",  name: "Filter vazduha",       qty: 1 },
+    { kind: "part",  name: "Filter goriva",        qty: 1 },
+    { kind: "part",  name: "Filter kabine",        qty: 1 },
+    { kind: "labor", name: "Zamena ulja i filtera", qty: 1 }
+  ];
+
   function t(k) { return window.GT.t(k); }
   function esc(s) { return window.GT.esc(s); }
   function toast(m) { window.GT.toast(m); }
@@ -43,6 +67,8 @@
       mileage_km: "",
       photos: [],
       items: [],
+      categories: [],
+      klima_subs: [],
       signature: { customer: null, technician: null }
     };
     return Promise.all([window.Store.all("vehicles"), window.Store.all("contacts")])
@@ -67,6 +93,8 @@
       mileage_km: ev.mileage_km || "",
       photos: [],
       items: (ev.items || []).map(function (it) { return Object.assign({}, it); }),
+      categories: [],
+      klima_subs: [],
       signature: { customer: null, technician: null }
     };
     return Promise.all([window.Store.all("vehicles"), window.Store.all("contacts")])
@@ -146,11 +174,30 @@
         var sel = WO.draft.docType === d ? ' selected' : '';
         return '<option value="' + d + '"' + sel + '>' + t("doc." + d) + '</option>';
       }).join("");
+
+      var cats = WO.draft.categories || [];
+      var catChips = SVC_CATS.map(function (c) {
+        var on = cats.indexOf(c.id) >= 0 ? ' chip-on' : '';
+        return '<button type="button" class="chip' + on + '" onclick="WOgo.toggleCat(\'' + c.id + '\')">' + esc(c.label) + '</button>';
+      }).join("");
+
+      var klimaSubs = '';
+      if (cats.indexOf('klima') >= 0) {
+        var subs = WO.draft.klima_subs || [];
+        klimaSubs = '<div class="chip-sub">' + KLIMA_SUBS.map(function (s) {
+          var on = subs.indexOf(s.id) >= 0 ? ' chip-on' : '';
+          return '<button type="button" class="chip chip-sm' + on + '" onclick="WOgo.toggleKlimaSub(\'' + s.id + '\')">' + esc(s.label) + '</button>';
+        }).join("") + '</div>';
+      }
+
       return '<div class="card">' +
         '<label class="field"><span data-i18n="wo.doc_type"></span>' +
           '<select id="wo_doctype">' + dtOpts + '</select></label>' +
-        '<label class="field"><span data-i18n="wo.step_description"></span>' +
-          '<textarea id="wo_desc" rows="5" placeholder="' + t("wo.desc_placeholder") + '">' + esc(WO.draft.description) + '</textarea></label>' +
+        '<div class="svc-cats">' + catChips + '</div>' +
+        klimaSubs +
+        '<button type="button" class="btn btn-secondary btn-sm mt8" onclick="WOgo.presetVelikiServis()">🔧 Veliki servis</button>' +
+        '<label class="field mt8"><span data-i18n="wo.step_description"></span>' +
+          '<textarea id="wo_desc" rows="4" placeholder="' + t("wo.desc_placeholder") + '">' + esc(WO.draft.description) + '</textarea></label>' +
         '<button class="btn btn-secondary" id="wo_voicebtn" onclick="WOgo.voice()" data-i18n="wo.voice"></button>' +
       '</div>';
     },
@@ -436,6 +483,50 @@
       });
     },
 
+    toggleCat: function (id) {
+      var ta = document.getElementById("wo_desc");
+      if (ta) WO.draft.description = ta.value;
+      var dt = document.getElementById("wo_doctype");
+      if (dt) WO.draft.docType = dt.value;
+      var cats = WO.draft.categories || [];
+      var idx = cats.indexOf(id);
+      if (idx >= 0) {
+        cats.splice(idx, 1);
+        if (id === 'klima') WO.draft.klima_subs = [];
+      } else {
+        cats.push(id);
+      }
+      WO.draft.categories = cats;
+      var bodyEl = document.querySelector(".wo-body");
+      if (bodyEl) { bodyEl.innerHTML = STEP.description(); window.GT.translateNode(bodyEl); }
+    },
+
+    toggleKlimaSub: function (id) {
+      var ta = document.getElementById("wo_desc");
+      if (ta) WO.draft.description = ta.value;
+      var dt = document.getElementById("wo_doctype");
+      if (dt) WO.draft.docType = dt.value;
+      var subs = WO.draft.klima_subs || [];
+      var idx = subs.indexOf(id);
+      if (idx >= 0) subs.splice(idx, 1); else subs.push(id);
+      WO.draft.klima_subs = subs;
+      var bodyEl = document.querySelector(".wo-body");
+      if (bodyEl) { bodyEl.innerHTML = STEP.description(); window.GT.translateNode(bodyEl); }
+    },
+
+    presetVelikiServis: function () {
+      captureStep();
+      var cur = window.Store.settings.get("currency", window.GT.config().currency_default);
+      VELIKI_SERVIS_ITEMS.forEach(function (it) {
+        WO.draft.items.push(window.Models.createItem({
+          kind: it.kind, name: it.name, qty: it.qty, price: 0, currency: cur
+        }));
+      });
+      var idx = WO.steps.indexOf("items");
+      if (idx >= 0) { WO.step = idx; renderStep(); }
+      toast("Veliki servis — dopuni cene i obriši šta nije rađeno.");
+    },
+
     shareWithOwner: function () {
       captureStep();
       if (!window.AutoHub) { toast("AutoHub modul nije učitan."); return; }
@@ -486,12 +577,18 @@
       var lastNum = docs.map(function (d) { return d.number; }).filter(Boolean).sort().pop() || null;
       var number = window.Models.nextDocNumber(prefix, lastNum);
 
-      var typeMap = { work_order: "work_order", invoice: "work_order", estimate: "note" };
+      var catLabel = (WO.draft.categories || []).map(function (id) {
+        for (var i = 0; i < SVC_CATS.length; i++) { if (SVC_CATS[i].id === id) return SVC_CATS[i].label; }
+        return id;
+      }).join(" · ");
+      var docTitle = window.GT.t("doc." + WO.draft.docType);
+      var eventTitle = catLabel ? docTitle + " — " + catLabel : docTitle;
+
       var ev = window.Models.createEvent({
         vehicle_id: WO.draft.vehicle_id,
         contact_id: WO.draft.contact_id,
         type: WO.draft.docType === "estimate" ? "note" : "work_order",
-        title: window.GT.t("doc." + WO.draft.docType),
+        title: eventTitle,
         description: WO.draft.description,
         mileage_km: WO.draft.mileage_km ? parseInt(WO.draft.mileage_km, 10) : null,
         items: WO.draft.items,
