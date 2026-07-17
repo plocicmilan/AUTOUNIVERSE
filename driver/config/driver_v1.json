@@ -22,7 +22,7 @@
 
   "signature_default": false,
 
-  "nav": ["vehicle", "history", "documents", "reminders", "settings"],
+  "nav": ["vehicle", "history", "expenses", "documents", "reminders", "settings"],
 
   "modules": {
     "vehicles_card": { "tier": "basic" },
@@ -34,7 +34,7 @@
     "tires": { "tier": "basic" },
     "backup_export": { "tier": "basic" },
     "multi_vehicle": { "tier": "key" },
-    "costs_fuel": { "tier": "key" },
+    "costs_fuel": { "tier": "basic" },
     "calculators": { "tier": "key" },
     "checklists": { "tier": "key" },
     "stats": { "tier": "key" },
@@ -52,7 +52,14 @@
     "inspection",
     "fuel",
     "expense",
-    "note"
+    "note",
+    "expense_fuel",
+    "expense_tires",
+    "expense_bodywork",
+    "expense_registration",
+    "expense_insurance",
+    "expense_decorative",
+    "expense_other"
   ],
 
   "license": {

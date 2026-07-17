@@ -8,7 +8,8 @@
 (function () {
   "use strict";
 
-  var App = { config: null, i18n: {}, route: "vehicle", params: null, activeVehicleId: null };
+  var App = { config: null, i18n: {}, route: "vehicle", params: null, activeVehicleId: null,
+              expensesVehicleId: null, expensesPeriod: "month" };
 
   /* ---------- Pomoćne ---------- */
   function t(key) { return App.i18n[key] || key; }
@@ -32,6 +33,26 @@
       (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + '></label>';
   }
   function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function pad2(n) { return n < 10 ? "0" + n : String(n); }
+
+  function filterByPeriod(events, period) {
+    if (period === "all") return events;
+    var now = new Date(), from, to = todayISO();
+    if (period === "month") {
+      from = now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-01";
+    } else if (period === "prev") {
+      var pmStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      var pmEnd   = new Date(now.getFullYear(), now.getMonth(), 0);
+      from = pmStart.toISOString().slice(0, 10);
+      to   = pmEnd.toISOString().slice(0, 10);
+    } else if (period === "3m") {
+      var t3 = new Date(now); t3.setMonth(t3.getMonth() - 3);
+      from = t3.toISOString().slice(0, 10);
+    } else if (period === "year") {
+      from = now.getFullYear() + "-01-01";
+    } else { return events; }
+    return events.filter(function (e) { return (e.date || "") >= from && (e.date || "") <= to; });
+  }
 
   /* ---------- Boot ---------- */
   function boot() {
@@ -258,6 +279,9 @@
           return '<option value="' + k + '"' + (v.category === k ? " selected" : "") + '>' +
                  k + " — " + esc(Models.VEHICLE_CATEGORIES[k]) + '</option>';
         }).join("");
+        var statusOpts = Models.VEHICLE_STATUSES.map(function (s) {
+          return '<option value="' + s + '"' + (v.status === s ? " selected" : "") + '>' + t("d.vehicle_status_" + s) + '</option>';
+        }).join("");
         return '' +
           '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
           '<h1>' + (id ? t("common.edit") : t("vehicles.add").replace("+ ", "")) + '</h1>' +
@@ -268,6 +292,8 @@
             field("f_plate", "vehicles.plate", v.plate) +
             '<label class="field"><span>' + t("vehicles.category") + '</span><select id="f_category">' + catOpts + '</select></label>' +
             field("f_vin", "vehicles.vin", v.vin) +
+            '<label class="field"><span>' + t("d.vehicle_status") + '</span><select id="f_status">' + statusOpts + '</select></label>' +
+            field("f_regowner", "d.vehicle_registered_owner", v.registered_owner || "") +
             field("f_fuel", "d.fuel", eng.fuel) +
             field("f_power", "d.power", eng.power_kw || "", "number") +
           '</div>' +
@@ -469,10 +495,112 @@
       });
     },
 
-    /* ===== DOKUMENTA (placeholder — puni tok u Sesiji 2) ===== */
-    documents: function () {
-      return '<h1 data-i18n="d.nav_documents"></h1>' +
-        '<div class="card"><p class="empty" data-i18n="d.documents_soon"></p></div>';
+    /* ===== TROŠKOVI ===== */
+    expenses: function () {
+      return Promise.all([Store.all("events"), Store.all("vehicles")]).then(function (res) {
+        var events = res[0], vehicles = res[1];
+        if (!vehicles.length) {
+          return '<h1 data-i18n="d.nav_expenses"></h1>' +
+            '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+        }
+        var vid = App.expensesVehicleId || App.activeVehicleId || vehicles[0].id;
+        if (!vehicles.some(function (v) { return v.id === vid; })) vid = vehicles[0].id;
+        App.expensesVehicleId = vid;
+        var period = App.expensesPeriod || "month";
+        var EXP_TYPES = ["expense_fuel","expense_tires","expense_bodywork",
+          "expense_registration","expense_insurance","expense_decorative","expense_other"];
+        var all = events.filter(function (e) {
+          return e.vehicle_id === vid && EXP_TYPES.indexOf(e.type) !== -1;
+        });
+        var filtered = filterByPeriod(all, period);
+        filtered.sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+        var switcher = vehicles.length > 1
+          ? '<div class="vehswitch">' + vehicles.map(function (x) {
+              return '<button class="chip' + (x.id === vid ? ' active' : '') +
+                '" onclick="DR.setExpensesVehicle(\'' + esc(x.id) + '\')">' + esc(x.make + " " + x.model) + '</button>';
+            }).join("") + '</div>'
+          : '';
+        var periodDefs = [
+          ["month","Ovaj mesec"],["prev","Prošli mesec"],["3m","3 meseca"],["year","Ova godina"],["all","Sve"]
+        ];
+        var periodBar = '<div class="vehswitch">' + periodDefs.map(function (p) {
+          return '<button class="chip' + (period === p[0] ? ' active' : '') +
+            '" onclick="DR.setExpensesPeriod(\'' + p[0] + '\')">' + p[1] + '</button>';
+        }).join("") + '</div>';
+
+        var totalRSD = 0, totalEUR = 0;
+        filtered.forEach(function (e) {
+          if (e.cost) {
+            if (e.cost.currency === "EUR") totalEUR += (e.cost.total || 0);
+            else totalRSD += (e.cost.total || 0);
+          }
+        });
+        var totalStr = "";
+        if (totalRSD) totalStr += Models.formatAmount(totalRSD, "RSD");
+        if (totalEUR) totalStr += (totalStr ? " + " : "") + Models.formatAmount(totalEUR, "EUR");
+
+        var list = filtered.length ? filtered.map(function (e) {
+          var amtStr = e.cost ? Models.formatAmount(e.cost.total, e.cost.currency) : "";
+          return '<div class="card exprow">' +
+            '<button class="rowmain" onclick="DR.go(\'expense_form\',{id:\'' + esc(e.id) + '\'})">' +
+              '<b>' + esc(e.title || t("d.type_" + e.type)) + '</b>' +
+              '<span class="muted">' + esc(e.date || "") +
+                (e.cost && e.cost.informal ? ' • ⓘ' : '') +
+                ((e.photos && e.photos.length) ? ' • 📎' : '') +
+              '</span>' +
+            '</button>' +
+            (amtStr ? '<b class="expamt">' + esc(amtStr) + '</b>' : '') +
+          '</div>';
+        }).join("") : '<div class="card"><p class="empty" data-i18n="d.expenses_empty"></p></div>';
+
+        return '<h1 data-i18n="d.nav_expenses"></h1>' +
+          switcher + periodBar +
+          (totalStr ? '<div class="card exptotal"><b>' + t("common.total") + ': ' + totalStr + '</b></div>' : '') +
+          list +
+          '<button class="btn btn-primary" onclick="DR.go(\'expense_form\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.add_event"></button>';
+      });
+    },
+
+    expense_form: function (params) {
+      var id = params && params.id;
+      var vehId = params && params.vehicle_id;
+      var p = id ? Store.get("events", id) : Promise.resolve(null);
+      return Promise.all([p, Store.all("vehicles")]).then(function (res) {
+        var e = res[0]; App._editingExpense = e || null;
+        if (e) vehId = e.vehicle_id;
+        var EXP_TYPES = ["expense_fuel","expense_tires","expense_bodywork",
+          "expense_registration","expense_insurance","expense_decorative","expense_other"];
+        var defType = (e && e.type) || "expense_fuel";
+        var cost = (e && e.cost) || { total: "", currency: Store.settings.get("currency", "RSD"), informal: false };
+        var activeVid = vehId || App.expensesVehicleId || App.activeVehicleId;
+        var vehOpts = res[1].map(function (v) {
+          return '<option value="' + esc(v.id) + '"' + (v.id === activeVid ? " selected" : "") + '>' +
+                 esc(v.make + " " + v.model + (v.plate ? " • " + v.plate : "")) + '</option>';
+        }).join("");
+        var typeOpts = EXP_TYPES.map(function (ty) {
+          return '<option value="' + ty + '"' + (ty === defType ? " selected" : "") + '>' + t("d.type_" + ty) + '</option>';
+        }).join("");
+        var curOpts = ["RSD","EUR"].map(function (c) {
+          return '<option value="' + c + '"' + (cost.currency === c ? " selected" : "") + '>' + c + '</option>';
+        }).join("");
+        return '<button class="linkback" onclick="DR.go(\'expenses\')" data-i18n="common.back"></button>' +
+          '<h1>' + (id ? t("common.edit") : t("d.add_event")) + '</h1>' +
+          '<div class="card">' +
+            '<label class="field"><span>' + t("d.nav_vehicle") + '</span><select id="exp_vehicle">' + vehOpts + '</select></label>' +
+            '<label class="field"><span>' + t("d.event_type") + '</span><select id="exp_type">' + typeOpts + '</select></label>' +
+            field("exp_title", "d.event_title", (e && e.title) || "") +
+            field("exp_date", "common.date", (e && e.date) || todayISO(), "date") +
+            '<div class="row2">' +
+              field("exp_amount", "d.expense_amount", cost.total !== "" ? cost.total : "", "number") +
+              '<label class="field"><span>&nbsp;</span><select id="exp_currency">' + curOpts + '</select></label>' +
+            '</div>' +
+            field("exp_desc", "d.event_desc", (e && e.description) || "") +
+            '<label class="chk mt8"><input type="checkbox" id="exp_informal"' + (cost.informal ? " checked" : "") + '> ' + t("d.expense_informal") + '</label>' +
+          '</div>' +
+          '<button class="btn btn-primary" onclick="DR.saveExpense()" data-i18n="common.save"></button>' +
+          (id ? '<button class="btn btn-danger mt8" onclick="DR.deleteExpense(\'' + esc(id) + '\')" data-i18n="common.delete"></button>' : '');
+      });
     },
 
     /* ===== PODSETNICI (za vlasnika basic) ===== */
@@ -782,6 +910,8 @@
       base.category = el("f_category").value;
       base.type_label = Models.VEHICLE_CATEGORIES[base.category] || "";
       base.vin = val("f_vin");
+      base.status = el("f_status") ? el("f_status").value : (base.status || "active");
+      base.registered_owner = val("f_regowner");
       base.engine = Object.assign({}, base.engine, {
         fuel: val("f_fuel"),
         power_kw: val("f_power") ? parseInt(val("f_power"), 10) : null
@@ -965,6 +1095,27 @@
       localStorage.removeItem("autohub_last_sync");
       toast("Odjavljeno.");
       render("settings");
+    },
+
+    setExpensesVehicle: function (id) { App.expensesVehicleId = id; render("expenses"); },
+    setExpensesPeriod: function (p) { App.expensesPeriod = p; render("expenses"); },
+
+    saveExpense: function () {
+      var base = App._editingExpense || Models.createEvent({ app: "driver", source: "owner" });
+      base.vehicle_id = el("exp_vehicle") ? el("exp_vehicle").value : null;
+      base.type = el("exp_type") ? el("exp_type").value : "expense_other";
+      base.title = val("exp_title");
+      base.date = val("exp_date") || todayISO();
+      base.description = val("exp_desc") || "";
+      var amount = parseFloat(val("exp_amount")) || 0;
+      var currency = el("exp_currency") ? el("exp_currency").value : "RSD";
+      base.cost = Models.createCost({ total: amount, currency: currency, informal: checked("exp_informal") });
+      if (!base.vehicle_id) { toast(t("d.need_vehicle")); return; }
+      Store.put("events", base).then(function () { toast(t("common.saved")); render("expenses"); });
+    },
+    deleteExpense: function (id) {
+      if (!confirm(t("common.confirm_delete"))) return;
+      Store.remove("events", id).then(function () { render("expenses"); });
     },
 
     hubSync: function () {

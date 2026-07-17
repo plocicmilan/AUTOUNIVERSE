@@ -1,6 +1,6 @@
 /* ============================================================
    AUTO UNIVERSE — CORE / MODELS  (Nivo 0)
-   Model podataka po Mapi sveta v1.0 (Deo II).
+   Model podataka po Mapi sveta v1.1 (Deo II).
    Radi u localStorage/IndexedDB danas, spreman za PostgreSQL sutra.
    Bez framework-a. Radi u browseru (window.Models) i u Node (tests).
    ============================================================ */
@@ -47,8 +47,25 @@
   // Tipovi događaja — srce Event Engine-a
   var EVENT_TYPES = [
     "service", "repair", "work_order", "fuel", "expense",
-    "inspection", "tires", "document", "reminder_done", "note"
+    "inspection", "tires", "document", "reminder_done", "note",
+    // Expense tipovi (v1.1 — Driver expense modul)
+    "expense_fuel", "expense_tires", "expense_bodywork",
+    "expense_registration", "expense_insurance",
+    "expense_decorative", "expense_other"
   ];
+
+  // Podtipovi za type="service"
+  var SERVICE_SUBTYPES = [
+    "mali_servis", "veliki_servis", "dijagnostika",
+    "ulje_filteri", "kocnice", "kvacilo", "gume_sezonski",
+    "elektrika", "klima", "kaischani_lanac", "ostalo"
+  ];
+
+  // Statusi vozila (v1.1)
+  var VEHICLE_STATUSES = ["active", "for_sale", "sold", "archived", "totaled"];
+
+  // Izvor nabavke za trade mod
+  var TRADE_SOURCES = ["individual", "auction", "import", "other"];
 
   // Poreklo zapisa — seme Trust Layer-a (košta nula sada)
   // "initial" = uneto pri onboardingu / naknadno, bez dokaza (nizak nivo poverenja)
@@ -91,6 +108,14 @@
         size_front: "", size_rear: "", current_set: ""
       }, data.tires || {}),
       owner_contact_id: data.owner_contact_id || null,
+      // NOVA POLJA v1.1
+      registered_owner: data.registered_owner || "",   // ime iz saobraćajne (papirni vlasnik)
+      status: VEHICLE_STATUSES.indexOf(data.status) !== -1 ? data.status : "active",
+      trade_mode: data.trade_mode === true,
+      trade: data.trade ? {
+        purchase: Object.assign({ date: null, price: null, currency: "EUR", source: "individual", notes: "" }, data.trade.purchase || {}),
+        sale:     Object.assign({ date: null, price: null, currency: "EUR" }, data.trade.sale || {})
+      } : null,
       photos: data.photos || [],
       notes: data.notes || ""
     });
@@ -120,8 +145,25 @@
         ? data.date_precision : "exact",                    // exact | month | approx
       km_precision: KM_PRECISION.indexOf(data.km_precision) !== -1
         ? data.km_precision : "exact",                      // exact | approx
+      // NOVA POLJA v1.1
+      subtype: data.subtype || "",                          // za service: mali_servis, veliki_servis...
+      cost: data.cost ? createCost(data.cost) : null,      // expense modul (Driver)
+      next_service: data.next_service || null,             // { km, date } → automatski podsetnik
+      public_on_marketplace: data.public_on_marketplace !== false,  // default: true (opt-out)
       documents: data.documents || []
     });
+  }
+
+  function createCost(data) {
+    data = data || {};
+    return {
+      total: data.total != null ? Number(data.total) : 0,
+      currency: CURRENCIES.indexOf(data.currency) !== -1 ? data.currency : "RSD",
+      entered_by: data.entered_by || "owner",
+      entered_at: data.entered_at || nowISO(),
+      receipt_document_id: data.receipt_document_id || null,
+      informal: data.informal === true   // "bez računa" — sitnice, drugari, keš
+    };
   }
 
   function createItem(data) {
@@ -265,7 +307,10 @@
     newId: newId,
     nowISO: nowISO,
     VEHICLE_CATEGORIES: VEHICLE_CATEGORIES,
+    VEHICLE_STATUSES: VEHICLE_STATUSES,
+    TRADE_SOURCES: TRADE_SOURCES,
     EVENT_TYPES: EVENT_TYPES,
+    SERVICE_SUBTYPES: SERVICE_SUBTYPES,
     EVENT_SOURCES: EVENT_SOURCES,
     DATE_PRECISION: DATE_PRECISION,
     KM_PRECISION: KM_PRECISION,
@@ -276,6 +321,7 @@
     createVehicle: createVehicle,
     createEvent: createEvent,
     createItem: createItem,
+    createCost: createCost,
     createContact: createContact,
     createDocument: createDocument,
     createReminder: createReminder,

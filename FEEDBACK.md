@@ -1,11 +1,11 @@
 # AUTO UNIVERSE — FEEDBACK & DORADE
 
-Živa lista signala iz stvarnog korišćenja (Faza 3). Svaka stavka: ko je prijavio,
-šta, u koji sloj ide (**core** = dele sve aplikacije / **app** = samo jedna), i status.
+Živa lista signala iz stvarnog korišćenja (Faza 3+4). Svaka stavka: ko je prijavio,
+šta, u koji sloj ide (**core** = dele sve aplikacije / **app** = samo jedna / **hub** = AutoHub server), i status.
 
-Pravilo: kad krene v1.1, radi se redom sa vrha. Ništa se ne kodira dok nije ovde.
+Pravilo: kad krene v1.x, radi se redom sa vrha. Ništa se ne kodira dok nije ovde.
 
-Legenda statusa: 🔵 novo • 🟡 u analizi • 🟢 za v1.1 • ✅ urađeno • ⚪ odbačeno
+Legenda statusa: 🔵 novo • 🟡 u analizi • 🟢 za implementaciju • ✅ urađeno • ⚪ odbačeno / na čekanju
 
 ---
 
@@ -13,13 +13,28 @@ Legenda statusa: 🔵 novo • 🟡 u analizi • 🟢 za v1.1 • ✅ urađeno 
 
 | # | Stavka | Izvor | Sloj | Aplikacije | Status |
 |---|--------|-------|------|-----------|--------|
-| 1 | **Početno stanje vozila (retroaktivni unos istorije).** Nova aplikacija/prazan karton — vlasnik/majstor uzima vozilo "iz sredine" života i mora da unese zatečeno stanje: trenutna km, poslednji servis (datum + km), rok registracije/tehničkog, gume. | Marko (Garage) | **core** (Event model) | Garage + Driver | ✅ URAĐENO u OBE app — core Event polja + Driver wizard (S2) + Garage "Raniji unos" (v1.1) + retroaktivni trust prikaz |
-| 2 | **Deljena IndexedDB baza između aplikacija na istom origin-u.** Odlučiti: Garage i Driver dele bazu (platform seme) ili se razdvajaju (namespace po app-u) — pre platform faze. Ne menjati sad (obrisalo bi Markove podatke). | Claude (build) | core (store) | sve | 🟡 u analizi |
-| 3 | **Multi-user signal — jedan permission primitiv rešava sve.** (A) Marko+Pavle: ista radionica. (B) Marko+Goran: povremena saradnja. (C) Vlasnik→majstor. Sva tri = `grant(user, target, vehicle, role, [expires])`. Team je automatizam preko primitiva, ne poseban entitet. Obaveza: implementirati kao jedinstveni primitiv od dana 1 AutoHub-a. | Marko (Garage) | **platform** | Garage (sad) + AutoHub (kasnije) | 🟢 za AutoHub S6 |
-| 4 | **Reverse marketplace — "objavi potrebu → dobavljači se takmiče".** Parts, servisi, šlep, gume, polovni delovi. Nije signal sa terena, hipoteza iz razmišljanja. Puna analiza + uslovi aktivacije u `ideas/hypothesis/2026-07-11_reverse_marketplace.md`. | Desktop Claude (razmišljanje) | platform | AutoHub + Marketplace modul | ⚪ hipoteza — Faza 6+, ne pre uslova |
-| 5 | **Play Protect "Nebezbedna aplikacija" upozorenje pri instalaciji Garage PWA na Androidu.** Chrome WebAPK Minter generiše APK sa zastarelim `targetSdkVersion` koji triguje Play Protect skeniranje. Nije bug u kodu — Google-ov problem. First impression je loš. Fiksirati: dodati korak u uputstvo ("Klikni Ipak instaliraj"). | Marko (Android, Faza 3 onboarding) | docs | Garage | 🔴 blokira onboarding — uputstvo hitno |
-| 6 | **Nikola — prvi realni Driver tester van autora projekta.** Aktivan od 2026-07-11. Do sada je Driver imao samo Milana kao planiranog testera. Nikola je prvi čovek koji nije autor koji koristi aplikaciju — ovo je signal da app ima vrednost van razvojnog tima. Uređaj: Android/Chrome. | Nikola | — | Driver | 🟢 aktivan tester |
-| 7 | **Katalog marki i modela vozila — padajući meni umesto slobodnog kucanja.** Nikola kao Driver korisnik signalizirao korist od autocomplete/kataloga pri unosu vozila (Dacia → Sandero → …). Analiza (Milan): JSON katalog ~100 KB u `core/data/vehicles.json`, offline-first, radi u obe aplikacije, bez servera. Alternativa: VIN dekoder (AutoHub Faza 4+). Čeka potvrdu od Nikole. | Nikola + Milan diskusija | **core** | Driver + Garage | 🔵 novo — čeka Nikolinu potvrdu |
+| 1 | **Početno stanje vozila (retroaktivni unos istorije).** Nova aplikacija/prazan karton — vlasnik/majstor uzima vozilo "iz sredine" života i mora da unese zatečeno stanje: trenutna km, poslednji servis (datum + km), rok registracije/tehničkog, gume. | Marko (Garage) | core (Event model) | Garage + Driver | ✅ URAĐENO u OBE app |
+| 2 | **Deljena IndexedDB baza između aplikacija na istom origin-u.** Odlučiti pre platform faze. | Claude (build) | core (store) | sve | 🟡 u analizi |
+| 3 | **Multi-user — jedan primitiv rešava sve.** `grant(user, target, vehicle, role, [expires])`. Team NIJE poseban entitet, samo automatizam preko primitiva. | Marko + arhitektura | hub | sve | 🟢 za AutoHub — implementacija u toku |
+| 4 | **Reverse marketplace hipoteza** — "objavi potrebu → dobavljači se takmiče". Nije signal sa terena. Uslov aktivacije: 2+ mehaničara nezavisno traže brz parts sourcing + Faza 3 završena. | Desktop Claude | hub | — | ⚪ hipoteza — Faza 6+ |
+| 5 | **Play Protect upozorenje** — "Nebezbedna aplikacija" pri instalaciji Garage PWA na Androidu. Nije bug u kodu (Google WebAPK). | Marko | app (Garage) | Garage | 🔴 blokira onboarding — rešenje u manualu |
+| 6 | **Nikola — prvi realni Driver tester** van autora projekta. Aktivan od 2026-07-11. | Nikola | — | Driver | 🟢 aktivan |
+| 7 | **Katalog vozila** — padajući meni za marku/model umesto slobodnog kucanja. `core/data/vehicles.json`, offline, radi u obe app. | Nikola + Milan | core (data) | Garage + Driver | 🔵 čeka Nikolinu potvrdu |
+| 8 | **Servisne kategorije preuzake** — Goran nabraja nedostajuće: ulje u menjaču, diferencijal (prednji/zadnji), veliki servis, autodijagnostika, svećice, dizne, ulje u kočnicama, klima. Trenutni "top 6–8" ne pokriva realan raspon rada. **Rešenje:** grupisana lista (2 nivoa, 12 kategorija) + učenje iz istorije za "poslednje korišćeno" + slobodan tekst/glas ostaje. | Goran (Garage) | app (Garage) + core (Event subtype) | Garage + Driver (autocomplete) | 🟢 za v1.2 — blokirano na 4 pitanja Marku+Goranu |
+| 9 | **AutoHub magic-link razmena** — mehaničar završi posao → klik "Podeli sa vlasnikom" → short link koji preživljava PWA instalaciju (auto-install + auto-import). Bez ovoga se gubi 70% vozača na koraku "prvo instaliraj". Mehaničar je distribucijski kanal Drivera. | Milan + arhitektura | hub + Garage + Driver | sve | 🟢 P0 — server ŽIV, endpoint dizajniran |
+| 10 | **Strukturisan JSON payload razmene** — VIN kao ključ; delovi sa brand+model+kataloški broj; `next_service` postaje Driver podsetnik automatski; `source: mechanic` = Trust pečat. **Cene NE idu automatski** — nije svaki majstor pravi račun, marža privatna. Ako vozač dobije PDF → prikači kao dokument. | Milan (odluka) | hub + core (Event) | sve | 🟢 P0 — payload šema u BRIEFING.md sekcija C |
+| 11 | **Expense modul za Driver-a** — `event.cost` proširenje: total, currency, entered_by, receipt_document_id (opciono), `informal: boolean` (bez računa). 7 novih EVENT kategorija: fuel, tires, bodywork, registration, insurance, decorative, other. Novi ekran TROŠKOVI sa vehicle switcher + period filter + sažetak po kategoriji. | Nikola + kolega | core (Event) + app (Driver) | Driver | 🟢 P0 — model definisan |
+| 12 | **Vehicle switcher + status polje** — Nikola ima 4 vozila (kombi/kamion/2 auta), kolega 4 aktivno + 5–6 mesečno. `vehicle.status: active/for_sale/sold/archived/totaled`. Sold+totaled se automatski sklanja sa aktivne liste. | Nikola + kolega | core (Vehicle) + app (Driver) | Driver | 🟢 P0 |
+| 13 | **Trade toggle po vozilu (preprodavac-mod)** — kolega preprodavac (nova persona). `vehicle.trade_mode: boolean` + `vehicle.trade: { purchase, sale }` opciono polje. Toggle otključava nabavnu cenu, status, "Prodaj vozilo" wizard, profit karticu. **Isti Driver za vozača i preprodavca** — Trader Toolbox se briše iz mape. | Kolega preprodavac | core (Vehicle) + app (Driver) | Driver | 🟢 P1 |
+| 14 | **"Prodaj vozilo" wizard sa 3 ishoda** — kolega hoće sve tri opcije: (a) Podeli kupcu preko AutoHub link-a, (b) Sačuvaj u arhivi (status: sold, detalji ostaju), (c) Sačuvaj samo statistiku (detalji brisani, agregat u godišnjem sažetku). | Kolega | core (Vehicle) + app (Driver) + hub | Driver + AutoHub | 🟢 P1 — zavisi od Trade toggle |
+| 15 | **`informal: true` flag na trošku** — kolegini "drugari-servisi" i vulkanizer + Nikolove sitnice često nemaju račun. Legitimni troškovi, ali dokazno slabiji. Dosije PDF razdvaja "dokumentovana ulaganja" od "prijavljena bez dokaza". Nema poresku konotaciju — samo indikator vozaču/kupcu. | Kolega + Nikola | core (Event.cost) | Driver | 🟢 P1 |
+| 16 | **Vlasništvo ≠ Vozač (registered_owner polje)** — kolegin case "vozilo se vodi na dedu/majku/prethodnika, ja vozim, ja unosim". Nije izuzetak nego normalan slučaj kod polovnjaka. `vehicle.registered_owner: string (opciono)` odvaja papirnog vlasnika od korisnika aplikacije. | Kolega | core (Vehicle) | Driver + Garage | 🟢 P1 |
+| 17 | **Automatski transfer podataka pri prodaji vozila** — kada kolega proda vozilo preko AutoHub-a, server pronalazi sve mehaničare koji imaju taj VIN u bazi i šalje tihu notifikaciju o novom vlasniku. Isti `grant()` primitiv, target = "all_registered_mechanics_of_this_vin", read-only. Prvi put u srpskom auto tržištu vozilo ima kontinuiranu digitalnu istoriju kroz vlasnike. Novi vlasnik u onboarding-u: opt-in za deljenje kontakta prethodnim servisima. | Kolega + strateški razgovor | hub | sve | 🟢 za Fazu 5 — model se dizajnira sad, implementacija posle |
+| 18 | **Marketplace kao besplatan javni utility** — Milan odluka: marketplace ne zarađuje, AutoHub zarađuje. Nema provizije, nema pakovanja/dostave/garancije. Kontakt-forma spaja ponudu i potražnju, kupci i prodavci dogovaraju direktno. Javna stranica bez login-a (kupci vide, SEO indeksira, Viber deljenje). Prodavac plaća Basic nalog da bi objavio. Diferencijacija: verifikovana istorija vozila (dosije + potvrđeni servisi + računi) — nemoguće na KP/PA. | Milan (strateška odluka) | hub + statička stranica | novi sloj | 🟢 za P2 — MVP na istom AutoHub serveru |
+| 19 | **AutoUniverse Account (monetizacijski model)** — nivoi Free/Basic/Pro/Garage Pro. Free = lokalne app + marketplace read-only. Basic (2–5 EUR) = sync + backup + objava oglasa. Pro (5–10 EUR) = razmena sa mehaničarima + cloud slike + "Verifikovan prodavac" pečat. Garage Pro (15–25 EUR) = sve + Garage funkcije. Naplata kroz Gumroad/Stripe, ne provizije. | Milan (strateška odluka) | hub | novi sloj | 🟢 za P2/P3 — priprema modela sad, naplata kad je proizvod dokazan |
+| 20 | **Mehaničar dobija besplatnu reputaciju preko marketplace-a** — vozač na kraju servisa opt-in (default da): "Da li želiš da ovaj servis bude javan na oglasu kada prodaješ vozilo?". Markov naziv u dosijeu svakog vozila koje je servisirao. Kupac zove Marka da potvrdi. Marko dobija reklamu bez plaćanja. | Milan + arhitektura | core (Event.public flag) + hub | Garage + marketplace | 🟢 za P2 — polje na Event modelu se dodaje sad |
+
+---
 
 ### Detalji — Stavka #1
 
@@ -31,114 +46,255 @@ prošlosti. Dodaje se samo:
 
 - vrednost izvora `source: "initial"` (ili flag `retroactive: true`) → niži nivo
   poverenja u Trust sloju; ako se priloži slika starog računa → prelazi u `"receipt"`.
-- **fleksibilan datum**: dozvoliti samo mesec/godinu ili "pre ~6 meseci / na ~20.000 km"
-  (niko ne pamti tačan datum — ako tražiš tačan, ljudi ne unesu ništa).
+- **fleksibilan datum**: dozvoliti samo mesec/godinu ili "pre ~6 meseci / na ~20.000 km".
 - u timeline-u vizuelno drugačiji (sivlji, oznaka "unet naknadno").
 
 **Onboarding (Driver):** posle osnovnih podataka o vozilu → opcioni, preskočivi korak
-"Početno stanje": km + poslednji servis + rokovi + gume. Minimum koji odmah pali podsetnike.
+"Početno stanje": km + poslednji servis + rokovi + gume.
 
 **"Iskopaj fioku" tok:** korisnik bilo kad slika stare račune/garancije → svaki postaje
-retroaktivni događaj. Istorija raste unazad postepeno, umesto zida od 20 pitanja na startu.
+retroaktivni događaj. Istorija raste unazad postepeno.
+
+---
+
+### Detalji — Stavka #8 (Servisne kategorije)
+
+**Predložene 12 grupa:**
+
+| Kategorija | Šta ulazi |
+|---|---|
+| Motorno ulje + filteri | Zamena ulja, filter ulja, vazduha, goriva, kabinski |
+| Fluidi ostali | Rashladna, kočiono (DOT4), menjač (ručni/automatik), diferencijal prednji/zadnji, servo |
+| Paljenje i ubrizgavanje | Svećice, kablovi, dizne, bobine |
+| Kaiševi i lanci | Zupčasti kaiš (+ pumpa vode), micro-V, lanac razvoda |
+| Kočnice | Diskovi, pločice, čeljusti, cevi/creva |
+| Trap i vešanje | Amortizeri, opruge, spone, kraci, homokinetički, ležajevi |
+| Izduv | Auspuh, katalizator, EGR, DPF, lambda sonda |
+| Klima i grejanje | Punjenje freona, kompresor klime, ventilator, senzori |
+| Elektro | Akumulator, alternator, anlaser, senzori |
+| Dijagnostika | Čitanje grešaka, kodiranje, TPMS reset, servisni reset |
+| Veliki servis | Kombinacija (preset koji doda 6–8 podstavki jednim tapom) |
+| Popravka | Slobodan tekst — sve što ne ulazi u kategorije |
+
+**UI tok:**
+1. Top red: "Poslednje" (4 chip-a koje je Goran najskorije koristio, uči iz istorije)
+2. Ispod: 6 velikih chip-ova (Motor · Fluidi · Kočnice · Klima · Elektro · Dijagnostika)
+3. Uvek dostupno: slobodan tekst + glas
+4. Multi-select — chip-ovi se dodaju, ne zamenjuju
+
+**Blokirajuća pitanja (Viber, Marko + Goran):**
+1. "Veliki servis" — JEDAN klik koji doda 6 stavki, ili jedan zapis bez razlaganja?
+2. Dijagnostika — poseban tip zapisa (bez delova) ili obični posao?
+3. Klima — jedna stavka (freon) ili razdvaja punjenje/kompresor/kabinski?
+4. Kad piše šta je radio — delove i rad ODVOJENO po stavkama, ili "šta je rađeno + ukupna cifra"?
+
+---
+
+### Detalji — Stavka #9 + #10 (AutoHub razmena)
+
+**Magic-link tok:**
+
+```
+Marko klik "Podeli sa vlasnikom"
+  ↓
+Server generiše short link (npr. hub.plocic.rs/s/aB3xY7)
+  ↓
+Marko šalje Viberom vozaču
+  ↓
+Vozač klik:
+  ├─ ako Driver instaliran → app otvara i uvozi
+  └─ ako nije → landing "Driver Toolbox" → PWA install →
+                posle instalacije auto-fetch tog zapisa
+```
+
+**JSON payload minimalni:**
+
+```json
+{
+  "share_id": "sh_aB3xY7",
+  "created_at": "2026-07-17T14:22:00Z",
+  "from": {
+    "mechanic_id": "mec_042",
+    "name": "Marko",
+    "phone": "+381...",
+    "shop_name": "Auto servis Marko"
+  },
+  "vehicle": {
+    "vin": "WVWZZZ1KZAW123456",
+    "brand": "VW", "model": "Golf VII", "year": 2016,
+    "plate": "NI-123-AB", "fuel": "diesel"
+  },
+  "event": {
+    "type": "service",
+    "subtype": "mali_servis",
+    "date": "2026-07-17",
+    "mileage_km": 187500,
+    "description": "Mali servis - ulje, filteri",
+    "items": [
+      {"kind":"part", "category":"oil_motor",   "name":"Motorno ulje",
+       "brand":"Castrol", "model":"Edge 5W-30", "qty":4.3, "unit":"l"},
+      {"kind":"part", "category":"filter_oil",  "name":"Filter ulja",
+       "brand":"Mann-Filter", "model":"W7018",  "qty":1,   "unit":"kom"},
+      {"kind":"labor","name":"Zamena ulja i filtera"}
+    ],
+    "photos": ["url1", "url2"],
+    "next_service": {"km": 197500, "date": "2027-07-17"}
+  },
+  "source": "mechanic"
+}
+```
+
+Napomene:
+- **`items[].brand` + `items[].model`** = jedini pravi trag da mehaničar dodaje vrednost
+- **`next_service`** = automatski Driver podsetnik
+- **`source: "mechanic"`** = 🟢 Trust pečat u Driver timeline-u
+- **Cene NIKAD u payload-u** — vozač unosi ručno posle
+
+---
+
+### Detalji — Stavka #11 (Expense modul)
+
+**Event proširenje:**
+
+```js
+event.cost: {
+  total: number,
+  currency: "RSD" | "EUR",
+  entered_by: "owner",
+  entered_at: ISO,
+  receipt_document_id: string,  // opciono link u DOKUMENTA
+  informal: boolean             // true = "bez računa"
+}
+```
+
+**Nove EVENT kategorije za expense:**
+- `expense_fuel`
+- `expense_tires`
+- `expense_bodywork`
+- `expense_registration`
+- `expense_insurance`
+- `expense_decorative` (sitnice, dekorativno)
+- `expense_other`
+
+**Ekran TROŠKOVI (novi tab u Driver bottom nav):**
+- Vehicle switcher: [Sve ▼] [Kombi] [Kamion] [Golf] [Yaris]
+- Period: [Ovaj mesec ▼] [Prethodni] [3 meseca] [Godina] [Sve]
+- Sažetak ukupno + po kategoriji
+- Hronološka lista (📎 ako ima priložen dokument)
+- Brzi unos "+ Nov trošak"
+
+**Brzi tokovi:**
+1. Gorivo: datum, l, cena, km → automatski računa l/100km
+2. Servis: datum, opis, cena (ili se povezuje sa postojećim service EVENT-om)
+3. Registracija: iznos, veže se sa postojećim podsetnikom
+4. Ostalo: slobodan tekst + cena
+
+---
+
+### Detalji — Stavka #13 + #14 (Trade toggle + Prodaj wizard)
+
+**Vehicle proširenje:**
+
+```js
+vehicle.trade_mode: boolean
+vehicle.status: "active" | "for_sale" | "sold" | "archived" | "totaled"
+vehicle.trade: {
+  purchase: {
+    date: "2026-05-10",
+    price: 4500, currency: "EUR",
+    source: "individual" | "auction" | "import"
+  },
+  sale: {
+    date: "2026-08-15",
+    price: 5800, currency: "EUR"
+  }
+}
+```
+
+**Wizard "Prodaj vozilo" (samo ako trade_mode = true):**
+
+```
+1. Datum prodaje: [___]
+2. Prodajna cena: [___] [RSD/EUR]
+3. Prikazuje se: PROFIT: 320 EUR
+4. Šta sa istorijom?
+   ○ Podeli kupcu (šalje link)
+   ○ Sačuvaj u arhivi (samo za mene)
+   ○ Sačuvaj samo statistiku (obriši detalje)
+5. [Potvrdi]
+```
+
+**Profit kartica (samo za trade_mode vozila):**
+
+```
+📊 Golf VII (aktivan)
+Nabavka:       4.500 EUR
+Ulaganja:        320 EUR (limar 250 + gume 70)
+Trenutna cena: 4.820 EUR — potrebno da izađe u plus
+```
+
+**Trade dashboard (godišnji sažetak, P2):**
+
+```
+2026 — TRADE SAŽETAK
+
+Prodato vozila:     7
+Aktivno u obrtu:    4
+Prosečan profit:  280 EUR
+Ukupan profit:  1.960 EUR
+Prosečno vreme:   42 dana
+
+Top vozilo:  Golf VII 2016  (+520 EUR, 28 dana)
+Loše:        Fiesta 2012    (-90 EUR, 76 dana)
+```
+
+---
+
+### Detalji — Stavka #18 (Marketplace MVP)
+
+**Endpoint-i (na istom AutoHub serveru):**
+
+| Endpoint | Šta radi |
+|---|---|
+| `POST /marketplace/listings` | Kreiraj oglas iz Driver-a |
+| `GET /marketplace/listings` | Javna lista oglasa (filteri: marka, godina, cena) |
+| `GET /marketplace/listings/:id` | Javna stranica jednog oglasa + dosije |
+| `POST /marketplace/messages` | Pošalji poruku prodavcu (kontakt-forma) |
+
+**Javna stranica `/prodaja`:**
+- Ne PWA — obična HTML stranica sa listom
+- Bez login-a
+- SEO-friendly
+- Deli se Viberom/Facebook-om
+- Kupac otvara oglas → vidi dosije → kontakt-forma → mail/SMS prodavcu
+
+**Diferencijacija od KP/PA:**
+
+```
+Golf VII 2016
+Cena: 8.500 EUR
+Prodaje: Petar (Kruševac)
+
+📊 ISTORIJA VOZILA
+├── 47 zapisanih događaja od 2019
+├── 12 servisa (3 potvrđena od mehaničara ✅)
+├── 8 računa priloženo (PDF)
+├── Prosečna godišnja kilometraža: 18.500 km
+└── Vlasnik #2 od 2024
+
+📄 [Preuzmi kompletan dosije PDF]
+
+Kontakt: [Pošalji poruku]
+```
+
+**Nijedna druga aplikacija ili sajt u regionu ovo trenutno nema.**
 
 ---
 
 ## Zatvoreno
 
-*(prazno — prva v1.1 stavka još nije odrađena)*
+*(prazno — čeka se implementacija prve od stavki #8–#20)*
 
 ---
 
-### Detalji — Stavka #7 (Katalog vozila)
-
-**Problem:** Slobodni tekst za marku/model vozila je pogrešan UI za strukturirani podatak. Korisnik kuca "dacia", "Dacia", "DACIA" — tri ista vozila u bazi. Nikola signalizirao korist od catalog-driven UI.
-
-**Iste koristi za Garage:** Marko u WO Snap koraku 1 takođe kuca marku i model ručno. Katalog u `core/` rešava oba.
-
-**Tri opcije (procena Milan, 2026-07-11):**
-
-| Opcija | Opis | Status |
-|---|---|---|
-| **A — Lokalni JSON katalog** | `core/data/vehicles.json`: marka → modeli → godišta. Offline. ~100 KB. Uvek postoji "Drugo" za retke marke. | ✅ preporuka za v1.1 |
-| **B — VIN dekoder** | AutoHub proxuje NHTSA vPIC API. Korisnik unese VIN → automatski popuni sve. | ⏳ Faza 4+ (AutoHub) |
-| **C — Server katalog** | AutoHub kao izvor kataloga. | ❌ krši offline-first princip |
-
-**Pitanja za Nikolu pre kodiranja:**
-1. Koje vozilo ima? (Marka + model)
-2. Šta ga je gnjavilo pri unosu — kucanje marke, modela, ili nešto treće?
-3. Da li je uneo više od jednog vozila?
-4. Da li bi voleo godište iz padajućeg, ili je okej da se kuca?
-
-**Status:** 🔵 novo → čeka odgovore od Nikole → ako potvrdi: `ideas/accepted/katalog_vozila.md` → v1.1 patch
-
----
-
-*Otvoreno: 10.07.2026. — Garage v1 na terenu kod Marka, čeka se dalji feedback.*
-*Ažurirano: 2026-07-11 — Driver v1 live, stavka #3 (multi-user signal), stavka #5 (Play Protect), stavka #6 (Nikola — prvi realni Driver tester), stavka #7 (katalog vozila).*
-
-### Detalji — Stavka #3
-
-**Problem:** Marko i Pavle rade na istom vozilu. Marko upiše radni nalog u Garage,
-Pavle ga ne vidi jer je Garage standalone i lokalan na Markovom telefonu. Trenutno
-rešavaju tako što Marko šalje PDF preko Vibera — funkcioniše, ali nije istorija,
-nego poruka.
-
-**Zašto je važno:** ovo je prvi realan multi-user signal iz terena. Do sada je
-Mapa sveta pretpostavljala da će vlasnici prvi tražiti povezivanje ("hoću da vidim
-šta je majstor upisao"). Marko+Pavle pokazuje da **mehaničari mogu prvi da
-signaliziraju potrebu za platformom**, pre vlasnika. To je iznenađujuće — i dobro,
-jer su mehaničari ti koji plaćaju.
-
-**Razjašnjenje (2026-07-11):** Nije A ili B — oba scenarija postoje za istog mehaničara:
-
-- **(A) Marko + Pavle — ista radionica.** Dele mušterije, dele vozila, jedan biznis. Treba da vide sve zajedno stalno.
-  → arhitektura: team account, deljena Garage baza, uloge (šef/radnik)
-
-- **(B) Marko + Goran — različite radionice.** Goran ima svoju radionicu. Povremeno sarađuju na istom vozilu — Marko uradi jedno, Goran uradi nešto drugo, a ni jedan ni drugi ne znaju šta je drugi radio.
-  → arhitektura: deljenje po vozilu, ne po radionici — Marko "pozove" Gorana na konkretan karton
-
-**Ključni uvid:** vozilo je centralni entitet — potvrđeno iz terena. Karton vozila mora primati zapise od više izvora (Marko, Goran, vlasnik) i svaki zapis zna odakle je (`source`, `app` polja na EVENT-u već postoje upravo za ovo).
-
-**Šta radimo sad:** ništa se ne kodira. Oba scenarija su zabeležena. AutoHub mora podržati oba modela — team (A) i per-vehicle sharing (B). Čeka Faza 3 + drugi slični signali.
-
-**Privremeni radni tok:** Marko šalje PDF Pavlu/Goranu na Viber — ostaje kako jeste.
-
-**Status flow:** 🔵 novo → 🟡 u analizi (aktivno, arhitektura poznata) → 🟢 za AutoHub MVP
-
----
-
-### Ažuriranje 2026-07-11 — Desktop Claude arhitektonska sinteza
-
-**Signal je otkrio da platformi treba samo JEDAN mehanizam dozvola, ne tri.**
-
-Do sada su tri scenarija tretirana kao tri problema:
-1. Vlasnik → mehaničar (vlasnik daje pristup majstoru)
-2. Marko + Pavle (tim u istoj radionici)
-3. Marko + Goran (povremena saradnja različitih radionica)
-
-Marko+Goran forsira uvid: **sva tri su ista stvar sa različitim UX-om.**
-
-**Primitiv (jedini permission model u AutoHub-u):**
-
-```
-grant(user_A, user_B, vehicle_id, role, [expires_at])
-```
-
-**Sve ostalo je UX preko istog primitiva:**
-
-| Slučaj | Grant izraz |
-|---|---|
-| Vlasnik daje pristup majstoru | `grant(vlasnik, majstor, vozilo, "write")` |
-| Marko poziva Gorana na jedan posao | `grant(Marko, Goran, vozilo, "write", +7 dana)` |
-| Tim Marko+Pavle | auto-grant Pavlu na svako novo vozilo koje Marko doda |
-| Buduće: vulkanizer vidi samo gume | `grant(vlasnik, vulkanizer, vozilo, "write-tires-only")` |
-
-**Team accounts NISU poseban entitet.** Team je pravilo koje kaže "kad Marko doda novo vozilo, automatski dodeli Pavlu istu ulogu". Sintaktički šećer preko per-vozilo dozvola.
-
-**Zašto je ovo odluka za dan 1 AutoHub-a:**
-Ako AutoHub počne od "team accounts" kao primarni model, Marko+Goran postaje naknadna komplikacija koja se teško lepi. Ako AutoHub počne od `grant()` primitiva — sve slučajeve rešava jedan mehanizam, uključujući buduće koji još nisu identifikovani.
-
-**Obaveza za AutoHub Sesiju 6 (dan 1):**
-Permission model se gradi kao jedinstveni `grant()` primitiv od početka, ne kao naknadna dogradnja preko team account-a. Zapisano ovde da bi buduća sesija imala eksplicitnu obavezu.
-
-**Status:** 🟡 u analizi → 🟢 za implementaciju u AutoHub Sesiji 6 (permission model dan 1)
+*Otvoreno: 10.07.2026. — Ažurirano: 17.07.2026. sa signalima iz strateške sesije (Goran servisi, Nikola expense odgovori, kolega preprodavac persona, AutoHub live, marketplace model, monetizacija).*
