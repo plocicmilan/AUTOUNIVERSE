@@ -303,12 +303,19 @@
         var trCurOpts = ["RSD","EUR"].map(function (c) {
           return '<option value="' + c + '"' + ((tPur.currency || "EUR") === c ? " selected" : "") + '>' + c + '</option>';
         }).join("");
+        var makeName   = v.make || "";
+        var makesList  = window.Catalog ? window.Catalog.makes() : [];
+        var modelsList = window.Catalog ? window.Catalog.models(makeName) : [];
+        var makesDL  = '<datalist id="cat_makes">'  + makesList.map(function (m) { return '<option value="' + esc(m) + '">'; }).join("") + '</datalist>';
+        var modelsDL = '<datalist id="cat_models">' + modelsList.map(function (m) { return '<option value="' + esc(m) + '">'; }).join("") + '</datalist>';
+
         return '' +
           '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
           '<h1>' + (id ? t("common.edit") : t("vehicles.add").replace("+ ", "")) + '</h1>' +
+          makesDL + modelsDL +
           '<div class="card">' +
-            field("f_make", "vehicles.make", v.make) +
-            field("f_model", "vehicles.model", v.model) +
+            '<label class="field"><span>' + t("vehicles.make") + '</span><input id="f_make" list="cat_makes" value="' + esc(makeName) + '" oninput="DR.onMakeInput(this.value)" autocomplete="off"></label>' +
+            '<label class="field"><span>' + t("vehicles.model") + '</span><input id="f_model" list="cat_models" value="' + esc(v.model) + '" autocomplete="off"></label>' +
             field("f_year", "vehicles.year", v.year || "", "number") +
             field("f_plate", "vehicles.plate", v.plate) +
             '<label class="field"><span>' + t("vehicles.category") + '</span><select id="f_category">' + catOpts + '</select></label>' +
@@ -884,6 +891,12 @@
     setVehicle: function (id) { App.activeVehicleId = id; render("vehicle"); },
     toggleTradeMode: function () {
       var box = el("tradePurchaseFields"); if (box) box.hidden = !checked("f_trade_mode");
+    },
+    onMakeInput: function (makeVal) {
+      if (!window.Catalog) return;
+      var mdls = window.Catalog.models(makeVal);
+      var dl = el("cat_models");
+      if (dl) dl.innerHTML = mdls.map(function (m) { return '<option value="' + esc(m) + '">'; }).join("");
     },
     addEvent: function (vehId, retro) {
       render("event_form", { vehicle_id: vehId || App.activeVehicleId, retro: retro });
