@@ -80,6 +80,21 @@ async function syncEvents(vehicleId, events) {
   return apiCall('POST', `/vehicles/${vehicleId}/events/batch`, events);
 }
 
-  global.AutoHub = { getPlatformUrl, apiCall, isServerAvailable, getSession, setSession, syncEvents };
+// Kreiranje share tokena (Garage → vlasnik). Payload ne sme sadržati cene.
+async function createShare(payload) {
+  return apiCall('POST', '/public/share', payload);
+}
+
+// Dohvatanje share tokena (Driver uvozi zapis od mehaničara).
+// hubUrl: baza AutoHub servera (iz ?hub= URL param)
+async function fetchShare(hubUrl, token) {
+  const url = hubUrl.replace(/\/$/, '') + '/public/share/' + token;
+  const res = await fetch(url);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Greška pri dohvatanju');
+  return data;
+}
+
+  global.AutoHub = { getPlatformUrl, apiCall, isServerAvailable, getSession, setSession, syncEvents, createShare, fetchShare };
 
 }(typeof window !== 'undefined' ? window : this));

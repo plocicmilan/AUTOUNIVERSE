@@ -73,7 +73,16 @@
       .then(function () {
         translate(document.body);
         bindNav();
-        render("vehicle");
+        // Magic-link import: Driver otvoren sa ?hub_import=TOKEN&hub=URL
+        var urlP = new URL(location.href).searchParams;
+        var importToken = urlP.get("hub_import");
+        var importHub   = urlP.get("hub");
+        if (importToken && importHub) {
+          history.replaceState({}, "", location.pathname); // očisti URL
+          render("hub_import", { token: importToken, hub_url: importHub });
+        } else {
+          render("vehicle");
+        }
         registerSW();
         watchOnline();
       })
@@ -677,6 +686,49 @@
     }
   };
 
+    /* ===== HUB IMPORT — vlasnik dobija link od mehaničara ===== */
+    hub_import: function (params) {
+      var token  = params && params.token;
+      var hubUrl = params && params.hub_url;
+      if (!token || !hubUrl || !window.AutoHub) {
+        return '<div class="card"><p class="empty">Nevažeći link.</p>' +
+          '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button></div>';
+      }
+      return AutoHub.fetchShare(hubUrl, token).then(function (data) {
+        var ev  = data.event  || {};
+        var veh = data.vehicle || {};
+        var mech = data.mechanic_name || 'Servis';
+        var items = (ev.items || []).map(function (it) {
+          return '<li>' + esc(it.qty) + ' × ' + esc(it.name) + '</li>';
+        }).join('');
+        var nextStr = ev.next_service
+          ? (ev.next_service.km ? ev.next_service.km + ' km, ' : '') + (ev.next_service.date || '')
+          : '';
+        App._hubImportData = data;
+        return '' +
+          '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+          '<h1>📲 Uvoz od mehaničara</h1>' +
+          '<p class="sub">Od: ' + esc(mech) + '</p>' +
+          '<div class="card">' +
+            '<b>' + esc(ev.title || t("d.type_" + (ev.type || "service"))) + '</b>' +
+            '<p class="muted">' + esc(ev.date || '') + (ev.mileage_km != null ? ' • ' + esc(ev.mileage_km) + ' km' : '') + '</p>' +
+            (ev.description ? '<p>' + esc(ev.description) + '</p>' : '') +
+            (items ? '<ul>' + items + '</ul>' : '') +
+            (nextStr ? '<p><b>' + t("d.last_service") + ':</b> ' + esc(nextStr) + '</p>' : '') +
+          '</div>' +
+          (veh.make ? '<div class="card"><b>' + esc(veh.make + ' ' + veh.model) + '</b>' +
+            '<p class="muted">' + esc(veh.plate || '') + (veh.year ? ' • ' + veh.year : '') +
+              (veh.vin ? ' • VIN: ' + esc(veh.vin) : '') + '</p></div>' : '') +
+          '<div class="card"><p class="empty" style="font-size:.85rem">Cene nisu prikazane — mehaničar ih nije delio.</p></div>' +
+          '<button class="btn btn-primary" onclick="DR.importHubRecord()" data-i18n="backup.import"></button>' +
+          '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.cancel"></button>';
+      }).catch(function (err) {
+        return '<div class="card"><p class="empty">Greška: ' + esc(err.message) + '</p>' +
+          '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button></div>';
+      });
+    }
+  };
+
   /* ---------- AutoHub helperi ---------- */
   var HUB_MAP_KEY = "autohub_vehicle_map";
 
@@ -1095,6 +1147,49 @@
       localStorage.removeItem("autohub_last_sync");
       toast("Odjavljeno.");
       render("settings");
+    },
+
+    importHubRecord: function () {
+      var data = App._hubImportData;
+      if (!data || !data.event) { toast("Nema podataka za uvoz."); return; }
+      var ev = data.event, veh = data.vehicle || {};
+      Store.all("vehicles").then(function (vehicles) {
+        // Pokušaj VIN matching, pa plate matching, pa first vehicle
+        var matched = null;
+        if (veh.vin) matched = vehicles.filter(function (v) { return v.vin && v.vin === veh.vin; })[0] || null;
+        if (!matched && veh.plate) matched = vehicles.filter(function (v) { return v.plate && v.plate.toLowerCase() === veh.plate.toLowerCase(); })[0] || null;
+        if (!matched) matched = vehicles[0] || null;
+        var vid = matched ? matched.id : App.activeVehicleId;
+        if (!vid) { toast(t("d.need_vehicle")); return; }
+        var newEv = Models.createEvent({
+          vehicle_id:  vid,
+          type:        ev.type || "service",
+          title:       ev.title || "",
+          description: ev.description || "",
+          date:        ev.date || todayISO(),
+          mileage_km:  ev.mileage_km != null ? ev.mileage_km : null,
+          items:       (ev.items || []).map(function (it) { return Models.createItem({ name: it.name, qty: it.qty }); }),
+          source:      "mechanic",
+          app:         "driver",
+          retroactive: false
+        });
+        var ops = [Store.put("events", newEv)];
+        // next_service → automatski podsetnik
+        if (ev.next_service) {
+          ops.push(Store.put("reminders", Models.createReminder({
+            vehicle_id: vid,
+            title: "Sledeći servis (" + (ev.title || ev.type) + ")",
+            due_date:        ev.next_service.date || null,
+            due_mileage_km:  ev.next_service.km  || null
+          })));
+        }
+        Promise.all(ops).then(function () {
+          App._hubImportData = null;
+          App.activeVehicleId = vid;
+          toast(t("common.saved") + " — uvezeno od mehaničara");
+          render("vehicle");
+        });
+      });
     },
 
     setExpensesVehicle: function (id) { App.expensesVehicleId = id; render("expenses"); },
