@@ -608,7 +608,8 @@
           '<label class="btn btn-secondary mt8 filelabel"><span data-i18n="backup.import"></span>' +
             '<input type="file" accept=".json,application/json" onchange="GT.importBackup(this)" hidden></label>' +
         '</div>' +
-        '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>';
+        '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>' +
+        '<div class="card mt16"><h2>AutoHub ☁</h2>' + autohubCardHTML() + '</div>';
     },
 
     /* ===== VIZIT KARTA (🔑) ===== */
@@ -1295,6 +1296,65 @@
       '<button class="btn btn-primary" onclick="GT.activateLicense()" data-i18n="license.activate"></button>';
   }
 
+  /* ---------- AutoHub helperi ---------- */
+
+  var AH_SESSION_KEY = "autohub_garage_session";
+  var AH_VMAP_KEY    = "autohub_garage_vmap";
+  var AH_SYNCED_KEY  = "autohub_garage_synced";
+
+  function ahSession() {
+    try { return JSON.parse(localStorage.getItem(AH_SESSION_KEY)); } catch (e) { return null; }
+  }
+
+  function autohubCardHTML() {
+    var sess = ahSession();
+    if (sess) {
+      return '<p style="font-size:.85rem;color:#94a3b8;margin-bottom:.6rem">Prijavljen: <b>' + esc(sess.name) + '</b> (' + esc(sess.email) + ')</p>' +
+        '<button class="btn btn-secondary" onclick="GT.autohubSync()">🔄 Sinhronizuj sve</button>' +
+        '<div id="ahSyncStatus" style="font-size:.8rem;color:#94a3b8;margin-top:.4rem"></div>' +
+        '<button class="btn btn-danger mt8" style="background:none;border:1px solid #475569;color:#94a3b8" onclick="GT.autohubLogout()">Odjavi se sa AutoHub-a</button>';
+    }
+    return '<p style="font-size:.82rem;color:#94a3b8;margin-bottom:.6rem">Sinhronizuj podatke sa serverom. Prvi nalog postaje admin.</p>' +
+      '<label class="field"><span>Ime</span><input id="ah_name" type="text" placeholder="Marko Petrović"></label>' +
+      '<label class="field"><span>Email</span><input id="ah_email" type="email" placeholder="marko@servis.rs"></label>' +
+      '<label class="field"><span>Lozinka</span><input id="ah_pass" type="password"></label>' +
+      '<button class="btn btn-primary" onclick="GT.autohubRegister()">Registruj se</button>' +
+      '<button class="btn btn-secondary mt8" onclick="GT.autohubLogin()">Prijavi se (postojeći nalog)</button>' +
+      '<p id="ahErr" style="color:#f87171;font-size:.8rem;margin-top:.4rem"></p>';
+  }
+
+  function autohubFetch(method, path, body, noAuth) {
+    var sess = ahSession();
+    return window.AutoHub.getPlatformUrl().then(function (hubUrl) {
+      if (!hubUrl) throw new Error("AutoHub nedostupan — pokreni server.");
+      var hdrs = { "Content-Type": "application/json" };
+      if (!noAuth && sess) hdrs["Authorization"] = "Bearer " + sess.token;
+      return fetch(hubUrl + path, {
+        method: method,
+        headers: hdrs,
+        body: body ? JSON.stringify(body) : undefined
+      }).then(function (r) {
+        return r.json().then(function (d) {
+          if (!r.ok) throw new Error(d.error || r.statusText);
+          return d;
+        });
+      });
+    });
+  }
+
+  function ahMapEventType(type) {
+    var m = {
+      work_order: "service", estimate: "note", service: "service",
+      oil_change: "oil_change", tire_change: "tire_change", tire_rotation: "tire_rotation",
+      inspection: "inspection", registration: "registration", insurance: "insurance",
+      repair: "repair", fuel: "fuel", mileage: "mileage", note: "note", initial: "initial",
+      expense_fuel: "fuel", expense_tires: "repair", expense_bodywork: "repair",
+      expense_registration: "registration", expense_insurance: "insurance",
+      expense_decorative: "other", expense_other: "other"
+    };
+    return m[type] || "other";
+  }
+
   /* ---------- Reminders helperi ---------- */
 
   function latestKmByVehicle(events) {
@@ -1952,7 +2012,116 @@
         toast("Provera sačuvana");
         render("vehicle_card", { id: vehId });
       });
+    },
+
+    /* ---------- AutoHub ---------- */
+
+    autohubRegister: function () {
+      var name  = val("ah_name");
+      var email = val("ah_email");
+      var pass  = val("ah_pass");
+      var errEl = el("ahErr");
+      if (!name || !email || !pass) { if (errEl) errEl.textContent = "Sva polja su obavezna."; return; }
+      autohubFetch("POST", "/auth/register", { name: name, email: email, password: pass }, true)
+        .then(function (r) {
+          if (r.status === "pending") {
+            toast("Registracija primljena. Čeka se odobrenje admina.");
+          } else {
+            return autohubFetch("POST", "/auth/login", { email: email, password: pass }, true)
+              .then(function (lr) {
+                localStorage.setItem(AH_SESSION_KEY, JSON.stringify({ token: lr.session, name: lr.user.name, email: lr.user.email }));
+                toast("AutoHub: prijavljen kao " + lr.user.name);
+                render("settings");
+              });
+          }
+          render("settings");
+        })
+        .catch(function (e) { if (errEl) errEl.textContent = e.message; });
+    },
+
+    autohubLogin: function () {
+      var email = val("ah_email");
+      var pass  = val("ah_pass");
+      var errEl = el("ahErr");
+      if (!email || !pass) { if (errEl) errEl.textContent = "Email i lozinka su obavezni."; return; }
+      autohubFetch("POST", "/auth/login", { email: email, password: pass }, true)
+        .then(function (r) {
+          localStorage.setItem(AH_SESSION_KEY, JSON.stringify({ token: r.session, name: r.user.name, email: r.user.email }));
+          toast("AutoHub: prijavljen kao " + r.user.name);
+          render("settings");
+        })
+        .catch(function (e) { if (errEl) errEl.textContent = e.message; });
+    },
+
+    autohubLogout: function () {
+      autohubFetch("POST", "/auth/logout", {}).catch(function () {});
+      localStorage.removeItem(AH_SESSION_KEY);
+      toast("Odjavljen sa AutoHub-a.");
+      render("settings");
+    },
+
+    autohubSync: function () {
+      var statusEl = el("ahSyncStatus");
+      if (statusEl) statusEl.textContent = "Sinhronizujem…";
+      var vmap   = JSON.parse(localStorage.getItem(AH_VMAP_KEY)   || "{}");
+      var synced = JSON.parse(localStorage.getItem(AH_SYNCED_KEY) || "{}");
+
+      Promise.all([Store.all("vehicles"), Store.all("events")]).then(function (res) {
+        var vehicles = res[0];
+        var events   = res[1];
+
+        // Faza 1: registruj vozila na AutoHub-u ako nisu mapirana
+        return vehicles.reduce(function (p, v) {
+          return p.then(function () {
+            if (vmap[v.id]) return;
+            return autohubFetch("POST", "/vehicles", {
+              make: v.make || "?", model: v.model || "?",
+              year: v.year ? Number(v.year) : null,
+              plate: v.plate || null, vin: v.vin || null
+            }).then(function (r) {
+              vmap[v.id] = r.id;
+              localStorage.setItem(AH_VMAP_KEY, JSON.stringify(vmap));
+            });
+          });
+        }, Promise.resolve()).then(function () {
+          // Faza 2: sinhronizuj evente po vozilu
+          var byVehicle = {};
+          events.forEach(function (e) {
+            if (synced[e.id]) return;
+            var servId = vmap[e.vehicle_id];
+            if (!servId) return;
+            if (!byVehicle[servId]) byVehicle[servId] = [];
+            byVehicle[servId].push(e);
+          });
+
+          return Object.keys(byVehicle).reduce(function (p, servId) {
+            return p.then(function () {
+              var batch = byVehicle[servId].map(function (e) {
+                return { local_id: e.id, type: ahMapEventType(e.type), data: e,
+                         event_date: (e.date || e.created_at || new Date().toISOString()),
+                         retroactive: !!e.retroactive, source: e.source || "app", app: "garage" };
+              });
+              if (!batch.length) return;
+              return autohubFetch("POST", "/vehicles/" + servId + "/events/batch", batch)
+                .then(function (r) {
+                  (r.synced || []).forEach(function (s) {
+                    if (s.local_id && !s.error) synced[s.local_id] = true;
+                  });
+                  localStorage.setItem(AH_SYNCED_KEY, JSON.stringify(synced));
+                });
+            });
+          }, Promise.resolve());
+        });
+      }).then(function () {
+        var cnt = Object.keys(JSON.parse(localStorage.getItem(AH_SYNCED_KEY) || "{}")).length;
+        if (statusEl) statusEl.textContent = "✓ Sinhronizirano " + cnt + " zapisa ukupno.";
+        toast("AutoHub sync završen.");
+      }).catch(function (e) {
+        if (statusEl) statusEl.textContent = "Greška: " + e.message;
+        toast("Sync greška: " + e.message);
+      });
     }
+
   };
 
   /* ---------- Offline / SW ---------- */
