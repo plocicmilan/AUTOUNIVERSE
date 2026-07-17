@@ -270,6 +270,9 @@
               ? '<button class="btn btn-secondary mt8" onclick="DR.exportDossier(\'' + esc(vid) + '\')" data-i18n="d.dossier"></button>'
               : '') +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle_form\',{id:\'' + esc(vid) + '\'})" data-i18n="common.edit"></button>' +
+            (v.status !== "sold" && v.status !== "totaled"
+              ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'sell_vehicle\',{id:\'' + esc(vid) + '\'})" data-i18n="d.sell_vehicle"></button>'
+              : '') +
             (moduleUnlocked("multi_vehicle")
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle_form\')" data-i18n="vehicles.add"></button>'
               : '');
@@ -291,6 +294,15 @@
         var statusOpts = Models.VEHICLE_STATUSES.map(function (s) {
           return '<option value="' + s + '"' + (v.status === s ? " selected" : "") + '>' + t("d.vehicle_status_" + s) + '</option>';
         }).join("");
+        var tradeOn = !!v.trade_mode;
+        var tr = v.trade || {};
+        var tPur = tr.purchase || {};
+        var srcOpts = Models.TRADE_SOURCES.map(function (s) {
+          return '<option value="' + s + '"' + (tPur.source === s ? " selected" : "") + '>' + t("d.trade_src_" + s) + '</option>';
+        }).join("");
+        var trCurOpts = ["RSD","EUR"].map(function (c) {
+          return '<option value="' + c + '"' + ((tPur.currency || "EUR") === c ? " selected" : "") + '>' + c + '</option>';
+        }).join("");
         return '' +
           '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
           '<h1>' + (id ? t("common.edit") : t("vehicles.add").replace("+ ", "")) + '</h1>' +
@@ -305,6 +317,16 @@
             field("f_regowner", "d.vehicle_registered_owner", v.registered_owner || "") +
             field("f_fuel", "d.fuel", eng.fuel) +
             field("f_power", "d.power", eng.power_kw || "", "number") +
+          '</div>' +
+          '<div class="card"><h2 data-i18n="d.trade_mode"></h2>' +
+            '<label class="chk"><input type="checkbox" id="f_trade_mode"' + (tradeOn ? " checked" : "") + ' onchange="DR.toggleTradeMode()"> ' + t("d.trade_mode") + '</label>' +
+            '<div id="tradePurchaseFields"' + (tradeOn ? "" : " hidden") + '>' +
+              '<h3 style="margin:.8rem 0 .3rem">' + t("d.trade_purchase") + '</h3>' +
+              field("f_trade_buy_date",  "d.trade_buy_date",  tPur.date  || "", "date") +
+              field("f_trade_buy_price", "d.trade_buy_price", tPur.price != null ? tPur.price : "", "number") +
+              '<label class="field"><span>' + t("d.trade_buy_currency") + '</span><select id="f_trade_buy_cur">' + trCurOpts + '</select></label>' +
+              '<label class="field"><span>' + t("d.trade_buy_source") + '</span><select id="f_trade_buy_src">' + srcOpts + '</select></label>' +
+            '</div>' +
           '</div>' +
           '<div class="card"><h2 data-i18n="tech.title"></h2>' +
             field("f_oil_type", "tech.oil_type", sd.oil_type, "text", "5W-30") +
@@ -686,6 +708,36 @@
     }
   };
 
+    /* ===== PRODAJ VOZILO — status wizard ===== */
+    sell_vehicle: function (params) {
+      var vid = (params && params.id) || App.activeVehicleId;
+      return Store.get("vehicles", vid).then(function (v) {
+        if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+        App._sellVehicleId = vid;
+        var tr = (v.trade && v.trade.sale) || {};
+        var curOpts = ["EUR","RSD"].map(function (c) {
+          return '<option value="' + c + '"' + ((tr.currency || "EUR") === c ? " selected" : "") + '>' + c + '</option>';
+        }).join("");
+        var statusOpts = ["active","for_sale","sold","archived","totaled"].map(function (s) {
+          return '<option value="' + s + '"' + (v.status === s ? " selected" : "") + '>' + t("d.vehicle_status_" + s) + '</option>';
+        }).join("");
+        return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+          '<h1>' + t("d.sell_vehicle") + '</h1>' +
+          '<p class="sub">' + esc(v.make + " " + v.model) + ' • ' + t("d.vehicle_status_" + (v.status || "active")) + '</p>' +
+          '<div class="card">' +
+            '<label class="field"><span>' + t("d.sell_status_label") + '</span><select id="sv_status" onchange="DR.onSellStatusChange()">' + statusOpts + '</select></label>' +
+          '</div>' +
+          '<div class="card" id="saleFields"' + (v.status !== "sold" ? ' hidden' : '') + '>' +
+            '<h2 data-i18n="d.trade_sale"></h2>' +
+            field("sv_sell_date",  "d.sell_date",  tr.date  || todayISO(), "date") +
+            field("sv_sell_price", "d.sell_price", tr.price != null ? tr.price : "", "number") +
+            '<label class="field"><span>' + t("d.trade_buy_currency") + '</span><select id="sv_sell_cur">' + curOpts + '</select></label>' +
+          '</div>' +
+          '<button class="btn btn-primary" onclick="DR.saveSellVehicle()" data-i18n="d.sell_confirm"></button>' +
+          '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.cancel"></button>';
+      });
+    },
+
     /* ===== HUB IMPORT — vlasnik dobija link od mehaničara ===== */
     hub_import: function (params) {
       var token  = params && params.token;
@@ -830,6 +882,9 @@
   var Actions = {
     go: render,
     setVehicle: function (id) { App.activeVehicleId = id; render("vehicle"); },
+    toggleTradeMode: function () {
+      var box = el("tradePurchaseFields"); if (box) box.hidden = !checked("f_trade_mode");
+    },
     addEvent: function (vehId, retro) {
       render("event_form", { vehicle_id: vehId || App.activeVehicleId, retro: retro });
     },
@@ -964,6 +1019,23 @@
       base.vin = val("f_vin");
       base.status = el("f_status") ? el("f_status").value : (base.status || "active");
       base.registered_owner = val("f_regowner");
+      base.trade_mode = checked("f_trade_mode");
+      if (base.trade_mode) {
+        var buyPrice = val("f_trade_buy_price");
+        base.trade = Object.assign({ sale: { date: null, price: null, currency: "EUR" } },
+          base.trade || {},
+          { purchase: {
+              date:     val("f_trade_buy_date") || null,
+              price:    buyPrice ? parseFloat(buyPrice) : null,
+              currency: el("f_trade_buy_cur") ? el("f_trade_buy_cur").value : "EUR",
+              source:   el("f_trade_buy_src") ? el("f_trade_buy_src").value : "individual",
+              notes:    ""
+            }
+          }
+        );
+      } else {
+        base.trade = null;
+      }
       base.engine = Object.assign({}, base.engine, {
         fuel: val("f_fuel"),
         power_kw: val("f_power") ? parseInt(val("f_power"), 10) : null
@@ -1147,6 +1219,36 @@
       localStorage.removeItem("autohub_last_sync");
       toast("Odjavljeno.");
       render("settings");
+    },
+
+    onSellStatusChange: function () {
+      var box = el("saleFields"); if (box) box.hidden = el("sv_status").value !== "sold";
+    },
+
+    saveSellVehicle: function () {
+      var vid = App._sellVehicleId; if (!vid) { toast(t("d.need_vehicle")); return; }
+      Store.get("vehicles", vid).then(function (v) {
+        if (!v) return;
+        var newStatus = el("sv_status") ? el("sv_status").value : v.status;
+        v.status = newStatus;
+        if (newStatus === "sold") {
+          var sellPrice = val("sv_sell_price");
+          var sellCur   = el("sv_sell_cur") ? el("sv_sell_cur").value : "EUR";
+          var sellDate  = val("sv_sell_date") || todayISO();
+          v.trade = v.trade || { purchase: { date: null, price: null, currency: "EUR", source: "individual", notes: "" } };
+          v.trade.sale = { date: sellDate, price: sellPrice ? parseFloat(sellPrice) : null, currency: sellCur };
+          // log sale event
+          var saleEv = Models.createEvent({
+            vehicle_id: vid, type: "note", app: "driver", source: "owner",
+            title: "Vozilo prodato" + (sellPrice ? " — " + Models.formatAmount(parseFloat(sellPrice), sellCur) : ""),
+            date: sellDate
+          });
+          Store.put("events", saleEv);
+        }
+        Store.put("vehicles", v).then(function () {
+          toast(t("common.saved")); App.activeVehicleId = vid; render("vehicle");
+        });
+      });
     },
 
     importHubRecord: function () {

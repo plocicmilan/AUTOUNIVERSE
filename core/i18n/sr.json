@@ -226,5 +226,21 @@
   "d.vehicle_status_for_sale": "Na prodaju",
   "d.vehicle_status_sold": "Prodato",
   "d.vehicle_status_archived": "Arhivirano",
-  "d.vehicle_status_totaled": "Totalno uništeno"
+  "d.vehicle_status_totaled": "Totalno uništeno",
+  "d.trade_mode": "Kupoprodajni mod (preprodavac)",
+  "d.trade_purchase": "Kupovina",
+  "d.trade_buy_date": "Datum kupovine",
+  "d.trade_buy_price": "Cena kupovine",
+  "d.trade_buy_currency": "Valuta",
+  "d.trade_buy_source": "Izvor nabavke",
+  "d.trade_src_individual": "Fizičko lice",
+  "d.trade_src_auction": "Aukcija",
+  "d.trade_src_import": "Uvoz",
+  "d.trade_src_other": "Ostalo",
+  "d.sell_vehicle": "🏷️ Prodaj vozilo",
+  "d.sell_status_label": "Novi status",
+  "d.sell_price": "Prodajna cena",
+  "d.sell_date": "Datum prodaje",
+  "d.sell_confirm": "Sačuvaj status",
+  "d.trade_sale": "Prodaja"
 }
