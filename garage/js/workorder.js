@@ -69,6 +69,7 @@
       items: [],
       categories: [],
       klima_subs: [],
+      next_service: null,
       signature: { customer: null, technician: null }
     };
     return Promise.all([window.Store.all("vehicles"), window.Store.all("contacts")])
@@ -95,6 +96,7 @@
       items: (ev.items || []).map(function (it) { return Object.assign({}, it); }),
       categories: [],
       klima_subs: [],
+      next_service: null,
       signature: { customer: null, technician: null }
     };
     return Promise.all([window.Store.all("vehicles"), window.Store.all("contacts")])
@@ -190,6 +192,7 @@
         }).join("") + '</div>';
       }
 
+      var ns = WO.draft.next_service || {};
       return '<div class="card">' +
         '<label class="field"><span data-i18n="wo.doc_type"></span>' +
           '<select id="wo_doctype">' + dtOpts + '</select></label>' +
@@ -199,6 +202,11 @@
         '<label class="field mt8"><span data-i18n="wo.step_description"></span>' +
           '<textarea id="wo_desc" rows="4" placeholder="' + t("wo.desc_placeholder") + '">' + esc(WO.draft.description) + '</textarea></label>' +
         '<button class="btn btn-secondary" id="wo_voicebtn" onclick="WOgo.voice()" data-i18n="wo.voice"></button>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h3 style="margin:0 0 .5rem;font-size:.9rem">🔔 Sledeći servis (opciono)</h3>' +
+        '<label class="field"><span>Datum</span><input id="wo_ns_date" type="date" value="' + esc(ns.date || '') + '"></label>' +
+        '<label class="field"><span>km</span><input id="wo_ns_km" type="number" inputmode="numeric" placeholder="npr. 197500" value="' + esc(ns.km != null ? ns.km : '') + '"></label>' +
       '</div>';
     },
 
@@ -336,6 +344,11 @@
       if (d) WO.draft.description = d.value;
       var dt = document.getElementById("wo_doctype");
       if (dt) WO.draft.docType = dt.value;
+      var nsDate = document.getElementById("wo_ns_date");
+      var nsKm   = document.getElementById("wo_ns_km");
+      var nsD = nsDate ? nsDate.value.trim() : "";
+      var nsK = nsKm  ? parseInt(nsKm.value, 10) : NaN;
+      WO.draft.next_service = (nsD || !isNaN(nsK)) ? { date: nsD || null, km: !isNaN(nsK) ? nsK : null } : null;
     } else if (name === "signature") {
       captureSig("customer");
       captureSig("technician");
@@ -540,12 +553,13 @@
         if (!hubUrl) { toast("AutoHub nije dostupan. Pokreni server."); return; }
         var payload = {
           event: {
-            type:        WO.draft.docType === "estimate" ? "note" : "work_order",
-            title:       t("doc." + WO.draft.docType),
-            description: WO.draft.description || "",
-            date:        new Date().toISOString().slice(0, 10),
-            mileage_km:  WO.draft.mileage_km ? parseInt(WO.draft.mileage_km, 10) : null,
-            items:       safeItems
+            type:         WO.draft.docType === "estimate" ? "note" : "work_order",
+            title:        t("doc." + WO.draft.docType),
+            description:  WO.draft.description || "",
+            date:         new Date().toISOString().slice(0, 10),
+            mileage_km:   WO.draft.mileage_km ? parseInt(WO.draft.mileage_km, 10) : null,
+            items:        safeItems,
+            next_service: WO.draft.next_service || null
           },
           vehicle: v ? { vin: v.vin || "", make: v.make || "", model: v.model || "",
                          year: v.year || null, plate: v.plate || "" } : null,
