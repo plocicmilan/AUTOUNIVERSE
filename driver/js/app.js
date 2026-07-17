@@ -712,8 +712,7 @@
         '</div>' +
         '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>' +
         '<div class="card mt16" id="autohubCard">' + autohubCardHTML() + '</div>';
-    }
-  };
+    },
 
     /* ===== PRODAJ VOZILO — status wizard ===== */
     sell_vehicle: function (params) {
