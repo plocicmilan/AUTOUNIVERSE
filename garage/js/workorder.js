@@ -199,6 +199,7 @@
       '</div>' +
       '<button class="btn btn-secondary" onclick="WOgo.preview()" data-i18n="wo.review"></button>' +
       '<button class="btn btn-primary mt8" onclick="WOgo.share()" data-i18n="wo.share"></button>' +
+      '<button class="btn btn-secondary mt8" onclick="WOgo.shareWithOwner()">📨 Podeli sa vlasnikom</button>' +
       (WO.draft.vehicle_id
         ? '<button class="btn btn-secondary mt8" onclick="window.GT.go(\'reminder_form\',{vehicle_id:\'' + esc(WO.draft.vehicle_id) + '\'})">🔔 Dodaj podsetnik</button>'
         : '');
@@ -432,6 +433,47 @@
         window.Share.share({ blob: blob, fileName: fileName, title: fileName }).catch(function () {});
         toast(t("wo.saved_event"));
         setTimeout(function () { window.GT.go("vehicle_card", { id: WO.draft.vehicle_id }); }, 600);
+      });
+    },
+
+    shareWithOwner: function () {
+      captureStep();
+      if (!window.AutoHub) { toast("AutoHub modul nije učitan."); return; }
+      var v = byId(WO.vehicles, WO.draft.vehicle_id);
+      var profile = window.Store.settings.get("profile", { name: "" });
+      // Payload BEZ cena (FEEDBACK #10)
+      var safeItems = WO.draft.items.map(function (it) {
+        return { name: it.name || "", qty: it.qty != null ? it.qty : 1, unit: it.unit || "kom" };
+      });
+      window.AutoHub.getPlatformUrl().then(function (hubUrl) {
+        if (!hubUrl) { toast("AutoHub nije dostupan. Pokreni server."); return; }
+        var payload = {
+          event: {
+            type:        WO.draft.docType === "estimate" ? "note" : "work_order",
+            title:       t("doc." + WO.draft.docType),
+            description: WO.draft.description || "",
+            date:        new Date().toISOString().slice(0, 10),
+            mileage_km:  WO.draft.mileage_km ? parseInt(WO.draft.mileage_km, 10) : null,
+            items:       safeItems
+          },
+          vehicle: v ? { vin: v.vin || "", make: v.make || "", model: v.model || "",
+                         year: v.year || null, plate: v.plate || "" } : null,
+          mechanic_name: profile.name || "Servis",
+          hub_url:       hubUrl
+        };
+        window.AutoHub.createShare(payload).then(function (res) {
+          var url = res.url || "";
+          var msg = "📨 Link: " + url;
+          if (navigator.share) {
+            navigator.share({ title: "Servisni zapis", text: msg, url: url }).catch(function () {});
+          } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(function () { toast("Link kopiran! " + url.slice(-20)); });
+          } else {
+            toast("Link: " + url);
+          }
+        }).catch(function (e) {
+          toast("Greška: " + (e.message || "AutoHub nije dostupan"));
+        });
       });
     }
   };
