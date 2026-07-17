@@ -1280,6 +1280,79 @@
           '</div>' +
           '<button class="btn btn-primary" onclick="GT.saveHistory()" data-i18n="common.save"></button>';
       });
+    },
+
+    /* ===== GRANT MANAGER — pristup vozilima (FEEDBACK #3) ===== */
+    grant_manager: function () {
+      var sess = ahSession();
+      if (!sess) {
+        return '<button class="linkback" onclick="GT.go(\'settings\')" data-i18n="common.back"></button>' +
+          '<h1>Pristup vozilima</h1>' +
+          '<div class="card"><p class="empty">Prijaviš se na AutoHub da bih upravljao pristupom.</p></div>';
+      }
+      var vmap = JSON.parse(localStorage.getItem(AH_VMAP_KEY) || "{}");
+      var localIds = Object.keys(vmap);
+      if (!localIds.length) {
+        return '<button class="linkback" onclick="GT.go(\'settings\')" data-i18n="common.back"></button>' +
+          '<h1>Pristup vozilima</h1>' +
+          '<div class="card"><p class="empty">Nema sinhronizovanih vozila. Uradi sync u Podešavanjima.</p></div>';
+      }
+      return Store.all("vehicles").then(function (vehicles) {
+        var vById = {};
+        vehicles.forEach(function (v) { vById[v.id] = v; });
+
+        return Promise.all(localIds.map(function (lid) {
+          var servId = vmap[lid];
+          return autohubFetch("GET", "/vehicles/" + servId + "/grants").then(function (gs) {
+            return { lid: lid, servId: servId, grants: gs };
+          }).catch(function () {
+            return { lid: lid, servId: servId, grants: [] };
+          });
+        })).then(function (results) {
+          var ROLE_LABELS = { read: "Čitanje", write: "Pisanje", "write-tires-only": "Samo gume" };
+          var cards = results.map(function (r) {
+            var v = vById[r.lid];
+            var vName = v ? esc(v.make + " " + v.model + (v.plate ? " • " + v.plate : "")) : "Nepoznato vozilo";
+            var grantRows = r.grants.length
+              ? r.grants.map(function (g) {
+                  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-bottom:1px solid #f1f5f9">' +
+                    '<span style="font-size:.85rem"><b>' + esc(g.grantee_name || g.grantee_email) + '</b>' +
+                    '<span class="muted"> — ' + (ROLE_LABELS[g.role] || g.role) + '</span>' +
+                    (g.expires_at ? '<span class="muted"> do ' + esc(g.expires_at.slice(0,10)) + '</span>' : '') +
+                    '</span>' +
+                    '<button class="btn btn-danger" style="padding:.2rem .6rem;font-size:.75rem" ' +
+                      'onclick="GT.autohubGrantRevoke(\'' + esc(r.lid) + '\',\'' + esc(g.grantee_email) + '\')">Opozovi</button>' +
+                  '</div>';
+                }).join("")
+              : '<p class="muted" style="font-size:.82rem;margin:.4rem 0">Nema aktivnih pristupa.</p>';
+
+            return '<div class="card" style="margin-bottom:.8rem">' +
+              '<b>' + vName + '</b>' +
+              '<div style="margin:.5rem 0">' + grantRows + '</div>' +
+              '<details style="margin-top:.6rem">' +
+                '<summary style="font-size:.82rem;cursor:pointer;color:#0F766E">+ Dodaj pristup</summary>' +
+                '<div style="margin-top:.5rem">' +
+                  '<label class="field"><span>Email korisnika</span><input type="email" id="gr_email_' + esc(r.lid) + '" placeholder="nikola@email.com"></label>' +
+                  '<label class="field"><span>Uloga</span><select id="gr_role_' + esc(r.lid) + '">' +
+                    '<option value="read">Čitanje — vidi istoriju</option>' +
+                    '<option value="write">Pisanje — dodaje zapise</option>' +
+                    '<option value="write-tires-only">Samo gume</option>' +
+                  '</select></label>' +
+                  '<label class="field"><span>Ističe za (dana, prazno = trajno)</span><input type="number" id="gr_days_' + esc(r.lid) + '" placeholder="30" min="1"></label>' +
+                  '<button class="btn btn-primary" style="margin-top:.4rem" ' +
+                    'onclick="GT.autohubGrantAdd(\'' + esc(r.lid) + '\')">Dodaj pristup</button>' +
+                  '<div id="gr_err_' + esc(r.lid) + '" style="color:#f87171;font-size:.8rem;margin-top:.3rem"></div>' +
+                '</div>' +
+              '</details>' +
+            '</div>';
+          }).join("");
+
+          return '<button class="linkback" onclick="GT.go(\'settings\')" data-i18n="common.back"></button>' +
+            '<h1>Pristup vozilima ☁</h1>' +
+            '<p class="sub" style="margin-bottom:.8rem">Ko može da vidi ili upisuje istoriju tvojih vozila.</p>' +
+            cards;
+        });
+      });
     }
   };
 
@@ -1317,6 +1390,7 @@
     if (sess) {
       return '<p style="font-size:.85rem;color:#94a3b8;margin-bottom:.6rem">Prijavljen: <b>' + esc(sess.name) + '</b> (' + esc(sess.email) + ')</p>' +
         '<button class="btn btn-secondary" onclick="GT.autohubSync()">🔄 Sinhronizuj sve</button>' +
+        '<button class="btn btn-secondary mt8" onclick="GT.go(\'grant_manager\')">🔑 Pristup vozilima</button>' +
         '<div id="ahSyncStatus" style="font-size:.8rem;color:#94a3b8;margin-top:.4rem"></div>' +
         '<button class="btn btn-danger mt8" style="background:none;border:1px solid #475569;color:#94a3b8" onclick="GT.autohubLogout()">Odjavi se sa AutoHub-a</button>';
     }
@@ -2133,6 +2207,41 @@
       }).catch(function (e) {
         if (statusEl) statusEl.textContent = "Greška: " + e.message;
         toast("Sync greška: " + e.message);
+      });
+    },
+
+    /* ---------- AutoHub Grant akcije ---------- */
+    autohubGrantAdd: function (localVehicleId) {
+      var vmap   = JSON.parse(localStorage.getItem(AH_VMAP_KEY) || "{}");
+      var servId = vmap[localVehicleId];
+      if (!servId) { toast("Vozilo nije sinhronizirano."); return; }
+      var emailEl = el("gr_email_" + localVehicleId);
+      var roleEl  = el("gr_role_"  + localVehicleId);
+      var daysEl  = el("gr_days_"  + localVehicleId);
+      var errEl   = el("gr_err_"   + localVehicleId);
+      var email   = emailEl ? emailEl.value.trim() : "";
+      var role    = roleEl  ? roleEl.value : "read";
+      var days    = daysEl  ? parseInt(daysEl.value, 10) : NaN;
+      if (!email) { if (errEl) errEl.textContent = "Unesi email."; return; }
+      var body = { grantee_email: email, vehicle_id: servId, role: role };
+      if (!isNaN(days) && days > 0) body.expires_in_days = days;
+      autohubFetch("POST", "/grants", body).then(function () {
+        toast("Pristup dodat za " + email);
+        render("grant_manager");
+      }).catch(function (e) {
+        if (errEl) errEl.textContent = e.message || "Greška.";
+      });
+    },
+
+    autohubGrantRevoke: function (localVehicleId, granteeEmail) {
+      var vmap   = JSON.parse(localStorage.getItem(AH_VMAP_KEY) || "{}");
+      var servId = vmap[localVehicleId];
+      if (!servId) { toast("Vozilo nije sinhronizirano."); return; }
+      autohubFetch("DELETE", "/grants", { grantee_email: granteeEmail, vehicle_id: servId }).then(function () {
+        toast("Pristup opozvan.");
+        render("grant_manager");
+      }).catch(function (e) {
+        toast("Greška: " + (e.message || "nepoznata"));
       });
     }
 

@@ -15,7 +15,7 @@ Legenda statusa: 🔵 novo • 🟡 u analizi • 🟢 za implementaciju • ✅
 |---|--------|-------|------|-----------|--------|
 | 1 | **Početno stanje vozila (retroaktivni unos istorije).** Nova aplikacija/prazan karton — vlasnik/majstor uzima vozilo "iz sredine" života i mora da unese zatečeno stanje: trenutna km, poslednji servis (datum + km), rok registracije/tehničkog, gume. | Marko (Garage) | core (Event model) | Garage + Driver | ✅ URAĐENO u OBE app |
 | 2 | **Deljena IndexedDB baza između aplikacija na istom origin-u.** Odlučiti pre platform faze. | Claude (build) | core (store) | sve | 🟡 u analizi |
-| 3 | **Multi-user — jedan primitiv rešava sve.** `grant(user, target, vehicle, role, [expires])`. Team NIJE poseban entitet, samo automatizam preko primitiva. | Marko + arhitektura | hub | sve | 🟢 za AutoHub — implementacija u toku |
+| 3 | **Multi-user — jedan primitiv rešava sve.** `grant(user, target, vehicle, role, [expires])`. Team NIJE poseban entitet, samo automatizam preko primitiva. | Marko + arhitektura | hub | sve | ✅ URAĐENO (Garage v1.27.0) — Settings → 🔑 Pristup vozilima |
 | 4 | **Reverse marketplace hipoteza** — "objavi potrebu → dobavljači se takmiče". Nije signal sa terena. Uslov aktivacije: 2+ mehaničara nezavisno traže brz parts sourcing + Faza 3 završena. | Desktop Claude | hub | — | ⚪ hipoteza — Faza 6+ |
 | 5 | **Play Protect upozorenje** — "Nebezbedna aplikacija" pri instalaciji Garage PWA na Androidu. Nije bug u kodu (Google WebAPK). | Marko | app (Garage) | Garage | 🔴 blokira onboarding — rešenje u manualu |
 | 6 | **Nikola — prvi realni Driver tester** van autora projekta. Aktivan od 2026-07-11. | Nikola | — | Driver | 🟢 aktivan |
