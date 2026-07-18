@@ -1,0 +1,12 @@
+{
+  "name": "autodelovi",
+  "version": "1.0.0",
+  "description": "Autodelovi — marketplace za prodaju auto delova",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
+  }
+}

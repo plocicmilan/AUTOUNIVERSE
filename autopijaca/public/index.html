@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autopijaca — Prodaja automobila</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0D1B2A;
+    --gold:  #FFC107;
+    --bg:    #F5F5F5;
+    --card:  #FFFFFF;
+    --text:  #1A1A2E;
+    --muted: #6B7280;
+    --border:#E5E7EB;
+    --green: #10B981;
+  }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 { font-size: 1.4rem; font-weight: 700; }
+  header span { font-size: 0.85rem; color: var(--gold); }
+
+  .filters {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .filters input, .filters select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: var(--bg);
+    color: var(--text);
+    flex: 1;
+    min-width: 140px;
+  }
+  .filters button {
+    padding: 8px 20px;
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 16px; }
+
+  .stats { color: var(--muted); font-size: 0.85rem; margin-bottom: 12px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+  .card-photo {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 2.5rem;
+  }
+  .card-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+  .card-body { padding: 12px 14px; }
+  .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+  .card-price { font-size: 1.2rem; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+  .card-meta { font-size: 0.82rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { background: var(--bg); border-radius: 4px; padding: 2px 6px; }
+
+  /* Modal */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .overlay.open { display: flex; align-items: flex-start; justify-content: center; padding: 16px; }
+
+  .modal {
+    background: var(--card);
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    margin-top: 20px;
+    overflow: hidden;
+  }
+
+  .modal-photos { width: 100%; height: 240px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--muted); }
+  .modal-photos img { width: 100%; height: 100%; object-fit: cover; }
+
+  .modal-body { padding: 20px; }
+  .modal-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+  .modal-price { font-size: 1.5rem; font-weight: 700; color: var(--navy); margin-bottom: 12px; }
+  .modal-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .badge { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 0.83rem; }
+
+  .section-title { font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .description { font-size: 0.92rem; line-height: 1.6; color: var(--text); margin-bottom: 20px; white-space: pre-wrap; }
+
+  .contact-box {
+    background: var(--navy);
+    border-radius: 12px;
+    padding: 16px;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+  .contact-box p { font-size: 0.85rem; opacity: 0.7; margin-bottom: 4px; }
+  .contact-box .name { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+  .contact-box a {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--navy);
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-top: 4px;
+  }
+
+  /* Forma za poruku */
+  .msg-form { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px; }
+  .msg-form .section-title { margin-bottom: 10px; }
+  .msg-form input, .msg-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+  }
+  .msg-form textarea { min-height: 80px; resize: vertical; }
+  .msg-form button {
+    width: 100%;
+    padding: 12px;
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  .msg-sent { color: var(--green); font-size: 0.9rem; text-align: center; padding: 10px; font-weight: 600; }
+
+  .close-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    text-align: center;
+    background: var(--bg);
+    border: none;
+    font-size: 0.9rem;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 0;
+  }
+
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty p { font-size: 1rem; margin-top: 8px; }
+
+  .loading { text-align: center; padding: 40px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🚗 Autopijaca</h1>
+    <span>Prodaja automobila — AutoUniverse</span>
+  </div>
+</header>
+
+<div class="filters">
+  <input type="text" id="f-make" placeholder="Marka (VW, BMW...)">
+  <input type="text" id="f-model" placeholder="Model">
+  <input type="text" id="f-city" placeholder="Grad">
+  <input type="number" id="f-max-price" placeholder="Max cena (EUR)">
+  <button onclick="loadListings()">Pretraži</button>
+</div>
+
+<div class="container">
+  <div class="stats" id="stats"></div>
+  <div class="grid" id="grid">
+    <div class="loading">Učitavanje oglasa...</div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-photos" id="modal-photo">🚗</div>
+    <div class="modal-body">
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-price" id="modal-price"></div>
+      <div class="modal-meta" id="modal-meta"></div>
+      <div class="section-title">Opis</div>
+      <div class="description" id="modal-desc"></div>
+      <div class="contact-box" id="modal-contact"></div>
+      <div class="msg-form" id="msg-form">
+        <div class="section-title">Pošalji poruku prodavcu</div>
+        <input type="text" id="msg-name" placeholder="Vaše ime *">
+        <input type="tel" id="msg-phone" placeholder="Vaš telefon">
+        <textarea id="msg-content" placeholder="Poruka *"></textarea>
+        <button onclick="sendMessage()">Pošalji poruku</button>
+        <div class="msg-sent" id="msg-sent" style="display:none">✓ Poruka poslata! Prodavac će vas kontaktirati.</div>
+      </div>
+    </div>
+    <button class="close-btn" onclick="closeModal()">Zatvori ✕</button>
+  </div>
+</div>
+
+<script>
+  const API = '';  // isti server
+  let currentListingId = null;
+
+  function fmt(listing) {
+    return `${listing.make} ${listing.model}${listing.year ? ' ' + listing.year : ''}`;
+  }
+
+  function fmtPrice(listing) {
+    return `${Number(listing.price).toLocaleString('sr-RS')} ${listing.currency}`;
+  }
+
+  function fmtMeta(l) {
+    const parts = [];
+    if (l.mileage_km) parts.push(`${Number(l.mileage_km).toLocaleString('sr-RS')} km`);
+    if (l.fuel)       parts.push(l.fuel);
+    if (l.gearbox)    parts.push(l.gearbox);
+    if (l.city)       parts.push('📍 ' + l.city);
+    return parts;
+  }
+
+  async function loadListings() {
+    document.getElementById('grid').innerHTML = '<div class="loading">Učitavanje...</div>';
+    const make  = document.getElementById('f-make').value.trim();
+    const model = document.getElementById('f-model').value.trim();
+    const city  = document.getElementById('f-city').value.trim();
+    const max   = document.getElementById('f-max-price').value.trim();
+
+    const params = new URLSearchParams();
+    if (make)  params.set('make', make);
+    if (model) params.set('model', model);
+    if (city)  params.set('city', city);
+    if (max)   params.set('max_price', max);
+    params.set('limit', '40');
+
+    const res = await fetch(`${API}/listings?${params}`);
+    const data = await res.json();
+
+    const grid = document.getElementById('grid');
+    const stats = document.getElementById('stats');
+
+    if (!data.length) {
+      stats.textContent = '';
+      grid.innerHTML = '<div class="empty"><div style="font-size:3rem">🔍</div><p>Nema oglasa za zadatu pretragu.</p></div>';
+      return;
+    }
+
+    stats.textContent = `${data.length} oglas${data.length === 1 ? '' : data.length < 5 ? 'a' : 'a'} pronađeno`;
+
+    grid.innerHTML = data.map(l => `
+      <div class="card" onclick="openListing(${l.id})">
+        <div class="card-photo">
+          ${l.photos && l.photos.length > 0
+            ? `<img src="${l.photos[0]}" alt="${fmt(l)}" loading="lazy">`
+            : '🚗'}
+        </div>
+        <div class="card-body">
+          <div class="card-title">${fmt(l)}</div>
+          <div class="card-price">${fmtPrice(l)}</div>
+          <div class="card-meta">
+            ${fmtMeta(l).map(t => `<span class="tag">${t}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function openListing(id) {
+    currentListingId = id;
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('msg-sent').style.display = 'none';
+    document.getElementById('msg-name').value = '';
+    document.getElementById('msg-phone').value = '';
+    document.getElementById('msg-content').value = '';
+
+    const res = await fetch(`${API}/listings/${id}`);
+    const l = await res.json();
+
+    document.getElementById('modal-title').textContent = fmt(l);
+    document.getElementById('modal-price').textContent = fmtPrice(l);
+
+    document.getElementById('modal-photo').innerHTML = l.photos && l.photos.length > 0
+      ? `<img src="${l.photos[0]}" alt="${fmt(l)}">`
+      : '🚗';
+
+    document.getElementById('modal-meta').innerHTML = fmtMeta(l)
+      .map(t => `<span class="badge">${t}</span>`).join('');
+
+    document.getElementById('modal-desc').textContent = l.description || 'Bez opisa.';
+
+    const contact = document.getElementById('modal-contact');
+    const isPhone = l.contact_method !== 'message';
+    contact.innerHTML = `
+      <p>Kontakt prodavca</p>
+      <div class="name">${l.contact_name}</div>
+      ${isPhone
+        ? `<a href="tel:${l.contact_phone}">📞 Pozovi ${l.contact_phone}</a>`
+        : '<span style="font-size:0.85rem;opacity:0.8">Pošalji poruku ispod ↓</span>'}
+    `;
+
+    // Sakrij formu za poruku ako prodavac želi samo poziv
+    document.getElementById('msg-form').style.display = isPhone ? 'none' : 'block';
+  }
+
+  async function sendMessage() {
+    const name    = document.getElementById('msg-name').value.trim();
+    const phone   = document.getElementById('msg-phone').value.trim();
+    const content = document.getElementById('msg-content').value.trim();
+
+    if (!name || !content) { alert('Ime i poruka su obavezni.'); return; }
+
+    const res = await fetch(`${API}/listings/${currentListingId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ buyer_name: name, buyer_phone: phone, content })
+    });
+
+    if (res.ok) {
+      document.getElementById('msg-form').style.display = 'none';
+      document.getElementById('msg-sent').style.display = 'block';
+    } else {
+      alert('Greška. Pokušajte ponovo.');
+    }
+  }
+
+  function closeModal(e) {
+    if (e && e.target !== document.getElementById('overlay') && e.type !== 'click') return;
+    if (e && e.target.closest && e.target.closest('.modal') && e.target !== document.querySelector('.close-btn')) return;
+    document.getElementById('overlay').classList.remove('open');
+    currentListingId = null;
+  }
+
+  // Detektuj /prodaja/:id u URL-u i otvori direktno
+  const match = location.pathname.match(/\/prodaja\/(\d+)/);
+  if (match) openListing(match[1]);
+
+  loadListings();
+</script>
+</body>
+</html>

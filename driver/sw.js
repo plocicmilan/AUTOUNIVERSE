@@ -2,7 +2,7 @@
    Strategija: cache-first. Sve bundled, nikad CDN.                    */
 "use strict";
 
-var CACHE = "driver-toolbox-v1.7.0"; // podigni verziju pri svakom deploy-u
+var CACHE = "driver-toolbox-v1.8.0"; // podigni verziju pri svakom deploy-u
 
 var PRECACHE = [
   "index.html",
@@ -22,6 +22,7 @@ var PRECACHE = [
   "../core/js/license.js",
   "../core/js/reminders.js",
   "../core/js/autohub.js",
+  "../core/js/autopijaca.js",
   "../core/js/catalog.js",
   "../core/vendor/jspdf.umd.min.js",
   "../core/vendor/font-dejavu.js",

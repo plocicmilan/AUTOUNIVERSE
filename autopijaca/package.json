@@ -1,0 +1,12 @@
+{
+  "name": "autopijaca",
+  "version": "1.0.0",
+  "description": "Autopijaca — marketplace za prodaju automobila",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
+  }
+}

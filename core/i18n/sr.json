@@ -242,5 +242,18 @@
   "d.sell_price": "Prodajna cena",
   "d.sell_date": "Datum prodaje",
   "d.sell_confirm": "Sačuvaj status",
-  "d.trade_sale": "Prodaja"
+  "d.trade_sale": "Prodaja",
+  "d.publish_listing": "📢 Objavi oglas",
+  "d.publish_on_autopijaca": "Objavi na Autopijaci",
+  "d.listing_active": "✅ Oglas aktivan",
+  "d.listing_price": "Cena oglasa",
+  "d.listing_city": "Grad",
+  "d.listing_desc": "Opis (stanje, oprema...)",
+  "d.listing_contact_method": "Kontakt metod",
+  "d.contact_phone_call": "📞 Poziv",
+  "d.contact_message": "✉️ Poruka",
+  "d.listing_delete": "Obriši oglas",
+  "d.listing_messages": "Upiti kupaca",
+  "d.listing_no_messages": "Još nema upita.",
+  "d.autopijaca_unavailable": "Autopijaca server nije dostupan. Pokrenite server i ažurirajte platform-url.json."
 }

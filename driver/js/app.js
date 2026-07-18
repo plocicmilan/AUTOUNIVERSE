@@ -273,6 +273,9 @@
             (v.status !== "sold" && v.status !== "totaled"
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'sell_vehicle\',{id:\'' + esc(vid) + '\'})" data-i18n="d.sell_vehicle"></button>'
               : '') +
+            (v.trade_mode
+              ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'publish_listing\',{id:\'' + esc(vid) + '\'})" data-i18n="d.publish_listing"></button>'
+              : '') +
             (moduleUnlocked("multi_vehicle")
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle_form\')" data-i18n="vehicles.add"></button>'
               : '');
@@ -740,6 +743,65 @@
             '<label class="field"><span>' + t("d.trade_buy_currency") + '</span><select id="sv_sell_cur">' + curOpts + '</select></label>' +
           '</div>' +
           '<button class="btn btn-primary" onclick="DR.saveSellVehicle()" data-i18n="d.sell_confirm"></button>' +
+          '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.cancel"></button>';
+      });
+    },
+
+    /* ===== PUBLISH LISTING — objava na Autopijaci (trade_mode vozila) ===== */
+    publish_listing: function (params) {
+      var vid = (params && params.id) || App.activeVehicleId;
+      return Store.get("vehicles", vid).then(function (v) {
+        if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+        App._publishVehicleId = vid;
+
+        if (!window.Autopijaca) {
+          return '<div class="card"><p class="empty">' + t("d.autopijaca_unavailable") + '</p>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button></div>';
+        }
+
+        var existing = Autopijaca.getListingForVehicle(vid);
+        var tradePrice = (v.trade && v.trade.sale && v.trade.sale.price) ? v.trade.sale.price : '';
+        var tradeCur   = (v.trade && v.trade.sale && v.trade.sale.currency) ? v.trade.sale.currency : 'EUR';
+        var curOpts = ["EUR","RSD"].map(function (c) {
+          return '<option value="' + c + '"' + (tradeCur === c ? " selected" : "") + '>' + c + '</option>';
+        }).join("");
+
+        var existingSection = '';
+        if (existing) {
+          existingSection =
+            '<div class="card" style="border:2px solid #10B981">' +
+              '<h2>' + t("d.listing_active") + '</h2>' +
+              '<p class="muted">ID #' + existing.listing_id + '</p>' +
+              '<button class="btn btn-secondary mt8" onclick="DR.loadMyListingMessages(\'' + esc(vid) + '\')">' + t("d.listing_messages") + '</button>' +
+              '<button class="btn btn-secondary mt8" onclick="DR.deleteMyListing(\'' + esc(vid) + '\')" style="color:#ef4444">' + t("d.listing_delete") + '</button>' +
+            '</div>' +
+            '<div id="listing_messages_box"></div>';
+        }
+
+        return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+          '<h1>' + t("d.publish_listing") + '</h1>' +
+          '<p class="sub">' + esc(v.make + " " + v.model + (v.year ? " " + v.year : "")) + '</p>' +
+          existingSection +
+          '<div class="card">' +
+            '<h2>' + t("d.publish_on_autopijaca") + '</h2>' +
+            '<label class="field"><span>' + t("d.listing_price") + '</span>' +
+              '<div style="display:flex;gap:8px">' +
+                '<input type="number" id="pl_price" value="' + tradePrice + '" style="flex:1">' +
+                '<select id="pl_cur" style="width:80px">' + curOpts + '</select>' +
+              '</div>' +
+            '</label>' +
+            '<label class="field"><span>' + t("d.listing_city") + '</span>' +
+              '<input type="text" id="pl_city" placeholder="Kruševac"></label>' +
+            '<label class="field"><span>' + t("d.listing_desc") + '</span>' +
+              '<textarea id="pl_desc" rows="3" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.9rem"></textarea></label>' +
+            '<label class="field"><span>' + t("d.listing_contact_method") + '</span>' +
+              '<select id="pl_contact">' +
+                '<option value="phone_call">' + t("d.contact_phone_call") + '</option>' +
+                '<option value="message">' + t("d.contact_message") + '</option>' +
+              '</select>' +
+            '</label>' +
+          '</div>' +
+          '<button class="btn btn-primary" onclick="DR.publishListing()">' + t("d.publish_on_autopijaca") + '</button>' +
           '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.cancel"></button>';
       });
     },
@@ -1304,6 +1366,71 @@
           render("vehicle");
         });
       });
+    },
+
+    /* ----- Autopijaca akcije ----- */
+
+    publishListing: function () {
+      var vid = App._publishVehicleId;
+      if (!vid || !window.Autopijaca) return;
+      Store.get("vehicles", vid).then(function (v) {
+        if (!v) return;
+        var price = parseFloat(val("pl_price"));
+        if (!price) { toast("Unesite cenu."); return; }
+        var profile = JSON.parse(localStorage.getItem("driver_profile") || "{}");
+        var payload = {
+          make:           v.make,
+          model:          v.model,
+          year:           v.year || null,
+          mileage_km:     v.mileage_km || null,
+          fuel:           (v.engine && v.engine.fuel) || null,
+          gearbox:        (v.engine && v.engine.gearbox) || null,
+          vin:            v.vin || null,
+          price:          price,
+          currency:       val("pl_cur") || "EUR",
+          description:    val("pl_desc") || null,
+          city:           val("pl_city") || null,
+          contact_name:   profile.name || v.make + " " + v.model,
+          contact_phone:  profile.phone || "",
+          contact_method: val("pl_contact") || "phone_call"
+        };
+        if (!payload.contact_phone) { toast("Dodajte telefon u Podešavanjima."); return; }
+        Autopijaca.publish(vid, payload).then(function (data) {
+          toast("Oglas objavljen! #" + data.id);
+          render("publish_listing", { id: vid });
+        }).catch(function (e) { toast("Greška: " + e.message); });
+      });
+    },
+
+    loadMyListingMessages: function (vid) {
+      if (!window.Autopijaca) return;
+      Autopijaca.getMyListing(vid).then(function (data) {
+        var box = document.getElementById("listing_messages_box");
+        if (!box) return;
+        if (!data || !data.messages || !data.messages.length) {
+          box.innerHTML = '<div class="card"><p class="empty">' + t("d.listing_no_messages") + '</p></div>';
+          return;
+        }
+        box.innerHTML = '<div class="card"><h2>' + t("d.listing_messages") + '</h2>' +
+          data.messages.map(function (m) {
+            return '<div style="border-bottom:1px solid var(--border);padding:8px 0">' +
+              '<b>' + esc(m.buyer_name) + '</b>' +
+              (m.buyer_phone ? ' · <a href="tel:' + esc(m.buyer_phone) + '">' + esc(m.buyer_phone) + '</a>' : '') +
+              '<p style="margin-top:4px;font-size:.88rem">' + esc(m.content) + '</p>' +
+              '<p class="muted" style="font-size:.78rem">' + (m.created_at || "").slice(0, 16).replace("T", " ") + '</p>' +
+            '</div>';
+          }).join("") +
+        '</div>';
+      }).catch(function (e) { toast("Greška: " + e.message); });
+    },
+
+    deleteMyListing: function (vid) {
+      if (!window.Autopijaca) return;
+      if (!confirm("Obrisati oglas?")) return;
+      Autopijaca.deleteListing(vid).then(function () {
+        toast("Oglas obrisan.");
+        render("publish_listing", { id: vid });
+      }).catch(function (e) { toast("Greška: " + e.message); });
     },
 
     setExpensesVehicle: function (id) { App.expensesVehicleId = id; render("expenses"); },
