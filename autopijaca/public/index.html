@@ -153,7 +153,7 @@ header {
   z-index: 10;
   max-width: 960px;
   margin: 0 auto;
-  padding: 20px 20px 60px;
+  padding: 20px 20px 80px;
 }
 .stats-count {
   font-family: var(--font-h);
@@ -403,6 +403,97 @@ header {
   .modal-title { font-size: 1.3rem; }
   .modal-price { font-size: 1.6rem; }
 }
+
+/* ── Tab bar ──────────────────────────────────────────────── */
+.tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: var(--surface); border-top: 1px solid var(--border);
+  display: flex; height: 58px; backdrop-filter: blur(8px);
+}
+.tab-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  border: none; background: none; cursor: pointer;
+  color: var(--muted); transition: color 0.15s; padding: 4px 0;
+}
+.tab-btn.active { color: var(--accent); }
+.tab-btn .ti { font-size: 1.2rem; line-height: 1; }
+.tab-btn .tl { font-family: var(--font-b); font-size: 0.65rem; font-weight: 500; }
+
+/* ── Tab panels ───────────────────────────────────────────── */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Page content shared styles ──────────────────────────── */
+.page-container {
+  max-width: 720px; margin: 0 auto; padding: 24px 20px 80px;
+  position: relative; z-index: 10;
+}
+.page-section { margin-bottom: 28px; }
+.page-h {
+  font-family: var(--font-h); font-size: 1.25rem; font-weight: 800;
+  color: #fff; letter-spacing: 0.02em; margin-bottom: 14px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.app-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 420px) { .app-grid-2 { grid-template-columns: 1fr; } }
+.app-tile {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 14px; text-decoration: none;
+  display: block; transition: border-color 0.2s, transform 0.15s;
+}
+.app-tile:hover { transform: translateY(-2px); border-color: var(--border2); }
+.app-tile.active-app { opacity: 0.5; cursor: default; pointer-events: none; }
+.app-tile.t-orange { border-top: 3px solid #FF5722; }
+.app-tile.t-blue   { border-top: 3px solid #0EA5E9; }
+.app-tile.t-red    { border-top: 3px solid #D5281B; }
+.app-tile.t-green  { border-top: 3px solid #1C8A4C; }
+.app-tile .at-name {
+  font-family: var(--font-h); font-size: 0.9rem; font-weight: 700;
+  color: #fff; margin-bottom: 5px;
+}
+.app-tile .at-desc { font-size: 0.76rem; color: var(--muted); line-height: 1.45; }
+.info-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 18px; margin-bottom: 12px;
+}
+.info-card p { font-size: 0.88rem; color: var(--text); line-height: 1.6; margin: 0; }
+.info-card p + p { margin-top: 8px; }
+.contact-row {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 14px;
+}
+.contact-row .cr-ico { font-size: 1.3rem; flex-shrink: 0; }
+.contact-row .cr-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.contact-row .cr-val { font-size: 0.88rem; color: var(--text); font-weight: 500; }
+.contact-row a { color: var(--accent); text-decoration: none; }
+.contact-row a:hover { text-decoration: underline; }
+.btn-mail {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: var(--accent); color: #fff; padding: 13px;
+  border-radius: 10px; text-decoration: none;
+  font-family: var(--font-h); font-size: 1.05rem; font-weight: 700;
+  letter-spacing: 0.04em; transition: background 0.15s; margin-bottom: 14px;
+}
+.btn-mail:hover { background: var(--accent2); }
+.feedback-form textarea {
+  width: 100%; padding: 11px 13px;
+  background: var(--s2); border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--text); font-family: var(--font-b);
+  font-size: 0.875rem; min-height: 100px; resize: vertical;
+  outline: none; transition: border-color 0.2s; margin-bottom: 10px; display: block;
+}
+.feedback-form textarea:focus { border-color: var(--accent); }
+.feedback-form textarea::placeholder { color: var(--muted); }
+.btn-feedback {
+  width: 100%; padding: 11px;
+  background: var(--s2); border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--text); font-family: var(--font-h);
+  font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-feedback:hover { background: var(--s3); border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -430,6 +521,7 @@ header {
   </div>
 </header>
 
+<div id="panel-main" class="tab-panel active">
 <div class="search-bar">
   <div class="search-inner">
     <input type="text" id="f-make" placeholder="Marka (VW, BMW, Audi...)">
@@ -446,6 +538,7 @@ header {
     <div class="loading">Učitavanje oglasa</div>
   </div>
 </div>
+</div><!-- /panel-main -->
 
 <div class="overlay" id="overlay" onclick="closeModal(event)">
   <div class="modal" id="modal">
@@ -473,9 +566,111 @@ header {
   </div>
 </div>
 
+<div id="panel-about" class="tab-panel">
+  <div class="page-container">
+    <div class="page-section">
+      <div class="page-h">AutoUniverse</div>
+      <div class="info-card">
+        <p>Digitalni alati za srpsku auto industriju. Testna faza — svaki feedback direktno utiče na dalji razvoj.</p>
+      </div>
+    </div>
+    <div class="page-section">
+      <div class="page-h">Naši alati</div>
+      <div class="app-grid-2">
+        <span class="app-tile t-orange active-app">
+          <div class="at-name">🏷️ Autopijaca</div>
+          <div class="at-desc">Prodaja automobila direktno, bez posrednika. Sa verifikovanom istorijom servisa.</div>
+        </span>
+        <a href="http://localhost:3002/delovi" class="app-tile t-blue" target="_blank">
+          <div class="at-name">⚙️ Autodelovi</div>
+          <div class="at-desc">Prodaja auto delova. Filteri po vozilu, kategorijama i stanju.</div>
+        </a>
+        <a href="https://plocicmilan.github.io/AUTOUNIVERSE/garage/" class="app-tile t-red" target="_blank">
+          <div class="at-name">🔧 Garage Toolbox</div>
+          <div class="at-desc">Za mehaničare. Radni nalozi, karton vozila, PDF računi.</div>
+        </a>
+        <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="app-tile t-green" target="_blank">
+          <div class="at-name">🚗 Driver Toolbox</div>
+          <div class="at-desc">Za vlasnike vozila. Servisna istorija, dokumenta, podsetnici.</div>
+        </a>
+      </div>
+    </div>
+    <div class="page-section">
+      <div class="page-h">Ko smo</div>
+      <div class="info-card">
+        <p><strong>AutoUniverse</strong> gradi <strong>Belora Ventures Studio</strong>, mali studio iz Kruševca koji razvija digitalne alate za srpsko tržište.</p>
+        <p>Testna faza je aktivna — feedback korisnika direktno oblikuje sledeće verzije.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="panel-contact" class="tab-panel">
+  <div class="page-container">
+    <div class="page-section">
+      <div class="page-h">Kontakt</div>
+      <a href="mailto:plocicmilan@gmail.com" class="btn-mail">✉️ plocicmilan@gmail.com</a>
+      <div class="contact-row">
+        <div class="cr-ico">📍</div>
+        <div>
+          <div class="cr-label">Lokacija</div>
+          <div class="cr-val">Kruševac, Srbija</div>
+        </div>
+      </div>
+      <div class="contact-row">
+        <div class="cr-ico">💻</div>
+        <div>
+          <div class="cr-label">GitHub</div>
+          <div class="cr-val"><a href="https://github.com/plocicmilan/AUTOUNIVERSE" target="_blank">plocicmilan/AUTOUNIVERSE</a></div>
+        </div>
+      </div>
+    </div>
+    <div class="page-section">
+      <div class="page-h">Feedback</div>
+      <div class="info-card" style="margin-bottom:12px">
+        <p>Imaš predlog, bug ili komentar? Napiši nam — svaki feedback se čita.</p>
+      </div>
+      <div class="feedback-form">
+        <textarea id="fb-text" placeholder="Vaša poruka, predlog ili bug..."></textarea>
+        <button class="btn-feedback" onclick="sendFeedback()">POŠALJI FEEDBACK</button>
+        <div id="fb-sent" style="display:none;text-align:center;padding:10px;color:var(--green);font-size:.9rem">✓ Hvala! Otvara se email klijent.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="main" onclick="switchTab('main')">
+    <span class="ti">🏷️</span>
+    <span class="tl">Oglasi</span>
+  </button>
+  <button class="tab-btn" data-tab="about" onclick="switchTab('about')">
+    <span class="ti">ℹ️</span>
+    <span class="tl">O nama</span>
+  </button>
+  <button class="tab-btn" data-tab="contact" onclick="switchTab('contact')">
+    <span class="ti">📞</span>
+    <span class="tl">Kontakt</span>
+  </button>
+</nav>
+
 <script>
   const API = '';
   let currentListingId = null;
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+  }
+
+  function sendFeedback() {
+    const text = document.getElementById('fb-text').value.trim();
+    if (!text) return;
+    window.location.href = `mailto:plocicmilan@gmail.com?subject=AutoUniverse%20Feedback%20(Autopijaca)&body=${encodeURIComponent(text)}`;
+    document.getElementById('fb-sent').style.display = 'block';
+  }
 
   function fmt(l) { return `${l.make} ${l.model}${l.year ? ' ' + l.year : ''}`; }
   function fmtPrice(l) { return `${Number(l.price).toLocaleString('sr-RS')} ${l.currency}`; }
