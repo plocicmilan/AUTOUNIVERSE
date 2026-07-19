@@ -58,5 +58,13 @@
   <script src="../core/js/autodelovi.js"></script>
   <script src="js/app.js"></script>
   <script src="js/workorder.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      var _swRefresh = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!_swRefresh) { _swRefresh = true; window.location.reload(); }
+      });
+    }
+  </script>
 </body>
 </html>
