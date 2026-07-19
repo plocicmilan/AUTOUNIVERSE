@@ -563,7 +563,8 @@
             date:         new Date().toISOString().slice(0, 10),
             mileage_km:   WO.draft.mileage_km ? parseInt(WO.draft.mileage_km, 10) : null,
             items:        safeItems,
-            next_service: WO.draft.next_service || null
+            next_service: WO.draft.next_service || null,
+            public_on_marketplace: true
           },
           vehicle: v ? { vin: v.vin || "", make: v.make || "", model: v.model || "",
                          year: v.year || null, plate: v.plate || "" } : null,

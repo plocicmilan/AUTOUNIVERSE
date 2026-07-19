@@ -850,6 +850,13 @@
             '<p class="muted">' + esc(veh.plate || '') + (veh.year ? ' • ' + veh.year : '') +
               (veh.vin ? ' • VIN: ' + esc(veh.vin) : '') + '</p></div>' : '') +
           '<div class="card"><p class="empty" style="font-size:.85rem">Cene nisu prikazane — mehaničar ih nije delio.</p></div>' +
+          '<div class="card" style="display:flex;align-items:center;gap:12px;padding:14px 16px">' +
+            '<input type="checkbox" id="pm_public" checked style="width:20px;height:20px;accent-color:var(--accent);flex-shrink:0">' +
+            '<label for="pm_public" style="font-size:.9rem;line-height:1.3;cursor:pointer">' +
+              '<b>Javno u dosijeu</b><br>' +
+              '<span style="color:var(--muted);font-size:.8rem">Ovaj zapis se prikazuje kupcima na Autopijaci kad prodaješ vozilo</span>' +
+            '</label>' +
+          '</div>' +
           '<button class="btn btn-primary" onclick="DR.importHubRecord()" data-i18n="backup.import"></button>' +
           '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.cancel"></button>';
       }).catch(function (err) {
@@ -1488,17 +1495,21 @@
         if (!matched) matched = vehicles[0] || null;
         var vid = matched ? matched.id : App.activeVehicleId;
         if (!vid) { toast(t("d.need_vehicle")); return; }
+        var pmChk = document.getElementById("pm_public");
+        var publicFlag = pmChk ? pmChk.checked : (ev.public_on_marketplace !== false);
         var newEv = Models.createEvent({
-          vehicle_id:  vid,
-          type:        ev.type || "service",
-          title:       ev.title || "",
-          description: ev.description || "",
-          date:        ev.date || todayISO(),
-          mileage_km:  ev.mileage_km != null ? ev.mileage_km : null,
-          items:       (ev.items || []).map(function (it) { return Models.createItem({ name: it.name, qty: it.qty }); }),
-          source:      "mechanic",
-          app:         "driver",
-          retroactive: false
+          vehicle_id:           vid,
+          type:                 ev.type || "service",
+          title:                ev.title || "",
+          description:          ev.description || "",
+          date:                 ev.date || todayISO(),
+          mileage_km:           ev.mileage_km != null ? ev.mileage_km : null,
+          items:                (ev.items || []).map(function (it) { return Models.createItem({ name: it.name, qty: it.qty }); }),
+          source:               "mechanic",
+          mechanic_name:        data.mechanic_name || null,
+          public_on_marketplace: publicFlag,
+          app:                  "driver",
+          retroactive:          false
         });
         var ops = [Store.put("events", newEv)];
         // next_service → automatski podsetnik
@@ -1663,8 +1674,10 @@
             data: {
               title: e.title || null,
               description: e.description || null,
-              km: e.mileage_km || null,
+              mileage_km: e.mileage_km || null,
               source: e.source || null,
+              mechanic_name: e.mechanic_name || null,
+              public_on_marketplace: e.public_on_marketplace !== false,
               photos_count: (e.photos || []).length
             },
             event_date: e.date || new Date().toISOString(),

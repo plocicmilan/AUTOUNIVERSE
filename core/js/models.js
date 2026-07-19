@@ -150,6 +150,7 @@
       cost: data.cost ? createCost(data.cost) : null,      // expense modul (Driver)
       next_service: data.next_service || null,             // { km, date } → automatski podsetnik
       public_on_marketplace: data.public_on_marketplace !== false,  // default: true (opt-out)
+      mechanic_name: data.mechanic_name || null,                   // ime mehaničara koji je delio (source: mechanic)
       documents: data.documents || []
     });
   }
