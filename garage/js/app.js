@@ -85,6 +85,7 @@
       .then(function () {
         translate(document.body);
         bindNav();
+        bindBackButton();
         render("home");
         registerSW();
         watchOnline();
@@ -127,9 +128,19 @@
     });
   }
 
+  var _isPop = false;
+
   function render(route, params) {
     App.route = route;
     App.params = params || null;
+    if (!_isPop) {
+      try {
+        var st = { route: route, params: params || null };
+        if (route === "home") history.replaceState(st, "", "#home");
+        else history.pushState(st, "", "#" + route);
+      } catch (e) {}
+    }
+    _isPop = false;
     document.querySelectorAll(".nav-btn").forEach(function (btn) {
       btn.classList.toggle("active", btn.getAttribute("data-route") === route.split("/")[0]);
     });
@@ -141,6 +152,19 @@
       translate(s);
       s.scrollTop = 0;
       window.scrollTo(0, 0);
+    });
+  }
+
+  function bindBackButton() {
+    window.addEventListener("popstate", function (e) {
+      if (e.state && e.state.route) {
+        _isPop = true;
+        render(e.state.route, e.state.params || null);
+      } else {
+        history.replaceState({ route: "home", params: null }, "", "#home");
+        _isPop = true;
+        render("home");
+      }
     });
   }
 

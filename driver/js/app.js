@@ -73,6 +73,7 @@
       .then(function () {
         translate(document.body);
         bindNav();
+        bindBackButton();
         // Magic-link import: Driver otvoren sa ?hub_import=TOKEN&hub=URL
         var urlP = new URL(location.href).searchParams;
         var importToken = urlP.get("hub_import");
@@ -118,8 +119,18 @@
       btn.addEventListener("click", function () { render(btn.getAttribute("data-route")); });
     });
   }
+  var _isPop = false;
+
   function render(route, params) {
     App.route = route; App.params = params || null;
+    if (!_isPop) {
+      try {
+        var st = { route: route, params: params || null };
+        if (route === "vehicle") history.replaceState(st, "", "#vehicle");
+        else history.pushState(st, "", "#" + route);
+      } catch (e) {}
+    }
+    _isPop = false;
     document.querySelectorAll(".nav-btn").forEach(function (btn) {
       btn.classList.toggle("active", btn.getAttribute("data-route") === route.split("/")[0]);
     });
@@ -127,6 +138,19 @@
     Promise.resolve(fn(params)).then(function (html) {
       var s = el("screen");
       s.innerHTML = html; translate(s); s.scrollTop = 0; window.scrollTo(0, 0);
+    });
+  }
+
+  function bindBackButton() {
+    window.addEventListener("popstate", function (e) {
+      if (e.state && e.state.route) {
+        _isPop = true;
+        render(e.state.route, e.state.params || null);
+      } else {
+        history.replaceState({ route: "vehicle", params: null }, "", "#vehicle");
+        _isPop = true;
+        render("vehicle");
+      }
     });
   }
 
