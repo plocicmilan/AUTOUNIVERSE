@@ -794,6 +794,9 @@
               '<input type="text" id="pl_city" placeholder="Kruševac"></label>' +
             '<label class="field"><span>' + t("d.listing_desc") + '</span>' +
               '<textarea id="pl_desc" rows="3" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.9rem"></textarea></label>' +
+            '<label class="field"><span>Telefon *</span>' +
+              '<input type="tel" id="pl_phone" value="' + esc((Store.settings.get("profile", {}) || {}).phone || "") + '" placeholder="+381...">' +
+            '</label>' +
             '<label class="field"><span>' + t("d.listing_contact_method") + '</span>' +
               '<select id="pl_contact">' +
                 '<option value="phone_call">' + t("d.contact_phone_call") + '</option>' +
@@ -1377,7 +1380,8 @@
         if (!v) return;
         var price = parseFloat(val("pl_price"));
         if (!price) { toast("Unesite cenu."); return; }
-        var profile = JSON.parse(localStorage.getItem("driver_profile") || "{}");
+        var profile = Store.settings.get("profile", {}) || {};
+        var phone = val("pl_phone") || profile.phone || "";
         var payload = {
           make:           v.make,
           model:          v.model,
@@ -1391,10 +1395,10 @@
           description:    val("pl_desc") || null,
           city:           val("pl_city") || null,
           contact_name:   profile.name || v.make + " " + v.model,
-          contact_phone:  profile.phone || "",
+          contact_phone:  phone,
           contact_method: val("pl_contact") || "phone_call"
         };
-        if (!payload.contact_phone) { toast("Dodajte telefon u Podešavanjima."); return; }
+        if (!payload.contact_phone) { toast("Unesite telefon za kontakt."); return; }
         Autopijaca.publish(vid, payload).then(function (data) {
           toast("Oglas objavljen! #" + data.id);
           render("publish_listing", { id: vid });
