@@ -15,19 +15,22 @@ const STORAGE_SESSION_KEY = 'autohub_session';
 let _baseUrl = null;
 
 async function getPlatformUrl() {
+  // In-memory cache samo za trajanje jedne akcije (nema persist između fetch-ova ako se app osvezi)
   if (_baseUrl) return _baseUrl;
 
-  // Keširano u sessionStorage
-  const cached = sessionStorage.getItem(STORAGE_KEY);
-  if (cached) { _baseUrl = cached; return _baseUrl; }
-
   try {
-    const res = await fetch(PLATFORM_URL_PATH, { cache: 'no-store' });
+    // cache-bust param + no-store da SW i browser cache oboje preskoče
+    const bust = Date.now();
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 8000);
+    const res = await fetch(PLATFORM_URL_PATH + '?t=' + bust, {
+      cache: 'no-store',
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(tid));
     if (!res.ok) return null;
     const data = await res.json();
     if (data.url) {
       _baseUrl = data.url;
-      sessionStorage.setItem(STORAGE_KEY, _baseUrl);
       return _baseUrl;
     }
   } catch {

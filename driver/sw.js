@@ -2,7 +2,7 @@
    Strategija: cache-first. Sve bundled, nikad CDN.                    */
 "use strict";
 
-var CACHE = "driver-toolbox-v1.18.0"; // podigni verziju pri svakom deploy-u
+var CACHE = "driver-toolbox-v1.19.0"; // podigni verziju pri svakom deploy-u
 
 var PRECACHE = [
   "index.html",
@@ -53,6 +53,15 @@ self.addEventListener("activate", function (e) {
 
 self.addEventListener("fetch", function (e) {
   if (e.request.method !== "GET") return;
+
+  // platform-url.json MORA uvek sa mreže (tunnel URL se menja)
+  if (e.request.url.indexOf("platform-url.json") !== -1) {
+    e.respondWith(fetch(e.request).catch(function () {
+      return caches.match(e.request);
+    }));
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request, { ignoreSearch: true }).then(function (hit) {
       if (hit) return hit;
