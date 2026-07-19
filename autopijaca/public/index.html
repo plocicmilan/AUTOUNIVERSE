@@ -4,350 +4,545 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Autopijaca — Prodaja automobila</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --navy: #0D1B2A;
-    --gold:  #FFC107;
-    --bg:    #F5F5F5;
-    --card:  #FFFFFF;
-    --text:  #1A1A2E;
-    --muted: #6B7280;
-    --border:#E5E7EB;
-    --green: #10B981;
-  }
+:root {
+  --bg:      #080B10;
+  --surface: #111520;
+  --s2:      #1A1F2E;
+  --s3:      #222838;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text:    #DDE1EC;
+  --muted:   #5A6070;
+  --accent:  #FF5722;
+  --accent2: #FF7043;
+  --green:   #10B981;
+  --font-h:  'Barlow Condensed', sans-serif;
+  --font-b:  'DM Sans', sans-serif;
+}
 
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+body {
+  font-family: var(--font-b);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  header {
-    background: var(--navy);
-    color: #fff;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  header h1 { font-size: 1.4rem; font-weight: 700; }
-  header span { font-size: 0.85rem; color: var(--gold); }
+/* Watermark */
+.wm-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.wm-bg svg {
+  position: absolute;
+  bottom: -8%;
+  right: -8%;
+  width: 72vw;
+  max-width: 860px;
+  opacity: 0.04;
+  fill: #ffffff;
+}
 
-  .filters {
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .filters input, .filters select {
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.9rem;
-    background: var(--bg);
-    color: var(--text);
-    flex: 1;
-    min-width: 140px;
-  }
-  .filters button {
-    padding: 8px 20px;
-    background: var(--gold);
-    color: var(--navy);
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
+/* Header */
+header {
+  position: relative;
+  z-index: 10;
+  background: linear-gradient(135deg, #0D1118 0%, #141824 100%);
+  border-bottom: 1px solid var(--border);
+}
+.header-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.logo-mark {
+  width: 44px;
+  height: 44px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.logo-mark svg { width: 26px; height: 26px; fill: #fff; }
+.accent-line {
+  width: 3px;
+  height: 44px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.brand h1 {
+  font-family: var(--font-h);
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: #fff;
+}
+.brand span {
+  font-size: 0.75rem;
+  color: var(--muted);
+  display: block;
+  margin-top: 3px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 
-  .container { max-width: 900px; margin: 0 auto; padding: 16px; }
+/* Search */
+.search-bar {
+  position: relative;
+  z-index: 10;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+}
+.search-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.search-inner input {
+  flex: 1;
+  min-width: 130px;
+  padding: 9px 14px;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-b);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-inner input:focus { border-color: var(--accent); }
+.search-inner input::placeholder { color: var(--muted); }
+.btn-search {
+  padding: 9px 22px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-h);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn-search:hover { background: var(--accent2); transform: translateY(-1px); }
 
-  .stats { color: var(--muted); font-size: 0.85rem; margin-bottom: 12px; }
+/* Main */
+.container {
+  position: relative;
+  z-index: 10;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 20px 60px;
+}
+.stats-count {
+  font-family: var(--font-h);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+  display: block;
+}
+.stats-count .n { color: var(--accent); }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-  }
+/* Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+  gap: 14px;
+}
 
-  .card {
-    background: var(--card);
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    overflow: hidden;
-    transition: box-shadow 0.2s;
-    cursor: pointer;
-  }
-  .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+/* Card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0;
+  animation: cardIn 0.4s forwards;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  border-color: rgba(255,87,34,0.5);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(255, 87, 34, 0.12);
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card-photo {
+  width: 100%;
+  height: 175px;
+  background: var(--s2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 3rem;
+  overflow: hidden;
+}
+.card-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.35s; }
+.card:hover .card-photo img { transform: scale(1.05); }
+.card-strip { height: 3px; background: linear-gradient(90deg, var(--accent), transparent); }
+.card-body { padding: 12px 14px 14px; }
+.card-title {
+  font-family: var(--font-h);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.card-price {
+  font-family: var(--font-h);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.card-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag {
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
 
-  .card-photo {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--muted);
-    font-size: 2.5rem;
-  }
-  .card-photo img { width: 100%; height: 100%; object-fit: cover; }
-
-  .card-body { padding: 12px 14px; }
-  .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
-  .card-price { font-size: 1.2rem; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
-  .card-meta { font-size: 0.82rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; }
-  .tag { background: var(--bg); border-radius: 4px; padding: 2px 6px; }
-
-  /* Modal */
-  .overlay {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 100;
-    overflow-y: auto;
-  }
-  .overlay.open { display: flex; align-items: flex-start; justify-content: center; padding: 16px; }
-
-  .modal {
-    background: var(--card);
-    border-radius: 16px;
-    max-width: 600px;
-    width: 100%;
-    margin-top: 20px;
-    overflow: hidden;
-  }
-
-  .modal-photos { width: 100%; height: 240px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--muted); }
-  .modal-photos img { width: 100%; height: 100%; object-fit: cover; }
-
-  .modal-body { padding: 20px; }
-  .modal-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
-  .modal-price { font-size: 1.5rem; font-weight: 700; color: var(--navy); margin-bottom: 12px; }
-  .modal-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-  .badge { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 0.83rem; }
-
-  .section-title { font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-  .description { font-size: 0.92rem; line-height: 1.6; color: var(--text); margin-bottom: 20px; white-space: pre-wrap; }
-
-  .contact-box {
-    background: var(--navy);
-    border-radius: 12px;
-    padding: 16px;
-    color: #fff;
-    margin-bottom: 16px;
-  }
-  .contact-box p { font-size: 0.85rem; opacity: 0.7; margin-bottom: 4px; }
-  .contact-box .name { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
-  .contact-box a {
-    display: inline-block;
-    background: var(--gold);
-    color: var(--navy);
-    padding: 10px 20px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 0.9rem;
-    margin-top: 4px;
-  }
-
-  /* Forma za poruku */
-  .msg-form { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px; }
-  .msg-form .section-title { margin-bottom: 10px; }
-  .msg-form input, .msg-form textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.9rem;
-    margin-bottom: 8px;
-    background: var(--bg);
-    color: var(--text);
-    font-family: inherit;
-  }
-  .msg-form textarea { min-height: 80px; resize: vertical; }
-  .msg-form button {
-    width: 100%;
-    padding: 12px;
-    background: var(--gold);
-    color: var(--navy);
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 0.95rem;
-    cursor: pointer;
-  }
-  .msg-sent { color: var(--green); font-size: 0.9rem; text-align: center; padding: 10px; font-weight: 600; }
-
-  .close-btn {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    text-align: center;
-    background: var(--bg);
-    border: none;
-    font-size: 0.9rem;
-    color: var(--muted);
-    cursor: pointer;
-    font-family: inherit;
-    margin-top: 0;
-  }
-
-  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
-  .empty p { font-size: 1rem; margin-top: 8px; }
-
-  .loading { text-align: center; padding: 40px; color: var(--muted); }
+/* Modal */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.78);
+  z-index: 200;
+  overflow-y: auto;
+  backdrop-filter: blur(4px);
+}
+.overlay.open { display: flex; align-items: flex-start; justify-content: center; padding: 16px; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  max-width: 620px;
+  width: 100%;
+  margin-top: 24px;
+  overflow: hidden;
+  animation: modalIn 0.25s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+.modal-photo {
+  width: 100%;
+  height: 250px;
+  background: var(--s2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  color: var(--muted);
+  overflow: hidden;
+}
+.modal-photo img { width: 100%; height: 100%; object-fit: cover; }
+.modal-strip { height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2), transparent); }
+.modal-body { padding: 22px 22px 18px; }
+.modal-title {
+  font-family: var(--font-h);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.modal-price {
+  font-family: var(--font-h);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+.modal-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.badge {
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+.section-label {
+  font-family: var(--font-h);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.description {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--text);
+  margin-bottom: 20px;
+  white-space: pre-wrap;
+}
+.contact-box {
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.contact-box .clabel { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.contact-box .cname {
+  font-family: var(--font-h);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 10px;
+}
+.btn-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-family: var(--font-h);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: background 0.15s;
+}
+.btn-call:hover { background: var(--accent2); }
+.msg-form { padding: 0 22px 22px; }
+.msg-divider { height: 1px; background: var(--border); margin-bottom: 18px; }
+.msg-form input, .msg-form textarea {
+  width: 100%;
+  padding: 10px 13px;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-b);
+  font-size: 0.875rem;
+  margin-bottom: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.msg-form input:focus, .msg-form textarea:focus { border-color: var(--accent); }
+.msg-form input::placeholder, .msg-form textarea::placeholder { color: var(--muted); }
+.msg-form textarea { min-height: 80px; resize: vertical; }
+.btn-send {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-h);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-send:hover { background: var(--accent2); }
+.msg-sent { text-align: center; padding: 12px; color: var(--green); font-weight: 600; font-size: 0.9rem; }
+.close-btn {
+  display: block; width: 100%; padding: 14px;
+  text-align: center; background: var(--s2); border: none;
+  border-top: 1px solid var(--border); font-family: var(--font-b);
+  font-size: 0.875rem; color: var(--muted); cursor: pointer;
+  transition: background 0.15s;
+}
+.close-btn:hover { background: var(--s3); color: var(--text); }
+.empty { text-align: center; padding: 80px 20px; color: var(--muted); }
+.empty .ei { font-size: 3rem; opacity: 0.4; margin-bottom: 10px; }
+.empty p { font-size: 0.92rem; }
+.loading { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 0.9rem; }
+.loading::after {
+  content: '';
+  display: block;
+  width: 36px; height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+  margin: 12px auto 0;
+  animation: lb 1s ease-in-out infinite alternate;
+}
+@keyframes lb { from { transform: scaleX(0.3); } to { transform: scaleX(1); } }
+@media (max-width: 480px) {
+  .grid { grid-template-columns: 1fr; }
+  .modal-title { font-size: 1.3rem; }
+  .modal-price { font-size: 1.6rem; }
+}
 </style>
 </head>
 <body>
 
+<div class="wm-bg">
+  <svg viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+    <path d="M30,140 L70,75 Q90,45 130,42 L370,42 Q410,45 430,75 L470,140 Q480,155 470,165 L30,165 Q20,155 30,140 Z"/>
+    <circle cx="110" cy="165" r="38"/><circle cx="110" cy="165" r="22"/>
+    <circle cx="390" cy="165" r="38"/><circle cx="390" cy="165" r="22"/>
+    <path d="M130,42 L165,8 L335,8 L370,42 Z"/>
+    <rect x="20" y="152" width="460" height="8" rx="4"/>
+  </svg>
+</div>
+
 <header>
-  <div>
-    <h1>🚗 Autopijaca</h1>
-    <span>Prodaja automobila — AutoUniverse</span>
+  <div class="header-inner">
+    <div class="accent-line"></div>
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+    </div>
+    <div class="brand">
+      <h1>AUTOPIJACA</h1>
+      <span>AutoUniverse · Prodaja automobila</span>
+    </div>
   </div>
 </header>
 
-<div class="filters">
-  <input type="text" id="f-make" placeholder="Marka (VW, BMW...)">
-  <input type="text" id="f-model" placeholder="Model">
-  <input type="text" id="f-city" placeholder="Grad">
-  <input type="number" id="f-max-price" placeholder="Max cena (EUR)">
-  <button onclick="loadListings()">Pretraži</button>
-</div>
-
-<div class="container">
-  <div class="stats" id="stats"></div>
-  <div class="grid" id="grid">
-    <div class="loading">Učitavanje oglasa...</div>
+<div class="search-bar">
+  <div class="search-inner">
+    <input type="text" id="f-make" placeholder="Marka (VW, BMW, Audi...)">
+    <input type="text" id="f-model" placeholder="Model">
+    <input type="text" id="f-city" placeholder="Grad">
+    <input type="number" id="f-max-price" placeholder="Max cena (EUR)">
+    <button class="btn-search" onclick="loadListings()">PRETRAŽI</button>
   </div>
 </div>
 
-<!-- Modal -->
+<div class="container">
+  <span class="stats-count" id="stats"></span>
+  <div class="grid" id="grid">
+    <div class="loading">Učitavanje oglasa</div>
+  </div>
+</div>
+
 <div class="overlay" id="overlay" onclick="closeModal(event)">
   <div class="modal" id="modal">
-    <div class="modal-photos" id="modal-photo">🚗</div>
+    <div class="modal-photo" id="modal-photo">🚗</div>
+    <div class="modal-strip"></div>
     <div class="modal-body">
       <div class="modal-title" id="modal-title"></div>
       <div class="modal-price" id="modal-price"></div>
       <div class="modal-meta" id="modal-meta"></div>
-      <div class="section-title">Opis</div>
+      <div class="section-label">Opis</div>
       <div class="description" id="modal-desc"></div>
       <div class="contact-box" id="modal-contact"></div>
-      <div class="msg-form" id="msg-form">
-        <div class="section-title">Pošalji poruku prodavcu</div>
-        <input type="text" id="msg-name" placeholder="Vaše ime *">
-        <input type="tel" id="msg-phone" placeholder="Vaš telefon">
-        <textarea id="msg-content" placeholder="Poruka *"></textarea>
-        <button onclick="sendMessage()">Pošalji poruku</button>
-        <div class="msg-sent" id="msg-sent" style="display:none">✓ Poruka poslata! Prodavac će vas kontaktirati.</div>
-      </div>
+    </div>
+    <div class="msg-form" id="msg-form">
+      <div class="msg-divider"></div>
+      <div class="section-label" style="padding:0 0 10px">Pošalji poruku prodavcu</div>
+      <input type="text" id="msg-name" placeholder="Vaše ime *">
+      <input type="tel" id="msg-phone" placeholder="Vaš telefon">
+      <textarea id="msg-content" placeholder="Poruka *"></textarea>
+      <button class="btn-send" onclick="sendMessage()">POŠALJI PORUKU</button>
+      <div class="msg-sent" id="msg-sent" style="display:none">✓ Poruka poslata! Prodavac će vas kontaktirati.</div>
     </div>
     <button class="close-btn" onclick="closeModal()">Zatvori ✕</button>
   </div>
 </div>
 
 <script>
-  const API = '';  // isti server
+  const API = '';
   let currentListingId = null;
 
-  function fmt(listing) {
-    return `${listing.make} ${listing.model}${listing.year ? ' ' + listing.year : ''}`;
-  }
-
-  function fmtPrice(listing) {
-    return `${Number(listing.price).toLocaleString('sr-RS')} ${listing.currency}`;
-  }
-
+  function fmt(l) { return `${l.make} ${l.model}${l.year ? ' ' + l.year : ''}`; }
+  function fmtPrice(l) { return `${Number(l.price).toLocaleString('sr-RS')} ${l.currency}`; }
   function fmtMeta(l) {
-    const parts = [];
-    if (l.mileage_km) parts.push(`${Number(l.mileage_km).toLocaleString('sr-RS')} km`);
-    if (l.fuel)       parts.push(l.fuel);
-    if (l.gearbox)    parts.push(l.gearbox);
-    if (l.city)       parts.push('📍 ' + l.city);
-    return parts;
+    const p = [];
+    if (l.mileage_km) p.push(`${Number(l.mileage_km).toLocaleString('sr-RS')} km`);
+    if (l.fuel)       p.push(l.fuel);
+    if (l.gearbox)    p.push(l.gearbox);
+    if (l.city)       p.push('📍 ' + l.city);
+    return p;
   }
 
   async function loadListings() {
-    document.getElementById('grid').innerHTML = '<div class="loading">Učitavanje...</div>';
+    document.getElementById('grid').innerHTML = '<div class="loading">Učitavanje oglasa</div>';
+    document.getElementById('stats').innerHTML = '';
     const make  = document.getElementById('f-make').value.trim();
     const model = document.getElementById('f-model').value.trim();
     const city  = document.getElementById('f-city').value.trim();
     const max   = document.getElementById('f-max-price').value.trim();
-
     const params = new URLSearchParams();
     if (make)  params.set('make', make);
     if (model) params.set('model', model);
     if (city)  params.set('city', city);
     if (max)   params.set('max_price', max);
     params.set('limit', '40');
-
-    const res = await fetch(`${API}/listings?${params}`);
-    const data = await res.json();
-
-    const grid = document.getElementById('grid');
-    const stats = document.getElementById('stats');
-
-    if (!data.length) {
-      stats.textContent = '';
-      grid.innerHTML = '<div class="empty"><div style="font-size:3rem">🔍</div><p>Nema oglasa za zadatu pretragu.</p></div>';
-      return;
-    }
-
-    stats.textContent = `${data.length} oglas${data.length === 1 ? '' : data.length < 5 ? 'a' : 'a'} pronađeno`;
-
-    grid.innerHTML = data.map(l => `
-      <div class="card" onclick="openListing(${l.id})">
-        <div class="card-photo">
-          ${l.photos && l.photos.length > 0
-            ? `<img src="${l.photos[0]}" alt="${fmt(l)}" loading="lazy">`
-            : '🚗'}
-        </div>
-        <div class="card-body">
-          <div class="card-title">${fmt(l)}</div>
-          <div class="card-price">${fmtPrice(l)}</div>
-          <div class="card-meta">
-            ${fmtMeta(l).map(t => `<span class="tag">${t}</span>`).join('')}
+    try {
+      const res  = await fetch(`${API}/listings?${params}`);
+      const data = await res.json();
+      const grid  = document.getElementById('grid');
+      if (!data.length) {
+        document.getElementById('stats').innerHTML = '';
+        grid.innerHTML = '<div class="empty"><div class="ei">🔍</div><p>Nema oglasa za zadatu pretragu.</p></div>';
+        return;
+      }
+      const n = data.length;
+      document.getElementById('stats').innerHTML = `<span class="n">${n}</span> oglas${n<5?'a':'a'} pronađeno`;
+      grid.innerHTML = data.map((l, i) => `
+        <div class="card" style="animation-delay:${i*55}ms" onclick="openListing(${l.id})">
+          <div class="card-photo">${l.photos&&l.photos.length?`<img src="${l.photos[0]}" alt="${fmt(l)}" loading="lazy">`:'🚗'}</div>
+          <div class="card-strip"></div>
+          <div class="card-body">
+            <div class="card-title">${fmt(l)}</div>
+            <div class="card-price">${fmtPrice(l)}</div>
+            <div class="card-meta">${fmtMeta(l).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
           </div>
-        </div>
-      </div>
-    `).join('');
+        </div>`).join('');
+    } catch(e) {
+      document.getElementById('grid').innerHTML = '<div class="empty"><div class="ei">⚠️</div><p>Greška pri učitavanju.</p></div>';
+    }
   }
 
   async function openListing(id) {
     currentListingId = id;
     document.getElementById('overlay').classList.add('open');
     document.getElementById('msg-sent').style.display = 'none';
-    document.getElementById('msg-name').value = '';
-    document.getElementById('msg-phone').value = '';
-    document.getElementById('msg-content').value = '';
-
+    ['msg-name','msg-phone','msg-content'].forEach(i => { const e = document.getElementById(i); if(e) e.value=''; });
     const res = await fetch(`${API}/listings/${id}`);
-    const l = await res.json();
-
+    const l   = await res.json();
     document.getElementById('modal-title').textContent = fmt(l);
     document.getElementById('modal-price').textContent = fmtPrice(l);
-
-    document.getElementById('modal-photo').innerHTML = l.photos && l.photos.length > 0
-      ? `<img src="${l.photos[0]}" alt="${fmt(l)}">`
-      : '🚗';
-
-    document.getElementById('modal-meta').innerHTML = fmtMeta(l)
-      .map(t => `<span class="badge">${t}</span>`).join('');
-
+    document.getElementById('modal-photo').innerHTML = l.photos&&l.photos.length ? `<img src="${l.photos[0]}" alt="${fmt(l)}">` : '🚗';
+    document.getElementById('modal-meta').innerHTML = fmtMeta(l).map(t=>`<span class="badge">${t}</span>`).join('');
     document.getElementById('modal-desc').textContent = l.description || 'Bez opisa.';
-
-    const contact = document.getElementById('modal-contact');
     const isPhone = l.contact_method !== 'message';
-    contact.innerHTML = `
-      <p>Kontakt prodavca</p>
-      <div class="name">${l.contact_name}</div>
-      ${isPhone
-        ? `<a href="tel:${l.contact_phone}">📞 Pozovi ${l.contact_phone}</a>`
-        : '<span style="font-size:0.85rem;opacity:0.8">Pošalji poruku ispod ↓</span>'}
-    `;
-
-    // Sakrij formu za poruku ako prodavac želi samo poziv
+    document.getElementById('modal-contact').innerHTML = `
+      <div class="clabel">Kontakt prodavca</div>
+      <div class="cname">${l.contact_name}</div>
+      ${isPhone ? `<a class="btn-call" href="tel:${l.contact_phone}">📞 ${l.contact_phone}</a>` : '<span style="font-size:.85rem;color:var(--muted)">Pošalji poruku ispod ↓</span>'}`;
     document.getElementById('msg-form').style.display = isPhone ? 'none' : 'block';
   }
 
@@ -355,34 +550,25 @@
     const name    = document.getElementById('msg-name').value.trim();
     const phone   = document.getElementById('msg-phone').value.trim();
     const content = document.getElementById('msg-content').value.trim();
-
     if (!name || !content) { alert('Ime i poruka su obavezni.'); return; }
-
     const res = await fetch(`${API}/listings/${currentListingId}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ buyer_name: name, buyer_phone: phone, content })
     });
-
     if (res.ok) {
       document.getElementById('msg-form').style.display = 'none';
       document.getElementById('msg-sent').style.display = 'block';
-    } else {
-      alert('Greška. Pokušajte ponovo.');
-    }
+    } else { alert('Greška. Pokušajte ponovo.'); }
   }
 
   function closeModal(e) {
-    if (e && e.target !== document.getElementById('overlay') && e.type !== 'click') return;
-    if (e && e.target.closest && e.target.closest('.modal') && e.target !== document.querySelector('.close-btn')) return;
+    if (e && e.target.closest && e.target.closest('.modal')) return;
     document.getElementById('overlay').classList.remove('open');
     currentListingId = null;
   }
 
-  // Detektuj /prodaja/:id u URL-u i otvori direktno
   const match = location.pathname.match(/\/prodaja\/(\d+)/);
   if (match) openListing(match[1]);
-
   loadListings();
 </script>
 </body>
