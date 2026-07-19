@@ -41,6 +41,8 @@ async function apiCall(method, path, body) {
   if (!base) throw new Error('AutoHub server nije dostupan');
 
   const session = localStorage.getItem(STORAGE_SESSION_KEY);
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 10000);
   const res = await fetch(base + path, {
     method,
     headers: {
@@ -48,7 +50,8 @@ async function apiCall(method, path, body) {
       ...(session ? { Authorization: `Bearer ${session}` } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
-  });
+    signal: ctrl.signal,
+  }).finally(() => clearTimeout(tid));
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(data.error || 'Greška'), { status: res.status });

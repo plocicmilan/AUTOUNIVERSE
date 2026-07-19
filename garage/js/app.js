@@ -2297,11 +2297,14 @@
 
       AutoHub.getPlatformUrl().then(function (hubUrl) {
         if (!hubUrl) throw new Error("Server nije dostupan");
+        var ctrl = new AbortController();
+        var tid = setTimeout(function () { ctrl.abort(); }, 10000);
         return fetch(hubUrl + "/accounts/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email, name: name, phone: phone })
-        });
+          body: JSON.stringify({ email: email, name: name, phone: phone }),
+          signal: ctrl.signal
+        }).finally(function () { clearTimeout(tid); });
       }).then(function (r) {
         return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d }; });
       }).then(function (res) {
