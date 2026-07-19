@@ -850,6 +850,47 @@
         return '<div class="card"><p class="empty">Greška: ' + esc(err.message) + '</p>' +
           '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button></div>';
       });
+    },
+
+    /* ===== JAVNI DOSIJE / QR ID CARD ===== */
+    public_ids: function () {
+      if (!hubConnected()) {
+        return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+          '<h1>Javni dosije</h1>' +
+          '<div class="card"><p class="empty">Poveži se sa AutoHub-om u podešavanjima da bi generisao javni dosije.</p></div>';
+      }
+      var vehicleMap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+      var syncedLocalIds = Object.keys(vehicleMap);
+      if (!syncedLocalIds.length) {
+        return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+          '<h1>Javni dosije</h1>' +
+          '<div class="card"><p class="empty">Nema sinhronizovanih vozila. Najpre uradi Sync u AutoHub sekciji.</p>' +
+          '<button class="btn btn-primary mt8" onclick="DR.hubSync();DR.go(\'public_ids\')">Sync sada</button></div>';
+      }
+      return Store.all("vehicles").then(function (vehicles) {
+        return AutoHub.getPlatformUrl().then(function (hubUrl) {
+          var cards = syncedLocalIds.map(function (lid) {
+            var serverId = vehicleMap[lid];
+            var v = vehicles.find(function (x) { return x.id === lid; });
+            if (!v) return '';
+            var publicUrl = hubUrl ? hubUrl.replace(/\/$/, '') + '/public/v/' + serverId : '';
+            var qrSrc = publicUrl ? publicUrl + '/qr' : '';
+            return '<div class="card mt16">' +
+              '<b>' + esc(v.make + ' ' + v.model) + (v.year ? ' ' + v.year : '') + '</b>' +
+              (v.plate ? '<p class="muted" style="font-size:.82rem">' + esc(v.plate) + '</p>' : '') +
+              (qrSrc ? '<div style="text-align:center;margin:12px 0">' +
+                '<img src="' + esc(qrSrc) + '" alt="QR" style="width:160px;height:160px;border-radius:8px;background:#fff;padding:8px">' +
+                '</div>' : '') +
+              (publicUrl ? '<p style="font-size:.72rem;color:#64748b;word-break:break-all;margin-bottom:8px">' + esc(publicUrl) + '</p>' +
+                '<button class="btn btn-secondary" onclick="DR.copyPublicUrl(\'' + esc(publicUrl) + '\')">Kopiraj link</button>' : '') +
+              '</div>';
+          }).join('');
+          return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+            '<h1>Javni dosije</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 4px">QR kod i link za kupca — servisna istorija bez naloga.</p>' +
+            cards;
+        });
+      });
     }
   };
 
@@ -869,6 +910,7 @@
         (lastSync ? '<p class="muted" style="font-size:.8rem;margin:.4rem 0">Poslednji sync: ' + esc(lastSync.slice(0, 16).replace("T", " ")) + '</p>' : '') +
         '<div id="hubSyncStatus"></div>' +
         '<button class="btn btn-primary mt8" onclick="DR.hubSync()">Sync sada</button>' +
+        '<button class="btn btn-secondary mt8" onclick="DR.go(\'public_ids\')">📋 Javni dosije / QR</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.hubLogout()">Odjavi se</button>';
     }
     if (mode === 'register') {
@@ -1330,6 +1372,19 @@
       render("settings");
     },
 
+    copyPublicUrl: function (url) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function () { toast("Link kopiran."); });
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = url; ta.style.position = "fixed"; ta.style.top = "-999px";
+        document.body.appendChild(ta); ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        toast("Link kopiran.");
+      }
+    },
+
     submitEmailSignup: function () {
       var email = (el("su_email") && el("su_email").value || "").trim();
       var name  = (el("su_name")  && el("su_name").value  || "").trim();
@@ -1452,6 +1507,8 @@
         if (!price) { toast("Unesite cenu."); return; }
         var profile = Store.settings.get("profile", {}) || {};
         var phone = val("pl_phone") || profile.phone || "";
+        var vehicleMap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+        var serverId = vehicleMap[vid];
         var payload = {
           make:           v.make,
           model:          v.model,
@@ -1466,13 +1523,27 @@
           city:           val("pl_city") || null,
           contact_name:   profile.name || v.make + " " + v.model,
           contact_phone:  phone,
-          contact_method: val("pl_contact") || "phone_call"
+          contact_method: val("pl_contact") || "phone_call",
+          history_token:  null
         };
         if (!payload.contact_phone) { toast("Unesite telefon za kontakt."); return; }
-        Autopijaca.publish(vid, payload).then(function (data) {
-          toast("Oglas objavljen! #" + data.id);
-          render("publish_listing", { id: vid });
-        }).catch(function (e) { toast("Greška: " + e.message); });
+
+        // Ako je vozilo synkovano na AutoHub → dodaj public dosije URL
+        var publishAndSend = function () {
+          Autopijaca.publish(vid, payload).then(function (data) {
+            toast("Oglas objavljen! #" + data.id);
+            render("publish_listing", { id: vid });
+          }).catch(function (e) { toast("Greška: " + e.message); });
+        };
+
+        if (serverId && hubConnected()) {
+          AutoHub.getPlatformUrl().then(function (hubUrl) {
+            if (hubUrl) payload.history_token = hubUrl.replace(/\/$/, '') + '/public/v/' + serverId;
+            publishAndSend();
+          }).catch(publishAndSend);
+        } else {
+          publishAndSend();
+        }
       });
     },
 

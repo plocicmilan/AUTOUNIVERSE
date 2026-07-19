@@ -455,6 +455,7 @@ header {
       <div class="modal-title" id="modal-title"></div>
       <div class="modal-price" id="modal-price"></div>
       <div class="modal-meta" id="modal-meta"></div>
+      <div id="modal-dosije"></div>
       <div class="section-label">Opis</div>
       <div class="description" id="modal-desc"></div>
       <div class="contact-box" id="modal-contact"></div>
@@ -538,6 +539,27 @@ header {
     document.getElementById('modal-photo').innerHTML = l.photos&&l.photos.length ? `<img src="${l.photos[0]}" alt="${fmt(l)}">` : '🚗';
     document.getElementById('modal-meta').innerHTML = fmtMeta(l).map(t=>`<span class="badge">${t}</span>`).join('');
     document.getElementById('modal-desc').textContent = l.description || 'Bez opisa.';
+    const dosijeEl = document.getElementById('modal-dosije');
+    if (dosijeEl) {
+      if (l.history_token) {
+        dosijeEl.innerHTML = `
+          <div style="background:#0f2d1a;border:1px solid #166534;border-radius:10px;padding:14px 16px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span style="font-size:1.1rem">✅</span>
+              <span style="font-family:var(--font-h);font-size:.85rem;font-weight:700;color:#4ade80;letter-spacing:.05em">VERIFIKOVANA ISTORIJA VOZILA</span>
+            </div>
+            <div style="display:flex;gap:14px;align-items:flex-start">
+              <img src="${l.history_token}/qr" alt="QR" style="width:80px;height:80px;border-radius:6px;background:#fff;padding:4px;flex-shrink:0">
+              <div>
+                <p style="font-size:.82rem;color:#86efac;margin-bottom:6px">Prodavac ima dokumentovanu istoriju servisa.</p>
+                <a href="${l.history_token}" target="_blank" style="font-size:.78rem;color:#38bdf8;word-break:break-all">📋 Otvori kompletan dosije</a>
+              </div>
+            </div>
+          </div>`;
+      } else {
+        dosijeEl.innerHTML = '';
+      }
+    }
     const isPhone = l.contact_method !== 'message';
     document.getElementById('modal-contact').innerHTML = `
       <div class="clabel">Kontakt prodavca</div>
