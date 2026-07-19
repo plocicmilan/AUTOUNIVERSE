@@ -14,7 +14,7 @@ Legenda statusa: 🔵 novo • 🟡 u analizi • 🟢 za implementaciju • ✅
 | # | Stavka | Izvor | Sloj | Aplikacije | Status |
 |---|--------|-------|------|-----------|--------|
 | 1 | **Početno stanje vozila (retroaktivni unos istorije).** Nova aplikacija/prazan karton — vlasnik/majstor uzima vozilo "iz sredine" života i mora da unese zatečeno stanje: trenutna km, poslednji servis (datum + km), rok registracije/tehničkog, gume. | Marko (Garage) | core (Event model) | Garage + Driver | ✅ URAĐENO u OBE app |
-| 2 | **Deljena IndexedDB baza između aplikacija na istom origin-u.** Odlučiti pre platform faze. | Claude (build) | core (store) | sve | 🟡 u analizi |
+| 2 | **Deljena IndexedDB baza između aplikacija na istom origin-u.** Odlučeno: svaka app ima SOPSTVENI namespace u Store-u + sopstveni export podataka. Nema deljenja između Garage/Driver na istom origin-u. | Milan (odluka 2026-07-19) | core (store) | sve | ✅ ODLUČENO — implementirati namespace izolaciju |
 | 3 | **Multi-user — jedan primitiv rešava sve.** `grant(user, target, vehicle, role, [expires])`. Team NIJE poseban entitet, samo automatizam preko primitiva. | Marko + arhitektura | hub | sve | ✅ URAĐENO (Garage v1.27.0) — Settings → 🔑 Pristup vozilima |
 | 4 | **Reverse marketplace hipoteza** — "objavi potrebu → dobavljači se takmiče". Nije signal sa terena. Uslov aktivacije: 2+ mehaničara nezavisno traže brz parts sourcing + Faza 3 završena. | Desktop Claude | hub | — | ⚪ hipoteza — Faza 6+ |
 | 5 | **Play Protect upozorenje** — "Nebezbedna aplikacija" pri instalaciji Garage PWA na Androidu. Nije bug u kodu (Google WebAPK). | Marko | app (Garage) | Garage | ✅ DOKUMENTOVANO — `docs/play_protect_workaround.md` (korak-po-korak + poruka za testere) |
@@ -299,4 +299,4 @@ Kontakt: [Pošalji poruku]
 
 ---
 
-*Otvoreno: 10.07.2026. — Ažurirano: 17.07.2026. sa signalima iz strateške sesije (Goran servisi, Nikola expense odgovori, kolega preprodavac persona, AutoHub live, marketplace model, monetizacija).*
+*Otvoreno: 10.07.2026. — Ažurirano: 19.07.2026. Sesija: Garage v1.28 (Autodelovi integracija) + Driver v1.9 (Autopijaca telefon fix) + oba marketplace LIVE sa Cloudflare tunnelima + Industrial Dark redesign javnih stranica.*

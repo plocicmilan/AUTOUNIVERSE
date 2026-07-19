@@ -7,11 +7,11 @@
 (function (global) {
   "use strict";
 
-  var DB_NAME = "auto_universe";
   var DB_VERSION = 2;
   var _db = null;
 
   function init(appName, storeNames) {
+    var DB_NAME = "au_" + (appName || "garage");
     return new Promise(function (resolve, reject) {
       var req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = function (e) {
