@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O nama — AutoUniverse</title>
+<meta name="description" content="Ko smo mi — AutoUniverse, digitalni alati za auto industriju">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #1a1d24;
+    color: #e8e8e8;
+    line-height: 1.7;
+    padding: 20px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  header {
+    text-align: center;
+    padding: 30px 0 25px;
+    border-bottom: 1px solid #2d3038;
+    margin-bottom: 30px;
+  }
+  header a { text-decoration: none; }
+  h1 { font-size: 24px; letter-spacing: 2px; color: #fff; margin-bottom: 6px; }
+  .subtitle { color: #9aa0aa; font-size: 13px; }
+  h2 { font-size: 17px; font-weight: 700; color: #fff; margin: 28px 0 10px; border-left: 3px solid #D5281B; padding-left: 10px; }
+  p { font-size: 15px; color: #cfd2d7; margin-bottom: 14px; }
+  .hero {
+    background: #232733;
+    border-radius: 14px;
+    padding: 28px 24px;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+  .hero .big { font-size: 42px; margin-bottom: 12px; }
+  .hero h2 { border: none; padding: 0; text-align: center; font-size: 20px; margin: 0 0 10px; }
+  .hero p { color: #9aa0aa; font-size: 14px; margin: 0; }
+  .app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  @media (max-width: 480px) { .app-grid { grid-template-columns: 1fr; } }
+  .app-item {
+    background: #232733;
+    border-radius: 12px;
+    padding: 18px;
+    border-top: 3px solid;
+  }
+  .app-item.garage { border-color: #D5281B; }
+  .app-item.driver { border-color: #1C8A4C; }
+  .app-item.autopijaca { border-color: #FF5722; }
+  .app-item.autodelovi { border-color: #0EA5E9; }
+  .app-item h3 { font-size: 15px; color: #fff; margin-bottom: 6px; }
+  .app-item p { font-size: 13px; color: #9aa0aa; margin: 0; }
+  .values {
+    background: #232733;
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  .value-row { display: flex; gap: 14px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #2d3038; }
+  .value-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .value-ico { font-size: 24px; flex: 0 0 32px; text-align: center; margin-top: 2px; }
+  .value-text b { display: block; color: #fff; font-size: 15px; margin-bottom: 2px; }
+  .value-text span { font-size: 13px; color: #9aa0aa; }
+  .contact-card {
+    background: #232733;
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 10px;
+  }
+  .contact-card p { margin: 0 0 8px; }
+  .contact-card p:last-child { margin: 0; }
+  a { color: #D5281B; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  footer {
+    text-align: center;
+    padding: 30px 10px 20px;
+    color: #6a6f78;
+    font-size: 12px;
+    border-top: 1px solid #2d3038;
+    margin-top: 40px;
+  }
+  footer a { color: #9aa0aa; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="./"><h1>AUTO UNIVERSE</h1></a>
+  <div class="subtitle">O nama</div>
+</header>
+
+<div class="hero">
+  <div class="big">🔧</div>
+  <h2>Digitalni alati za auto industriju</h2>
+  <p>Gradimo besplatne alate koji pomažu mehaničarima i vlasnicima vozila<br>da lakše upravljaju evidencijom, dokumentacijom i komunikacijom.</p>
+</div>
+
+<h2>Naše aplikacije</h2>
+<div class="app-grid">
+  <div class="app-item garage">
+    <h3>🔧 Garage Toolbox</h3>
+    <p>Za mehaničare. Radni nalozi, karton vozila, PDF računi. Radi bez interneta.</p>
+  </div>
+  <div class="app-item driver">
+    <h3>🚗 Driver Toolbox</h3>
+    <p>Za vlasnike vozila. Servisna istorija, dokumenta, podsetnici. Sve na telefonu.</p>
+  </div>
+  <div class="app-item autopijaca">
+    <h3>🏷️ Autopijaca</h3>
+    <p>Besplatan oglas za prodaju auta direktno, bez posrednika. Sa servisnom istorijom.</p>
+  </div>
+  <div class="app-item autodelovi">
+    <h3>⚙️ Autodelovi</h3>
+    <p>Besplatan oglas za prodaju auto delova. Kupac filtrira po svom vozilu.</p>
+  </div>
+</div>
+
+<h2>Šta nas razlikuje</h2>
+<div class="values">
+  <div class="value-row">
+    <div class="value-ico">📴</div>
+    <div class="value-text">
+      <b>Radi bez interneta</b>
+      <span>Svi podaci ostaju na tvom uređaju. Nema oblaka, nema servera, nema praćenja.</span>
+    </div>
+  </div>
+  <div class="value-row">
+    <div class="value-ico">🆓</div>
+    <div class="value-text">
+      <b>Besplatno</b>
+      <span>Garage i Driver Toolbox su potpuno besplatni za osnovnu upotrebu. Bez pretplate.</span>
+    </div>
+  </div>
+  <div class="value-row">
+    <div class="value-ico">📋</div>
+    <div class="value-text">
+      <b>Servisna istorija uz oglas</b>
+      <span>Jedini oglas u Srbiji gde kupac može videti kompletnu servisnu istoriju vozila.</span>
+    </div>
+  </div>
+  <div class="value-row">
+    <div class="value-ico">🤝</div>
+    <div class="value-text">
+      <b>Direktna veza mehaničar–vlasnik</b>
+      <span>Garage i Driver Toolbox se mogu povezati — mehaničar unosi servis, vlasnik odmah vidi.</span>
+    </div>
+  </div>
+</div>
+
+<h2>Ko smo</h2>
+<p>AutoUniverse gradi <strong>Belora Ventures Studio</strong>, mali studio iz Kruševca koji razvija digitalne alate za srpsko tržište.</p>
+<p>Trenutno smo u testnoj fazi — aplikacije koristi ograničeni broj korisnika. Svaki feedback je vredan i direktno utiče na dalji razvoj.</p>
+
+<h2>Kontakt</h2>
+<div class="contact-card">
+  <p>&#128231; <a href="mailto:plocicmilan@gmail.com">plocicmilan@gmail.com</a></p>
+  <p>&#128205; Kruševac, Srbija</p>
+  <p>&#128187; <a href="https://github.com/plocicmilan/AUTOUNIVERSE" target="_blank">github.com/plocicmilan/AUTOUNIVERSE</a></p>
+</div>
+
+<footer>
+  <a href="./">AutoUniverse</a> · <a href="legal/terms.html">Uslovi</a> · <a href="legal/privacy.html">Privatnost</a><br><br>
+  © 2026 Belora Ventures Studio · Kruševac, Srbija
+</footer>
+
+</body>
+</html>
