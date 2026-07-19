@@ -306,6 +306,10 @@
         '<option value="labor"' + (it.kind === "labor" ? " selected" : "") + '>' + t("wo.item_kind_labor") + '</option>';
       return '<div class="itemrow" data-idx="' + i + '">' +
         '<input class="it-name" list="parts_hist" placeholder="' + t("wo.item_name") + '" value="' + esc(it.name) + '" oninput="WOgo.editItem(' + i + ',\'name\',this.value)">' +
+        '<div class="itemrow-bm">' +
+          '<input class="it-brand" placeholder="Brend (npr. Mann)" value="' + esc(it.brand || '') + '" oninput="WOgo.editItem(' + i + ',\'brand\',this.value)">' +
+          '<input class="it-partno" placeholder="Kataloški br. / model" value="' + esc(it.model || '') + '" oninput="WOgo.editItem(' + i + ',\'model\',this.value)">' +
+        '</div>' +
         '<div class="itemrow-line">' +
           '<select class="it-kind" onchange="WOgo.editItem(' + i + ',\'kind\',this.value)">' + kindOpts + '</select>' +
           '<input class="it-qty" type="number" inputmode="decimal" placeholder="' + t("wo.item_qty") + '" value="' + esc(it.qty) + '" oninput="WOgo.editItem(' + i + ',\'qty\',this.value)">' +
@@ -451,7 +455,7 @@
 
     addItem: function () {
       WO.draft.items.push(window.Models.createItem({
-        kind: "part", name: "", qty: 1,
+        kind: "part", name: "", brand: "", model: "", qty: 1,
         currency: window.Store.settings.get("currency", window.GT.config().currency_default)
       }));
       document.getElementById("wo_items").innerHTML = itemsHTML();
@@ -547,7 +551,7 @@
       var profile = window.Store.settings.get("profile", { name: "" });
       // Payload BEZ cena (FEEDBACK #10)
       var safeItems = WO.draft.items.map(function (it) {
-        return { name: it.name || "", qty: it.qty != null ? it.qty : 1, unit: it.unit || "kom" };
+        return { name: it.name || "", brand: it.brand || "", model: it.model || "", qty: it.qty != null ? it.qty : 1, unit: it.unit || "kom" };
       });
       window.AutoHub.getPlatformUrl().then(function (hubUrl) {
         if (!hubUrl) { toast("AutoHub nije dostupan. Pokreni server."); return; }

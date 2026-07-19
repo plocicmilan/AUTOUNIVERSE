@@ -1187,8 +1187,9 @@
                 var qty = it.qty != null ? it.qty : 1;
                 var line = (Number(it.price) || 0) * qty;
                 var kindLabel = it.kind === "labor" ? '<span class="muted" style="font-size:.75rem">[rad]</span> ' : '';
+                var bmLabel = (it.brand || it.model) ? '<span class="muted" style="font-size:.75rem;display:block">' + esc([it.brand, it.model].filter(Boolean).join(' · ')) + '</span>' : '';
                 return '<div class="evt-item-row">' +
-                  '<span class="evt-item-name">' + kindLabel + esc(it.name || "—") + '</span>' +
+                  '<span class="evt-item-name">' + kindLabel + esc(it.name || "—") + bmLabel + '</span>' +
                   '<span class="evt-item-detail">' + qty + (it.unit ? " " + it.unit : "") + ' × ' + Models.formatAmount(Number(it.price) || 0, it.currency) + '</span>' +
                   '<span class="evt-item-sum">' + Models.formatAmount(line, it.currency) + '</span>' +
                 '</div>';

@@ -1,9 +1,9 @@
 # AUTO UNIVERSE — FEEDBACK & DORADE
 
-Živa lista signala iz stvarnog korišćenja (Faza 3+4). Svaka stavka: ko je prijavio,
+Kanal za ideje, sugestije i primedbe iz stvarnog korišćenja. Svaka stavka: ko je prijavio,
 šta, u koji sloj ide (**core** = dele sve aplikacije / **app** = samo jedna / **hub** = AutoHub server), i status.
 
-Pravilo: kad krene v1.x, radi se redom sa vrha. Ništa se ne kodira dok nije ovde.
+**Filozofija:** FEEDBACK.md je kanal — informiše prioritete, ne blokira gradnju. Gradnja teče paralelno sa prikupljanjem signala.
 
 Legenda statusa: 🔵 novo • 🟡 u analizi • 🟢 za implementaciju • ✅ urađeno • ⚪ odbačeno / na čekanju
 
