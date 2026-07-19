@@ -337,7 +337,163 @@
     return doc;
   }
 
-  var PDF = { build: build, buildDossier: buildDossier, label: label, DOC_LABELS: DOC_LABELS };
+  /* ============================================================
+     buildSaleSummary — jednostranski "Sažetak za kupca"
+     Pokazuje: vozilo, ključne stats, istorija, trade info
+     opts: { vehicle, events, profile, trade, lang }
+     ============================================================ */
+  function buildSaleSummary(opts) {
+    opts = opts || {};
+    var jsPDFctor = (global.jspdf && global.jspdf.jsPDF) || global.jsPDF;
+    if (!jsPDFctor) throw new Error("jsPDF nije učitan.");
+    var lang = opts.lang || "sr";
+    var sr = lang === "sr";
+    var doc = new jsPDFctor({ unit: "mm", format: "a4" });
+
+    var FONT = "helvetica";
+    if (global.AUFont && global.AUFont.register(doc)) FONT = global.AUFont.name;
+    function setFont(style) { return doc.setFont(FONT, style || "normal"); }
+    function rgb(hex) {
+      hex = (hex || "#000000").replace("#", "");
+      return [parseInt(hex.slice(0,2),16), parseInt(hex.slice(2,4),16), parseInt(hex.slice(4,6),16)];
+    }
+
+    var C = readColors();
+    var cPrimary = rgb(C.primary), cAccent = rgb(C.accent);
+    var PW = 210, ML = 16, MR = 210 - 16, y = 18;
+    var v = opts.vehicle || {};
+    var events = (opts.events || []).filter(function (e) { return e.vehicle_id === v.id; });
+    var trade = opts.trade || (v.trade) || {};
+
+    /* ── Zaglavlje ── */
+    setFont("bold").setFontSize(20).setTextColor.apply(doc, cAccent);
+    doc.text(sr ? "SAŽETAK ZA KUPCA" : "VEHICLE SALE SUMMARY", ML, y);
+    y += 8;
+    setFont("normal").setFontSize(12).setTextColor.apply(doc, cPrimary);
+    var vTitle = [v.make, v.model].filter(Boolean).join(" ") + (v.year ? " (" + v.year + ")" : "");
+    doc.text(vTitle, ML, y);
+    y += 5;
+    setFont("normal").setFontSize(9).setTextColor(90);
+    var idLine = [v.plate, v.vin ? "VIN: " + v.vin : ""].filter(Boolean).join("   ");
+    if (idLine) { doc.text(idLine, ML, y); y += 4; }
+    doc.setDrawColor.apply(doc, cPrimary).setLineWidth(0.5).line(ML, y, MR, y);
+    y += 6;
+
+    /* ── Stats blok ── */
+    var totalEvts = events.length;
+    var mechEvts  = events.filter(function (e) { return e.source === "mechanic" || e.source === "receipt"; }).length;
+    var serviceEvts = events.filter(function (e) {
+      return ["service","oil_change","repair","inspection"].indexOf(e.type) >= 0;
+    }).length;
+    var currentKm = 0;
+    events.forEach(function (e) { if (e.mileage_km > currentKm) currentKm = e.mileage_km; });
+
+    var stats = [
+      [sr ? "Ukupno unosa" : "Total entries", totalEvts],
+      [sr ? "Potvrđeno od servisera" : "Mechanic-confirmed", mechEvts],
+      [sr ? "Servisnih intervencija" : "Service events", serviceEvts],
+      [sr ? "Poslednje stanje km" : "Last odometer", currentKm ? currentKm.toLocaleString("sr") + " km" : "—"],
+    ];
+    var colW = (MR - ML) / stats.length;
+    stats.forEach(function (s, i) {
+      var cx = ML + colW * i + colW / 2;
+      setFont("bold").setFontSize(16).setTextColor.apply(doc, cAccent);
+      doc.text(String(s[1]), cx, y, { align: "center" });
+      setFont("normal").setFontSize(8).setTextColor(110);
+      doc.text(s[0], cx, y + 5, { align: "center" });
+    });
+    y += 14;
+    doc.setDrawColor(220).setLineWidth(0.2).line(ML, y, MR, y);
+    y += 6;
+
+    /* ── Ključni servisi (max 8) ── */
+    var keyTypes = ["oil_change","service","repair","inspection","tire_change","registration","insurance"];
+    var keyEvts = events
+      .filter(function (e) { return keyTypes.indexOf(e.type) >= 0 || e.source === "mechanic"; })
+      .sort(function (a, b) { return (b.event_date || "").localeCompare(a.event_date || ""); })
+      .slice(0, 8);
+
+    var typeLabels = {
+      oil_change: sr ? "Zamena ulja" : "Oil change",
+      service: sr ? "Servis" : "Service",
+      repair: sr ? "Popravka" : "Repair",
+      inspection: sr ? "Tehnički" : "Inspection",
+      tire_change: sr ? "Gume" : "Tires",
+      registration: sr ? "Registracija" : "Registration",
+      insurance: sr ? "Osiguranje" : "Insurance",
+      work_order: sr ? "Radni nalog" : "Work order",
+    };
+
+    if (keyEvts.length) {
+      setFont("bold").setFontSize(10).setTextColor.apply(doc, cPrimary);
+      doc.text(sr ? "ISTORIJA SERVISA" : "SERVICE HISTORY", ML, y); y += 5;
+
+      keyEvts.forEach(function (e) {
+        if (y > 260) return;
+        var dateStr = (e.event_date || e.date || "").slice(0, 7).replace("-", ".");
+        var label   = typeLabels[e.type] || e.type;
+        var km      = e.mileage_km != null ? " · " + Number(e.mileage_km).toLocaleString("sr") + " km" : "";
+        var src     = e.source === "mechanic" ? " ✓" : "";
+
+        setFont("bold").setFontSize(8.5).setTextColor(40);
+        doc.text(dateStr + "  " + label + km + src, ML + 2, y);
+        if (e.description) {
+          setFont("normal").setFontSize(8).setTextColor(110);
+          var desc = e.description.length > 90 ? e.description.slice(0, 87) + "..." : e.description;
+          doc.text(desc, ML + 2, y + 3.5);
+          y += 3.5;
+        }
+        y += 5;
+      });
+      y += 2;
+      doc.setDrawColor(220).setLineWidth(0.2).line(ML, y, MR, y);
+      y += 6;
+    }
+
+    /* ── Trade info (ako postoji) ── */
+    if (trade.sale && (trade.sale.price || trade.purchase)) {
+      setFont("bold").setFontSize(10).setTextColor.apply(doc, cPrimary);
+      doc.text(sr ? "FINANSIJE" : "FINANCIALS", ML, y); y += 5;
+
+      var finRows = [];
+      if (trade.purchase && trade.purchase.price) {
+        finRows.push([sr ? "Nabavna cena" : "Purchase price",
+          trade.purchase.price + " " + (trade.purchase.currency || "EUR")]);
+      }
+      var totalInvested = 0;
+      events.forEach(function (e) {
+        if (e.cost && e.cost.total) totalInvested += Number(e.cost.total) || 0;
+      });
+      if (totalInvested > 0) {
+        var invCur = (events.find(function (e) { return e.cost && e.cost.currency; }) || {cost:{}}).cost.currency || "RSD";
+        finRows.push([sr ? "Ukupno uloženo" : "Total invested", totalInvested.toLocaleString("sr") + " " + invCur]);
+      }
+      if (trade.sale && trade.sale.price) {
+        finRows.push([sr ? "Tražena cena" : "Asking price",
+          trade.sale.price + " " + (trade.sale.currency || "EUR")]);
+      }
+
+      finRows.forEach(function (r) {
+        setFont("normal").setFontSize(9).setTextColor(60);
+        doc.text(r[0] + ":", ML + 2, y);
+        setFont("bold").setFontSize(9).setTextColor.apply(doc, cAccent);
+        doc.text(r[1], MR, y, { align: "right" });
+        y += 5;
+      });
+    }
+
+    /* ── Footer / watermark ── */
+    var ph = doc.internal.pageSize.getHeight();
+    doc.setFontSize(8).setTextColor(170);
+    doc.text("AutoUniverse · autouniverse.rs", ML, ph - 12);
+    doc.text(sr ? "Generisano: " + new Date().toLocaleDateString("sr-RS") : "Generated: " + new Date().toLocaleDateString(), MR, ph - 12, { align: "right" });
+    doc.setFontSize(7).setTextColor(190);
+    doc.text(sr ? "Podaci uneti od strane vlasnika. AutoUniverse ne garantuje tačnost." : "Data entered by owner. AutoUniverse does not guarantee accuracy.", ML, ph - 8);
+
+    return doc;
+  }
+
+  var PDF = { build: build, buildDossier: buildDossier, buildSaleSummary: buildSaleSummary, label: label, DOC_LABELS: DOC_LABELS };
 
   if (typeof module !== "undefined" && module.exports) module.exports = PDF;
   global.PDFEngine = PDF;

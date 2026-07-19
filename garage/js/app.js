@@ -620,7 +620,12 @@
         '</div>' +
         '<div class="card mt16" id="emailSignupCard">' + emailSignupCardHTML() + '</div>' +
         '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>' +
-        '<div class="card mt16"><h2>AutoHub ☁</h2>' + autohubCardHTML() + '</div>';
+        '<div class="card mt16"><h2>AutoHub ☁</h2>' + autohubCardHTML() + '</div>' +
+        '<div style="text-align:center;padding:24px 0 8px;font-size:.75rem;color:#475569">' +
+          '<a href="../legal/terms.html" style="color:#475569;margin:0 10px">Uslovi korišćenja</a>' +
+          '<a href="../legal/privacy.html" style="color:#475569;margin:0 10px">Privatnost</a>' +
+          '<a href="../about.html" style="color:#475569;margin:0 10px">O AutoUniverse</a>' +
+        '</div>';
     },
 
     /* ===== VIZIT KARTA (🔑) ===== */

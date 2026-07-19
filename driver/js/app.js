@@ -715,7 +715,12 @@
         '</div>' +
         '<div class="card mt16" id="emailSignupCard">' + emailSignupCardHTML() + '</div>' +
         '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>' +
-        '<div class="card mt16" id="autohubCard">' + autohubCardHTML() + '</div>';
+        '<div class="card mt16" id="autohubCard">' + autohubCardHTML() + '</div>' +
+        '<div style="text-align:center;padding:24px 0 8px;font-size:.75rem;color:#475569">' +
+          '<a href="../legal/terms.html" style="color:#475569;margin:0 10px">Uslovi korišćenja</a>' +
+          '<a href="../legal/privacy.html" style="color:#475569;margin:0 10px">Privatnost</a>' +
+          '<a href="../about.html" style="color:#475569;margin:0 10px">O AutoUniverse</a>' +
+        '</div>';
     },
 
     /* ===== PRODAJ VOZILO — status wizard ===== */
@@ -806,6 +811,7 @@
             '</label>' +
           '</div>' +
           '<button class="btn btn-primary" onclick="DR.publishListing()">' + t("d.publish_on_autopijaca") + '</button>' +
+          '<button class="btn btn-secondary mt8" onclick="DR.saleSummaryPdf(\'' + esc(vid) + '\')">📄 Pripremi za prodaju (PDF)</button>' +
           '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.cancel"></button>';
       });
     },
@@ -1370,6 +1376,23 @@
       localStorage.removeItem("autohub_last_sync");
       toast("Odjavljeno.");
       render("settings");
+    },
+
+    saleSummaryPdf: function (vid) {
+      if (!window.PDFEngine) { toast("PDF engine nije učitan."); return; }
+      var profile = Store.settings.get("profile", {});
+      var lang = Store.settings.get("lang", "sr");
+      Store.get("vehicles", vid).then(function (v) {
+        if (!v) { toast("Vozilo nije pronađeno."); return; }
+        Store.all("events").then(function (allEvents) {
+          var events = allEvents.filter(function (e) { return e.vehicle_id === vid; });
+          try {
+            var doc = PDFEngine.buildSaleSummary({ vehicle: v, events: events, profile: profile, trade: v.trade, lang: lang });
+            var fname = [v.make, v.model, v.year, "Sazetek"].filter(Boolean).join("_").replace(/\s+/g,"_") + ".pdf";
+            doc.save(fname);
+          } catch (e) { toast("Greška PDF: " + e.message); }
+        });
+      });
     },
 
     copyPublicUrl: function (url) {
