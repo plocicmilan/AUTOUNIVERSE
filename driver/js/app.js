@@ -713,6 +713,7 @@
           '<label class="btn btn-secondary mt8 filelabel"><span data-i18n="backup.import"></span>' +
             '<input type="file" accept=".json,application/json" onchange="DR.importBackup(this)" hidden></label>' +
         '</div>' +
+        '<div class="card mt16" id="emailSignupCard">' + emailSignupCardHTML() + '</div>' +
         '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>' +
         '<div class="card mt16" id="autohubCard">' + autohubCardHTML() + '</div>';
     },
@@ -921,6 +922,37 @@
       '<label class="field mt8"><span data-i18n="license.enter_key"></span>' +
         '<input id="lic_key" type="text" placeholder="XXXXXXXX-XXXXXXXX"></label>' +
       '<button class="btn btn-primary" onclick="DR.activateLicense()" data-i18n="license.activate"></button>';
+  }
+
+  /* ---------- Email signup card (AutoUniverse obaveštenja) ---------- */
+  var EMAIL_SIGNUP_KEY = "au_email_signup";
+
+  function emailSignupCardHTML() {
+    var state = localStorage.getItem(EMAIL_SIGNUP_KEY);
+    if (state === "done") {
+      return '<h2>AutoUniverse obaveštenja</h2>' +
+        '<p class="lic-ok" style="font-size:.9rem">✓ Prijavljeni ste — proverite email.</p>';
+    }
+    if (state === "error") {
+      return '<h2>AutoUniverse obaveštenja</h2>' +
+        '<p style="color:#f87171;font-size:.82rem;margin-bottom:.6rem">Greška pri slanju — pokušaj ponovo.</p>' +
+        emailSignupFormHTML();
+    }
+    return '<h2>AutoUniverse obaveštenja</h2>' +
+      '<p class="empty" style="margin-bottom:.8rem">Ostavi email i prvi saznaš nove funkcije.</p>' +
+      emailSignupFormHTML();
+  }
+
+  function emailSignupFormHTML() {
+    var profile = Store.settings.get("profile", {});
+    return '<label class="field"><span>Email</span>' +
+        '<input id="su_email" type="email" autocomplete="email" placeholder="tvoj@email.com"></label>' +
+      '<label class="field"><span>Ime (opciono)</span>' +
+        '<input id="su_name" type="text" autocomplete="name" placeholder="Ime" value="' + esc(profile.name || "") + '"></label>' +
+      '<label class="field"><span>Telefon (opciono)</span>' +
+        '<input id="su_phone" type="tel" autocomplete="tel" placeholder="+381..." value="' + esc(profile.phone || "") + '"></label>' +
+      '<div id="suErr" style="color:#f87171;font-size:.82rem;margin:.3rem 0"></div>' +
+      '<button class="btn btn-primary" onclick="DR.submitEmailSignup()">Prijavi me</button>';
   }
 
   /* ---------- Reminders red ---------- */
@@ -1296,6 +1328,44 @@
       localStorage.removeItem("autohub_last_sync");
       toast("Odjavljeno.");
       render("settings");
+    },
+
+    submitEmailSignup: function () {
+      var email = (el("su_email") && el("su_email").value || "").trim();
+      var name  = (el("su_name")  && el("su_name").value  || "").trim();
+      var phone = (el("su_phone") && el("su_phone").value || "").trim();
+      var errEl = el("suErr");
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (errEl) errEl.textContent = "Unesi ispravan email."; return;
+      }
+      if (errEl) errEl.textContent = "";
+      var btn = document.querySelector("#emailSignupCard .btn-primary");
+      if (btn) { btn.disabled = true; btn.textContent = "Šalje se..."; }
+
+      AutoHub.getPlatformUrl().then(function (hubUrl) {
+        if (!hubUrl) throw new Error("Server nije dostupan");
+        return fetch(hubUrl + "/accounts/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email, name: name, phone: phone })
+        });
+      }).then(function (r) {
+        return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d }; });
+      }).then(function (res) {
+        if (res.ok || res.status === 409) {
+          localStorage.setItem(EMAIL_SIGNUP_KEY, "done");
+          var card = el("emailSignupCard");
+          if (card) card.innerHTML = '<h2>AutoUniverse obaveštenja</h2>' +
+            '<p class="lic-ok" style="font-size:.9rem">✓ Proverite email za potvrdu.</p>';
+        } else {
+          throw new Error(res.d.error || "Greška");
+        }
+      }).catch(function (e) {
+        console.warn("[signup]", e.message);
+        localStorage.setItem(EMAIL_SIGNUP_KEY, "error");
+        if (errEl) errEl.textContent = e.message || "Greška — pokušaj ponovo.";
+        if (btn) { btn.disabled = false; btn.textContent = "Prijavi me"; }
+      });
     },
 
     onSellStatusChange: function () {
