@@ -645,6 +645,10 @@
         '<div class="card mt16" id="emailSignupCard">' + emailSignupCardHTML() + '</div>' +
         '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>' +
         '<div class="card mt16"><h2>AutoHub ☁</h2>' + autohubCardHTML() + '</div>' +
+        '<div class="card mt16"><h2>Aplikacija</h2>' +
+          '<button class="btn btn-secondary" onclick="GT.checkForUpdate()">🔄 Provjeri ažuriranja</button>' +
+          '<p id="updateStatus" style="font-size:.8rem;color:#94a3b8;margin-top:.4rem"></p>' +
+        '</div>' +
         '<div style="text-align:center;padding:24px 0 8px;font-size:.75rem;color:#475569">' +
           '<a href="../legal/terms.html" style="color:#475569;margin:0 10px">Uslovi korišćenja</a>' +
           '<a href="../legal/privacy.html" style="color:#475569;margin:0 10px">Privatnost</a>' +
@@ -2326,6 +2330,31 @@
           render("settings");
         })
         .catch(function (e) { if (errEl) errEl.textContent = e.message; });
+    },
+
+    checkForUpdate: function () {
+      var statusEl = document.getElementById('updateStatus');
+      if (!('serviceWorker' in navigator)) {
+        if (statusEl) statusEl.textContent = 'Service Worker nije podržan.';
+        return;
+      }
+      if (statusEl) statusEl.textContent = 'Provjera...';
+      navigator.serviceWorker.getRegistration().then(function (reg) {
+        if (!reg) { if (statusEl) statusEl.textContent = 'SW nije registrovan.'; return; }
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          if (statusEl) statusEl.textContent = 'Ažuriranje... aplikacija se restartuje.';
+          return;
+        }
+        reg.update().then(function () {
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            if (statusEl) statusEl.textContent = 'Novo ažuriranje primenjeno!';
+          } else {
+            if (statusEl) statusEl.textContent = 'Već imate najnoviju verziju.';
+          }
+        });
+      });
     },
 
     autohubLogout: function () {
