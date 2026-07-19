@@ -431,7 +431,7 @@ header {
 }
 .page-section { margin-bottom: 28px; }
 .page-h {
-  font-family: var(--font-h); font-size: 1.25rem; font-weight: 800;
+  font-family: var(--font-h); font-size: 1.4rem; font-weight: 800;
   color: #fff; letter-spacing: 0.02em; margin-bottom: 14px;
   padding-bottom: 8px; border-bottom: 1px solid var(--border);
 }
@@ -449,48 +449,48 @@ header {
 .app-tile.t-red    { border-top: 3px solid #D5281B; }
 .app-tile.t-green  { border-top: 3px solid #1C8A4C; }
 .app-tile .at-name {
-  font-family: var(--font-h); font-size: 0.9rem; font-weight: 700;
+  font-family: var(--font-h); font-size: 1rem; font-weight: 700;
   color: #fff; margin-bottom: 5px;
 }
-.app-tile .at-desc { font-size: 0.76rem; color: var(--muted); line-height: 1.45; }
+.app-tile .at-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.45; }
 .info-card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 12px; padding: 16px 18px; margin-bottom: 12px;
 }
-.info-card p { font-size: 0.88rem; color: var(--text); line-height: 1.6; margin: 0; }
+.info-card p { font-size: 1rem; color: var(--text); line-height: 1.65; margin: 0; }
 .info-card p + p { margin-top: 8px; }
 .contact-row {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
   display: flex; align-items: center; gap: 14px;
 }
-.contact-row .cr-ico { font-size: 1.3rem; flex-shrink: 0; }
-.contact-row .cr-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-.contact-row .cr-val { font-size: 0.88rem; color: var(--text); font-weight: 500; }
+.contact-row .cr-ico { font-size: 1.4rem; flex-shrink: 0; }
+.contact-row .cr-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.contact-row .cr-val { font-size: 1rem; color: var(--text); font-weight: 500; }
 .contact-row a { color: var(--accent); text-decoration: none; }
 .contact-row a:hover { text-decoration: underline; }
 .btn-mail {
   display: flex; align-items: center; justify-content: center; gap: 10px;
-  background: var(--accent); color: #fff; padding: 13px;
+  background: var(--accent); color: #fff; padding: 14px;
   border-radius: 10px; text-decoration: none;
-  font-family: var(--font-h); font-size: 1.05rem; font-weight: 700;
+  font-family: var(--font-h); font-size: 1.15rem; font-weight: 700;
   letter-spacing: 0.04em; transition: background 0.15s; margin-bottom: 14px;
 }
 .btn-mail:hover { background: var(--accent2); }
 .feedback-form textarea {
-  width: 100%; padding: 11px 13px;
+  width: 100%; padding: 12px 14px;
   background: var(--s2); border: 1px solid var(--border2);
   border-radius: 8px; color: var(--text); font-family: var(--font-b);
-  font-size: 0.875rem; min-height: 100px; resize: vertical;
+  font-size: 1rem; min-height: 110px; resize: vertical;
   outline: none; transition: border-color 0.2s; margin-bottom: 10px; display: block;
 }
 .feedback-form textarea:focus { border-color: var(--accent); }
 .feedback-form textarea::placeholder { color: var(--muted); }
 .btn-feedback {
-  width: 100%; padding: 11px;
+  width: 100%; padding: 13px;
   background: var(--s2); border: 1px solid var(--border2);
   border-radius: 8px; color: var(--text); font-family: var(--font-h);
-  font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  font-size: 1.05rem; font-weight: 700; cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 .btn-feedback:hover { background: var(--s3); border-color: var(--accent); }
@@ -609,7 +609,7 @@ header {
   <div class="page-container">
     <div class="page-section">
       <div class="page-h">Kontakt</div>
-      <a href="mailto:plocicmilan@gmail.com" class="btn-mail">✉️ plocicmilan@gmail.com</a>
+      <a href="mailto:beloraventures@gmail.com" class="btn-mail">✉️ beloraventures@gmail.com</a>
       <div class="contact-row">
         <div class="cr-ico">📍</div>
         <div>
@@ -668,7 +668,7 @@ header {
   function sendFeedback() {
     const text = document.getElementById('fb-text').value.trim();
     if (!text) return;
-    window.location.href = `mailto:plocicmilan@gmail.com?subject=AutoUniverse%20Feedback%20(Autopijaca)&body=${encodeURIComponent(text)}`;
+    window.location.href = `mailto:beloraventures@gmail.com?subject=AutoUniverse%20Feedback%20(Autopijaca)&body=${encodeURIComponent(text)}`;
     document.getElementById('fb-sent').style.display = 'block';
   }
 
