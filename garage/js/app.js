@@ -1532,7 +1532,12 @@
     return '<p style="font-size:.82rem;color:#94a3b8;margin-bottom:.6rem">Sinhronizuj podatke sa serverom. Prvi nalog postaje admin.</p>' +
       '<label class="field"><span>Ime</span><input id="ah_name" type="text" placeholder="Marko Petrović"></label>' +
       '<label class="field"><span>Email</span><input id="ah_email" type="email" placeholder="marko@servis.rs"></label>' +
-      '<label class="field"><span>Lozinka</span><input id="ah_pass" type="password"></label>' +
+      '<label class="field"><span>Lozinka</span>' +
+        '<div style="position:relative">' +
+          '<input id="ah_pass" type="password" style="width:100%;padding-right:40px;box-sizing:border-box">' +
+          '<button type="button" onclick="var i=document.getElementById(\'ah_pass\');i.type=i.type===\'password\'?\'text\':\'password\'" ' +
+            'style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px;color:#94a3b8">👁</button>' +
+        '</div></label>' +
       '<button class="btn btn-primary" onclick="GT.autohubRegister()">Registruj se</button>' +
       '<button class="btn btn-secondary mt8" onclick="GT.autohubLogin()">Prijavi se (postojeći nalog)</button>' +
       '<p id="ahErr" style="color:#f87171;font-size:.8rem;margin-top:.4rem"></p>';
@@ -1544,11 +1549,14 @@
       if (!hubUrl) throw new Error("AutoHub nedostupan — pokreni server.");
       var hdrs = { "Content-Type": "application/json" };
       if (!noAuth && sess) hdrs["Authorization"] = "Bearer " + sess.token;
+      var ctrl = new AbortController();
+      var tid = setTimeout(function () { ctrl.abort(); }, 10000);
       return fetch(hubUrl + path, {
         method: method,
         headers: hdrs,
-        body: body ? JSON.stringify(body) : undefined
-      }).then(function (r) {
+        body: body ? JSON.stringify(body) : undefined,
+        signal: ctrl.signal
+      }).finally(function () { clearTimeout(tid); }).then(function (r) {
         return r.json().then(function (d) {
           if (!r.ok) throw new Error(d.error || r.statusText);
           return d;
