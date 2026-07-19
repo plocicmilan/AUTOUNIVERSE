@@ -1538,7 +1538,7 @@
           '<button type="button" onclick="var i=document.getElementById(\'ah_pass\');i.type=i.type===\'password\'?\'text\':\'password\'" ' +
             'style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px;color:#94a3b8">👁</button>' +
         '</div></label>' +
-      '<button class="btn btn-primary" onclick="GT.autohubRegister()">Registruj se</button>' +
+      '<button id="ahRegBtn" class="btn btn-primary" onclick="GT.autohubRegister()">Registruj se</button>' +
       '<button class="btn btn-secondary mt8" onclick="GT.autohubLogin()">Prijavi se (postojeći nalog)</button>' +
       '<p id="ahErr" style="color:#f87171;font-size:.8rem;margin-top:.4rem"></p>';
   }
@@ -2252,11 +2252,17 @@
       var email = val("ah_email");
       var pass  = val("ah_pass");
       var errEl = el("ahErr");
-      if (!name || !email || !pass) { if (errEl) errEl.textContent = "Sva polja su obavezna."; return; }
+      var btn   = document.querySelector("#ahRegBtn");
+      if (!name || !email || !pass) {
+        if (errEl) errEl.textContent = "Sva polja su obavezna."; return;
+      }
+      if (errEl) errEl.textContent = "";
+      if (btn) { btn.disabled = true; btn.textContent = "Čeka se..."; }
       autohubFetch("POST", "/auth/register", { name: name, email: email, password: pass }, true)
         .then(function (r) {
           if (r.status === "pending") {
             toast("Registracija primljena. Čeka se odobrenje admina.");
+            render("settings");
           } else {
             return autohubFetch("POST", "/auth/login", { email: email, password: pass }, true)
               .then(function (lr) {
@@ -2265,9 +2271,11 @@
                 render("settings");
               });
           }
-          render("settings");
         })
-        .catch(function (e) { if (errEl) errEl.textContent = e.message; });
+        .catch(function (e) {
+          if (errEl) errEl.textContent = e.message || "Greška — provjeri internet vezu.";
+          if (btn) { btn.disabled = false; btn.textContent = "Registruj se"; }
+        });
     },
 
     autohubLogin: function () {
