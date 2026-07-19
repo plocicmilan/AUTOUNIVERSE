@@ -2495,11 +2495,36 @@
   /* ---------- Offline / SW ---------- */
 
   function registerSW() {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js").catch(function (e) {
-        console.warn("SW registracija nije uspela:", e);
+    if (!("serviceWorker" in navigator)) return;
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!refreshing) { refreshing = true; window.location.reload(); }
+    });
+    navigator.serviceWorker.register("sw.js").then(function (reg) {
+      reg.addEventListener("updatefound", function () {
+        var sw = reg.installing;
+        sw.addEventListener("statechange", function () {
+          if (sw.state === "installed" && navigator.serviceWorker.controller) {
+            showUpdateBanner(reg);
+          }
+        });
       });
-    }
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg);
+    }).catch(function (e) { console.warn("SW greška:", e); });
+  }
+
+  function showUpdateBanner(reg) {
+    if (document.getElementById("updateBanner")) return;
+    var b = document.createElement("div");
+    b.id = "updateBanner";
+    b.style.cssText = "position:fixed;bottom:72px;left:50%;transform:translateX(-50%);" +
+      "background:#1E8A4C;color:#fff;padding:12px 18px;border-radius:10px;font-size:.88rem;" +
+      "z-index:9999;display:flex;align-items:center;gap:12px;box-shadow:0 4px 16px rgba(0,0,0,.35);white-space:nowrap";
+    b.innerHTML = "<span>Nova verzija dostupna</span>" +
+      "<button style='background:#fff;color:#1E8A4C;border:none;padding:6px 14px;border-radius:6px;font-weight:700;cursor:pointer;font-size:.85rem'" +
+      " onclick='if(navigator.serviceWorker.controller){navigator.serviceWorker.ready.then(function(r){if(r.waiting)r.waiting.postMessage({type:\"SKIP_WAITING\"})})}'>" +
+      "Ažuriraj</button>";
+    document.body.appendChild(b);
   }
 
   function watchOnline() {
