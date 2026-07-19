@@ -1553,9 +1553,19 @@
         '<div id="ahSyncStatus" style="font-size:.8rem;color:#94a3b8;margin-top:.4rem"></div>' +
         '<button class="btn btn-danger mt8" style="background:none;border:1px solid #475569;color:#94a3b8" onclick="GT.autohubLogout()">Odjavi se sa AutoHub-a</button>';
     }
+    var pending = localStorage.getItem('autohub_reg_pending');
+    if (pending) {
+      return '<div style="text-align:center;padding:1.2rem 0">' +
+        '<div style="font-size:2rem;margin-bottom:.5rem">⏳</div>' +
+        '<p style="font-weight:600;margin-bottom:.3rem">Nalog čeka odobrenje</p>' +
+        '<p style="font-size:.82rem;color:#94a3b8">Registrovan kao <b>' + esc(pending) + '</b>.<br>Admin će te aktivirati uskoro.</p>' +
+        '<button class="btn btn-secondary mt8" onclick="GT.autohubLogin()">Već aktiviran? Prijavi se</button>' +
+        '</div>';
+    }
     return '<p style="font-size:.82rem;color:#94a3b8;margin-bottom:.6rem">Sinhronizuj podatke sa serverom. Prvi nalog postaje admin.</p>' +
       '<label class="field"><span>Ime</span><input id="ah_name" type="text" placeholder="Marko Petrović"></label>' +
       '<label class="field"><span>Email</span><input id="ah_email" type="email" placeholder="marko@servis.rs"></label>' +
+      '<label class="field"><span>Telefon</span><input id="ah_phone" type="tel" placeholder="+381 60 123 4567"></label>' +
       '<label class="field"><span>Lozinka</span>' +
         '<div style="position:relative">' +
           '<input id="ah_pass" type="password" style="width:100%;padding-right:40px;box-sizing:border-box">' +
@@ -2274,17 +2284,19 @@
     autohubRegister: function () {
       var name  = val("ah_name");
       var email = val("ah_email");
+      var phone = val("ah_phone");
       var pass  = val("ah_pass");
       var errEl = el("ahErr");
       var btn   = document.querySelector("#ahRegBtn");
-      if (!name || !email || !pass) {
+      if (!name || !email || !phone || !pass) {
         if (errEl) errEl.textContent = "Sva polja su obavezna."; return;
       }
       if (errEl) errEl.textContent = "";
       if (btn) { btn.disabled = true; btn.textContent = "Čeka se..."; }
-      autohubFetch("POST", "/auth/register", { name: name, email: email, password: pass }, true)
+      autohubFetch("POST", "/auth/register", { name: name, email: email, phone: phone, password: pass }, true)
         .then(function (r) {
           if (r.status === "pending") {
+            localStorage.setItem('autohub_reg_pending', email);
             toast("Registracija primljena. Čeka se odobrenje admina.");
             render("settings");
           } else {
