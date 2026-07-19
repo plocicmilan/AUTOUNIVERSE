@@ -210,6 +210,10 @@
             ? '<div style="display:flex;gap:.5rem;margin-top:.5rem">' +
                 '<button class="btn btn-secondary" style="flex:1" onclick="GT.go(\'stats\')">📊 Statistike</button>' +
                 '<button class="btn btn-secondary" style="flex:1" onclick="GT.go(\'calculators\')">🧮 Kalkulatori</button>' +
+              '</div>' +
+              '<div style="display:flex;gap:.5rem;margin-top:.5rem">' +
+                '<button class="btn btn-secondary" style="flex:1" onclick="GT.go(\'sell_part\')">📦 Prodaj deo</button>' +
+                '<button class="btn btn-secondary" style="flex:1" onclick="GT.go(\'my_parts\')">📋 Moji oglasi</button>' +
               '</div>'
             : '') +
           (function () {
@@ -1353,6 +1357,99 @@
             cards;
         });
       });
+    },
+
+    /* ===== SELL PART — forma za objavljivanje dela ===== */
+    sell_part: function () {
+      var profile = Store.settings.get("profile") || {};
+      var currency = Store.settings.get("currency") || "RSD";
+      var cats = [
+        ["motor","Motor"], ["menjac","Menjač"], ["kocnice","Kočnice"], ["trap","Trap/vešanje"],
+        ["karoserija","Karoserija"], ["elektrika","Elektrika"], ["klima","Klima/grejanje"],
+        ["filteri","Filteri"], ["gume","Gume"], ["stakla","Stakla"], ["ostalo","Ostalo"]
+      ];
+      var catOpts = cats.map(function (c) {
+        return '<option value="' + c[0] + '">' + c[1] + '</option>';
+      }).join("");
+      var curOpts = ["RSD","EUR"].map(function (c) {
+        return '<option value="' + c + '"' + (c === currency ? " selected" : "") + '>' + c + '</option>';
+      }).join("");
+
+      return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
+        '<h1>📦 Prodaj deo</h1>' +
+        '<div class="card">' +
+          '<label>Naziv dela *<br>' +
+            '<input id="sp_title" class="field" type="text" placeholder="npr. Filter ulja Mann W7018"></label>' +
+          '<label style="margin-top:.6rem">Kategorija<br>' +
+            '<select id="sp_cat" class="field">' + catOpts + '</select></label>' +
+          '<label style="margin-top:.6rem">Stanje<br>' +
+            '<select id="sp_cond" class="field">' +
+              '<option value="polovan">Polovan</option>' +
+              '<option value="nov">Nov</option>' +
+              '<option value="renoviran">Renoviran</option>' +
+            '</select></label>' +
+          '<label style="margin-top:.6rem">Kataloški broj (opciono)<br>' +
+            '<input id="sp_partno" class="field" type="text" placeholder="npr. W7018"></label>' +
+        '</div>' +
+        '<div class="card">' +
+          '<p style="font-weight:600;margin-bottom:.4rem">Kompatibilnost (opciono)</p>' +
+          '<div style="display:flex;gap:.4rem;flex-wrap:wrap">' +
+            '<input id="sp_make" class="field" type="text" placeholder="Marka" style="flex:1;min-width:100px">' +
+            '<input id="sp_model" class="field" type="text" placeholder="Model" style="flex:1;min-width:100px">' +
+            '<input id="sp_yf" class="field" type="number" placeholder="Od god." style="flex:1;min-width:70px">' +
+            '<input id="sp_yt" class="field" type="number" placeholder="Do god." style="flex:1;min-width:70px">' +
+          '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div style="display:flex;gap:.4rem">' +
+            '<label style="flex:2">Cena *<br><input id="sp_price" class="field" type="number" min="0" placeholder="0"></label>' +
+            '<label style="flex:1">Valuta<br><select id="sp_cur" class="field">' + curOpts + '</select></label>' +
+          '</div>' +
+          '<label style="margin-top:.6rem">Grad<br>' +
+            '<input id="sp_city" class="field" type="text" value="' + esc(profile.address || "") + '" placeholder="npr. Kruševac"></label>' +
+          '<label style="margin-top:.6rem">Opis (stanje, original, km...)<br>' +
+            '<textarea id="sp_desc" class="field" rows="3" placeholder="Napomene o delu..."></textarea></label>' +
+        '</div>' +
+        '<div class="card">' +
+          '<p style="font-weight:600;margin-bottom:.4rem">Kontakt *</p>' +
+          '<label>Ime / naziv<br>' +
+            '<input id="sp_cname" class="field" type="text" value="' + esc(profile.name || "") + '"></label>' +
+          '<label style="margin-top:.6rem">Telefon<br>' +
+            '<input id="sp_cphone" class="field" type="tel" value="' + esc(profile.phone || "") + '" placeholder="+381..."></label>' +
+          '<label style="margin-top:.6rem">Kontakt metod<br>' +
+            '<select id="sp_cmethod" class="field">' +
+              '<option value="phone_call">📞 Poziv</option>' +
+              '<option value="message">✉️ Poruka</option>' +
+            '</select></label>' +
+        '</div>' +
+        '<p id="sp_err" style="color:var(--c-danger,#c0392b);font-size:.85rem;display:none"></p>' +
+        '<button class="btn btn-primary" onclick="GT.savePartListing()">Objavi oglas</button>';
+    },
+
+    /* ===== MY PARTS — lista mojih oglasa delova ===== */
+    my_parts: function () {
+      var parts = (typeof Autodelovi !== "undefined") ? Autodelovi.getMyParts() : [];
+      var rows = parts.length
+        ? parts.map(function (p) {
+            var dateStr = p.created_at ? p.created_at.slice(0, 10) : "";
+            return '<div class="card" style="margin-bottom:.5rem">' +
+              '<div class="evt-head">' +
+                '<b>' + esc(p.title) + '</b>' +
+                '<span>' + dateStr + '</span>' +
+              '</div>' +
+              '<div style="margin-top:.4rem;display:flex;gap:.5rem;flex-wrap:wrap">' +
+                '<a href="' + esc(p.url || "") + '" target="_blank" class="btn btn-secondary" style="font-size:.8rem;padding:.3rem .7rem">🔗 Oglas</a>' +
+                '<button class="btn" style="background:var(--c-danger,#c0392b);color:#fff;font-size:.8rem;padding:.3rem .7rem" ' +
+                  'onclick="GT.deletePartListing(' + p.part_id + ',\'' + esc(p.seller_token) + '\')">🗑 Ukloni</button>' +
+              '</div>' +
+            '</div>';
+          }).join("")
+        : '<p class="empty">Nemaš aktivnih oglasa delova.</p>';
+
+      return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
+        '<h1>📋 Moji oglasi delova</h1>' +
+        '<button class="btn btn-primary" onclick="GT.go(\'sell_part\')" style="margin-bottom:.8rem">+ Novi oglas</button>' +
+        rows;
     }
   };
 
@@ -2230,6 +2327,67 @@
         render("grant_manager");
       }).catch(function (e) {
         if (errEl) errEl.textContent = e.message || "Greška.";
+      });
+    },
+
+    savePartListing: function () {
+      var title  = val("sp_title");
+      var price  = parseFloat(val("sp_price"));
+      var cname  = val("sp_cname");
+      var cphone = val("sp_cphone");
+      var errEl  = el("sp_err");
+
+      if (!title || !price || !cname || !cphone) {
+        errEl.textContent = "Naziv, cena, ime i telefon su obavezni.";
+        errEl.style.display = "block";
+        return;
+      }
+      errEl.style.display = "none";
+
+      var make = val("sp_make"), model = val("sp_model");
+      var yf = parseInt(val("sp_yf")), yt = parseInt(val("sp_yt"));
+      var compatible = [];
+      if (make || model) {
+        compatible.push({ make: make || "", model: model || "",
+          year_from: yf || null, year_to: yt || null });
+      }
+
+      var payload = {
+        title:          title,
+        category:       el("sp_cat").value,
+        condition:      el("sp_cond").value,
+        part_number:    val("sp_partno") || null,
+        compatible:     compatible,
+        price:          price,
+        currency:       el("sp_cur").value,
+        description:    val("sp_desc") || null,
+        city:           val("sp_city") || null,
+        contact_name:   cname,
+        contact_phone:  cphone,
+        contact_method: el("sp_cmethod").value,
+      };
+
+      if (typeof Autodelovi === "undefined") {
+        toast("Autodelovi modul nije učitan.");
+        return;
+      }
+      Autodelovi.publishPart(payload).then(function (data) {
+        toast("Oglas objavljen! 📦");
+        render("my_parts");
+      }).catch(function (e) {
+        errEl.textContent = e.message || "Greška pri objavljivanju.";
+        errEl.style.display = "block";
+      });
+    },
+
+    deletePartListing: function (partId, sellerToken) {
+      if (!confirm("Ukloniti oglas?")) return;
+      if (typeof Autodelovi === "undefined") { toast("Autodelovi modul nije učitan."); return; }
+      Autodelovi.deletePart(partId, sellerToken).then(function () {
+        toast("Oglas uklonjen.");
+        render("my_parts");
+      }).catch(function (e) {
+        toast("Greška: " + (e.message || "nepoznata"));
       });
     },
 

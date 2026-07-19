@@ -255,5 +255,20 @@
   "d.listing_delete": "Obriši oglas",
   "d.listing_messages": "Upiti kupaca",
   "d.listing_no_messages": "Još nema upita.",
-  "d.autopijaca_unavailable": "Autopijaca server nije dostupan. Pokrenite server i ažurirajte platform-url.json."
+  "d.autopijaca_unavailable": "Autopijaca server nije dostupan. Pokrenite server i ažurirajte platform-url.json.",
+
+  "g.sell_part": "📦 Prodaj deo",
+  "g.my_parts": "Moji oglasi delova",
+  "g.part_title": "Naziv dela",
+  "g.part_category": "Kategorija",
+  "g.part_condition": "Stanje",
+  "g.part_price": "Cena",
+  "g.part_city": "Grad",
+  "g.part_desc": "Opis (stanje, original, km...)",
+  "g.part_part_number": "Kataloški broj (opciono)",
+  "g.part_compatible": "Kompatibilno vozilo (opciono)",
+  "g.part_publish": "Objavi oglas",
+  "g.part_delete": "Ukloni oglas",
+  "g.parts_empty": "Nemaš aktivnih oglasa delova.",
+  "g.autodelovi_unavailable": "Autodelovi server nije dostupan."
 }

@@ -2,7 +2,7 @@
    Strategija: cache-first. Sve bundled, nikad CDN.                    */
 "use strict";
 
-var CACHE = "garage-toolbox-v1.27.0"; // podigni verziju pri svakom deploy-u
+var CACHE = "garage-toolbox-v1.28.0"; // podigni verziju pri svakom deploy-u
 
 var PRECACHE = [
   "index.html",
@@ -22,6 +22,7 @@ var PRECACHE = [
   "../core/js/license.js",
   "../core/js/reminders.js",
   "../core/js/catalog.js",
+  "../core/js/autodelovi.js",
   "../core/vendor/jspdf.umd.min.js",
   "../core/vendor/font-dejavu.js",
   "js/workorder.js",
