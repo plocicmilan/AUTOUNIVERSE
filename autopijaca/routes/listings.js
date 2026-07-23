@@ -50,9 +50,9 @@ module.exports = function (router) {
     });
   });
 
-  // GET /listings — javna lista (filteri: make, model, city, max_price, currency)
+  // GET /listings — javna lista (filteri: q, make, model, city, max_price, currency, fuel, min_year, max_year, sort)
   router.get('/listings', async (req, res) => {
-    const { make, model, city, max_price, currency, fuel, min_year, max_year, limit, offset } = req.query;
+    const { q, make, model, city, max_price, currency, fuel, min_year, max_year, sort, limit, offset } = req.query;
 
     let sql = `SELECT l.*, GROUP_CONCAT(p.url ORDER BY p.sort_order) as photos
                FROM listings l
@@ -60,6 +60,7 @@ module.exports = function (router) {
                WHERE l.status = 'active'`;
     const params = [];
 
+    if (q)         { sql += ` AND (l.make LIKE ? OR l.model LIKE ? OR l.description LIKE ?)`; params.push(`%${q}%`, `%${q}%`, `%${q}%`); }
     if (make)      { sql += ` AND l.make LIKE ?`;      params.push(`%${make}%`); }
     if (model)     { sql += ` AND l.model LIKE ?`;     params.push(`%${model}%`); }
     if (city)      { sql += ` AND l.city LIKE ?`;      params.push(`%${city}%`); }
@@ -69,7 +70,11 @@ module.exports = function (router) {
     if (min_year)  { sql += ` AND l.year >= ?`;        params.push(Number(min_year)); }
     if (max_year)  { sql += ` AND l.year <= ?`;        params.push(Number(max_year)); }
 
-    sql += ` GROUP BY l.id ORDER BY l.created_at DESC`;
+    const orderBy = sort === 'price_asc'  ? 'l.price ASC'
+                  : sort === 'price_desc' ? 'l.price DESC'
+                  : sort === 'year_desc'  ? 'l.year DESC'
+                  : 'l.created_at DESC';
+    sql += ` GROUP BY l.id ORDER BY ${orderBy}`;
     sql += ` LIMIT ? OFFSET ?`;
     params.push(Number(limit) || 20, Number(offset) || 0);
 

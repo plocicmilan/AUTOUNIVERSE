@@ -65,9 +65,9 @@ module.exports = function (router) {
     });
   });
 
-  // GET /parts — javna lista (filteri: category, condition, make, model, city, max_price)
+  // GET /parts — javna lista (filteri: q, category, condition, make, model, city, max_price)
   router.get('/parts', async (req, res) => {
-    const { category, condition, make, model, city, max_price, sort, limit, offset } = req.query;
+    const { q, category, condition, make, model, city, max_price, sort, limit, offset } = req.query;
 
     let sql = `SELECT p.*, GROUP_CONCAT(ph.url ORDER BY ph.sort_order) as photos
                FROM parts p
@@ -75,9 +75,11 @@ module.exports = function (router) {
                WHERE p.status = 'active'`;
     const params = [];
 
+    // Full-text pretraga po naslovu i opisu
+    if (q)         { sql += ` AND (p.title LIKE ? OR p.description LIKE ?)`; params.push(`%${q}%`, `%${q}%`); }
     if (category)  { sql += ` AND p.category = ?`;    params.push(category); }
     if (condition) { sql += ` AND p.condition = ?`;   params.push(condition); }
-    if (city)      { sql += ` AND p.city = ?`;        params.push(city); }
+    if (city)      { sql += ` AND p.city LIKE ?`;     params.push(`%${city}%`); }
     if (max_price) { sql += ` AND p.price <= ?`;      params.push(Number(max_price)); }
 
     // Pretraga po marci/modelu: compatible JSON ILI title

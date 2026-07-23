@@ -545,7 +545,8 @@
         }).join("") : '<div class="card"><p class="empty">Nema predračuna</p></div>';
 
         return '<h1>Predračuni</h1>' + list +
-          '<button class="btn btn-primary mt8" onclick="GT.startWO(\'\',\'estimate\')">+ Novi predračun</button>';
+          '<button class="btn btn-primary mt8" onclick="GT.startWO(\'\',\'estimate\')">+ Novi predračun</button>' +
+          '<button class="btn btn-secondary mt8" onclick="GT.exportDocsCSV(\'estimate\')">📥 Export CSV (predračuni)</button>';
       });
     },
 
@@ -1247,7 +1248,8 @@
           '<h2 class="secttitle">📅 Zakazano (danas + 7 dana)</h2>' +
           upcomingHtml +
           '<button class="btn btn-primary mt8" onclick="GT.go(\'appointment_form\')">+ Zakaži termin</button>' +
-          '<button class="btn btn-secondary mt8" onclick="GT.exportICS()" title="Exportuj termine u Google/Apple kalendar">📅 Export u kalendar (.ics)</button>';
+          '<button class="btn btn-secondary mt8" onclick="GT.exportICS()" title="Exportuj termine u Google/Apple kalendar">📅 Export u kalendar (.ics)</button>' +
+          '<button class="btn btn-secondary mt8" onclick="GT.exportDocsCSV(\'work_order\')">📥 Export WO/fakture (CSV)</button>';
       });
     },
 
@@ -2026,6 +2028,52 @@
         anchor.click();
         setTimeout(function () { URL.revokeObjectURL(anchor.href); anchor.remove(); }, 500);
         toast("Termini eksportovani kao .ics fajl.");
+      });
+    },
+
+    exportDocsCSV: function (docType) {
+      Promise.all([Store.all("documents"), Store.all("events"), Store.all("vehicles"), Store.all("contacts")]).then(function (res) {
+        var docs = res[0], evs = res[1], vehs = res[2], cons = res[3];
+        var evById  = {}; evs.forEach(function (e)  { evById[e.id]   = e; });
+        var vehById = {}; vehs.forEach(function (v)  { vehById[v.id]  = v; });
+        var conById = {}; cons.forEach(function (c)  { conById[c.id]  = c; });
+
+        var filtered = docs.filter(function (d) {
+          return docType ? d.doc_type === docType : (d.doc_type === "work_order" || d.doc_type === "invoice");
+        }).sort(function (a, b) { return (b.date || b.created_at || "").localeCompare(a.date || a.created_at || ""); });
+
+        if (!filtered.length) { toast("Nema dokumenata za export."); return; }
+
+        var rows = [["Broj", "Tip", "Datum", "Vozilo", "Klijent", "Ukupno (EUR)", "Ukupno (RSD)", "Status"]];
+        filtered.forEach(function (d) {
+          var ev  = evById[d.event_id];
+          var v   = ev && vehById[ev.vehicle_id];
+          var c   = ev && conById[ev.contact_id];
+          var sum = ev ? Models.sumByCurrency(ev.items) : {};
+          rows.push([
+            d.number || "",
+            d.doc_type || "",
+            d.date || (d.created_at || "").slice(0, 10),
+            v ? (v.make + " " + v.model + (v.plate ? " " + v.plate : "")) : "",
+            c ? c.name : "",
+            sum["EUR"] ? sum["EUR"].toFixed(2) : "",
+            sum["RSD"] ? sum["RSD"].toFixed(0) : "",
+            d.est_status || "—"
+          ]);
+        });
+
+        var csv = rows.map(function (r) {
+          return r.map(function (cell) { return '"' + String(cell || "").replace(/"/g, '""') + '"'; }).join(",");
+        }).join("\r\n");
+
+        var blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "garage-" + (docType || "dokumenti") + "-" + new Date().toISOString().slice(0, 10) + ".csv";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+        toast("Export završen — " + (filtered.length) + " dokumenata.");
       });
     },
 

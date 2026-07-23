@@ -77,6 +77,19 @@ require('./routes/share')(router);
 require('./routes/public')(router);
 require('./routes/admin')(router);
 
+// Health check — bez auth, za monitoring/uptime alate
+router.get('/health', (req, res) => {
+  let dbOk = false;
+  try { require('./db').getDb().prepare('SELECT 1').get(); dbOk = true; } catch {}
+  res.json(dbOk ? 200 : 503, {
+    status:   dbOk ? 'ok' : 'degraded',
+    uptime_s: Math.floor(process.uptime()),
+    version:  require('./package.json').version,
+    db:       dbOk ? 'ok' : 'error',
+    ts:       new Date().toISOString(),
+  });
+});
+
 // Public stats endpoint
 router.get('/stats', async (req, res) => {
   const { getDb } = require('./db');
@@ -147,7 +160,7 @@ function isApiPath(p) {
   return p.startsWith('/auth') || p.startsWith('/vehicles') || p.startsWith('/grants') ||
          p.startsWith('/admin') || p.startsWith('/events') || p.startsWith('/share') ||
          p.startsWith('/public') || p.startsWith('/accounts') || p.startsWith('/notifications') ||
-         p.startsWith('/stats');
+         p.startsWith('/stats') || p.startsWith('/health');
 }
 
 if (require.main === module) {

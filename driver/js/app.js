@@ -942,6 +942,41 @@
       });
     },
 
+    /* ===== FORGOT PASSWORD — zahtjev za reset ===== */
+    hub_forgot: function () {
+      return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+        '<h1>Resetuj lozinku</h1>' +
+        '<div class="card">' +
+          '<p class="muted" style="margin-bottom:.8rem;font-size:.88rem">Unesite email adresu — poslaćemo link za resetovanje lozinke.</p>' +
+          '<label class="field"><span>Email</span>' +
+            '<input id="fg_email" type="email" autocomplete="email" placeholder="tvoj@email.com">' +
+          '</label>' +
+          '<div id="fg_msg" style="font-size:.82rem;margin:.3rem 0"></div>' +
+          '<button class="btn btn-primary mt8" onclick="DR.hubForgot()">Pošalji link</button>' +
+          '<button class="btn btn-secondary mt8" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+        '</div>';
+    },
+
+    /* ===== RESET PASSWORD — unos nove lozinke sa tokenom ===== */
+    hub_reset: function (params) {
+      var token = (params && params.token) || new URLSearchParams(location.search).get('token') || '';
+      return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+        '<h1>Nova lozinka</h1>' +
+        '<div class="card">' +
+          (token
+            ? '<input type="hidden" id="rs_token" value="' + token + '">' +
+              '<label class="field"><span>Nova lozinka</span>' +
+                '<input id="rs_pass1" type="password" autocomplete="new-password" placeholder="min 8 znakova">' +
+              '</label>' +
+              '<label class="field"><span>Potvrdi lozinku</span>' +
+                '<input id="rs_pass2" type="password" autocomplete="new-password">' +
+              '</label>' +
+              '<div id="rs_msg" style="font-size:.82rem;margin:.3rem 0"></div>' +
+              '<button class="btn btn-primary mt8" onclick="DR.hubReset()">Sačuvaj lozinku</button>'
+            : '<p class="empty">Token nije pronađen u URL-u. Otvori link iz mejla.</p>') +
+        '</div>';
+    },
+
     /* ===== BROWSE AUTOPIJACA — pretraga vozila na prodaju ===== */
     browse_autopijaca: function () {
       return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
@@ -1370,7 +1405,8 @@
         '<input id="hub_pass" type="password" autocomplete="current-password"></label>' +
       '<div id="hubLoginErr" style="color:#f87171;font-size:.82rem;margin:.3rem 0"></div>' +
       '<button class="btn btn-primary mt8" onclick="DR.hubLogin()">Poveži</button>' +
-      '<button class="btn btn-secondary mt8" onclick="DR.showHubRegister()">Nemaš nalog? Registruj se</button>';
+      '<button class="btn btn-secondary mt8" onclick="DR.showHubRegister()">Nemaš nalog? Registruj se</button>' +
+      '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_forgot\')" style="font-size:.82rem;color:#64748b">Zaboravio lozinku?</button>';
   }
 
   /* ---------- License helperi ---------- */
@@ -1791,6 +1827,34 @@
         .catch(function (e) {
           if (errEl) errEl.textContent = e.message || "Greška pri povezivanju.";
         });
+    },
+
+    hubForgot: function () {
+      if (!window.AUCore) { toast("AU Core nije dostupan."); return; }
+      var emailVal = val("fg_email") || '';
+      var msgEl = el("fg_msg");
+      if (!emailVal) { if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = "Unesite email."; } return; }
+      AUCore.apiCall('POST', '/auth/forgot', { email: emailVal }).then(function () {
+        if (msgEl) { msgEl.style.color = '#22c55e'; msgEl.textContent = "Link poslan! Proverite mejl."; }
+      }).catch(function () {
+        if (msgEl) { msgEl.style.color = '#22c55e'; msgEl.textContent = "Link poslan! Proverite mejl."; } // anti-enumeration
+      });
+    },
+
+    hubReset: function () {
+      if (!window.AUCore) { toast("AU Core nije dostupan."); return; }
+      var token = val("rs_token") || '';
+      var pass1 = val("rs_pass1") || '';
+      var pass2 = val("rs_pass2") || '';
+      var msgEl = el("rs_msg");
+      if (!pass1 || pass1.length < 8) { if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = "Min 8 znakova."; } return; }
+      if (pass1 !== pass2)            { if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = "Lozinke se ne poklapaju."; } return; }
+      AUCore.apiCall('POST', '/auth/reset', { token: token, password: pass1 }).then(function () {
+        if (msgEl) { msgEl.style.color = '#22c55e'; msgEl.textContent = "Lozinka promenjena! Prijavi se."; }
+        setTimeout(function () { DR.go('settings'); }, 1500);
+      }).catch(function (e) {
+        if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = e.message || "Greška. Token možda istekao."; }
+      });
     },
 
     showHubRegister: function () {

@@ -575,6 +575,7 @@ header {
 <div id="panel-main" class="tab-panel active">
 <div class="search-bar">
   <div class="search-inner">
+    <input type="text" id="f-q" placeholder="Naziv dela (npr. disk kočnice, filter...)" onkeydown="if(event.key==='Enter')loadParts()" style="flex:2">
     <input type="text" id="f-make" placeholder="Marka (VW, BMW...)" onkeydown="if(event.key==='Enter')loadParts()">
     <input type="text" id="f-model" placeholder="Model" onkeydown="if(event.key==='Enter')loadParts()">
     <input type="text" id="f-city" placeholder="Grad" onkeydown="if(event.key==='Enter')loadParts()">
@@ -774,6 +775,7 @@ header {
   let allLoaded = false;
 
   function buildParams(offset) {
+    const q     = document.getElementById('f-q')        ? document.getElementById('f-q').value.trim()         : '';
     const make  = document.getElementById('f-make').value.trim();
     const model = document.getElementById('f-model').value.trim();
     const city  = document.getElementById('f-city').value.trim();
@@ -781,6 +783,7 @@ header {
     const sort  = document.getElementById('f-sort').value;
     const p = new URLSearchParams();
     if (activeCategory) p.set('category', activeCategory);
+    if (q)     p.set('q', q);
     if (make)  p.set('make', make);
     if (model) p.set('model', model);
     if (city)  p.set('city', city);
