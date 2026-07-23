@@ -216,6 +216,21 @@ img { display: block; max-width: 100%; }
 .diff__text b { color: var(--dark); }
 .diff__text { font-size: .9rem; color: var(--mid); line-height: 1.6; }
 
+/* === Tools ============================================ */
+.tools { padding: 72px 0; background: #F8F7F3; }
+.tools__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 2.5rem; }
+.tool-card {
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  padding: 24px; display: flex; flex-direction: column; gap: 10px;
+  text-decoration: none; color: inherit;
+  transition: box-shadow .15s, border-color .15s;
+}
+.tool-card:hover { border-color: var(--red); box-shadow: 0 4px 16px rgba(213,40,27,.08); }
+.tool-card__icon { font-size: 2rem; line-height: 1; }
+.tool-card__title { font-size: 1rem; font-weight: 700; color: var(--dark); }
+.tool-card__desc { font-size: .85rem; color: var(--muted); line-height: 1.5; flex: 1; }
+.tool-card__cta { font-size: .82rem; font-weight: 700; color: var(--red); }
+
 /* === Mission ========================================== */
 .mission {
   background: var(--dark); color: #fff;
@@ -454,6 +469,29 @@ img { display: block; max-width: 100%; }
         <span class="diff__vs">vs app</span>
         <div class="diff__text"><b>MyGarage aplikacije</b> — one traže od vlasnika da sve ručno unosi. Kod nas, kada mehaničar radi servis, vlasnik dobija zapis. Bez duplog kucanja.</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOLS -->
+<section class="tools" id="alati">
+  <div class="container">
+    <span class="label">Besplatni alati</span>
+    <h2 class="section-title">Kalkulatori za kupovinu i registraciju.</h2>
+    <p class="section-sub">Brze procene bez registracije. Koristite pre kupovine ili produženja registracije.</p>
+    <div class="tools__grid">
+      <a href="/kalkulator-registracije" class="tool-card">
+        <div class="tool-card__icon">📋</div>
+        <div class="tool-card__title">Kalkulator registracije</div>
+        <div class="tool-card__desc">Unesite snagu motora i godište — dobijte procenu tehničkog pregleda, AO osiguranja i republičke takse.</div>
+        <div class="tool-card__cta">Izračunaj →</div>
+      </a>
+      <a href="/kalkulator-uvoza" class="tool-card">
+        <div class="tool-card__icon">🚢</div>
+        <div class="tool-card__title">Kalkulator uvoza vozila</div>
+        <div class="tool-card__desc">Carina + PDV + homologacija. Procena ukupnih troškova uvoza iz EU i van EU u RSD.</div>
+        <div class="tool-card__cta">Izračunaj →</div>
+      </a>
     </div>
   </div>
 </section>
