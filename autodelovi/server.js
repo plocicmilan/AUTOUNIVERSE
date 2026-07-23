@@ -38,7 +38,7 @@ function makeRes(res) {
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let data = '';
-    req.on('data', chunk => { data += chunk; if (data.length > 2e6) reject(new Error('Body too large')); });
+    req.on('data', chunk => { data += chunk; if (data.length > 8e6) reject(new Error('Body too large')); });
     req.on('end', () => {
       try { resolve(data ? JSON.parse(data) : {}); }
       catch { resolve({}); }
@@ -50,7 +50,8 @@ function readBody(req) {
 function serveStatic(res, filePath) {
   if (!fs.existsSync(filePath)) { res.json(404, { error: 'Not found' }); return; }
   const ext = path.extname(filePath);
-  const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+  const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
+                 '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
   res.writeHead(200, { 'Content-Type': mime[ext] || 'application/octet-stream' });
   fs.createReadStream(filePath).pipe(res);
 }
@@ -58,6 +59,7 @@ function serveStatic(res, filePath) {
 const router = makeRouter();
 require('./routes/parts')(router);
 require('./routes/messages')(router);
+require('./routes/photos')(router);
 
 const server = http.createServer(async (req, res) => {
   makeRes(res);
@@ -74,8 +76,8 @@ const server = http.createServer(async (req, res) => {
     return serveStatic(res, path.join(__dirname, 'public', 'index.html'));
   }
 
-  if (pathname.startsWith('/public/')) {
-    return serveStatic(res, path.join(__dirname, pathname));
+  if (pathname.startsWith('/public/') || pathname.startsWith('/uploads/')) {
+    return serveStatic(res, path.join(__dirname, pathname.startsWith('/uploads/') ? 'public' + pathname : pathname));
   }
 
   if (pathname.startsWith('/api') || isApiPath(pathname)) {
@@ -107,7 +109,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 function isApiPath(p) {
-  return p.startsWith('/parts');
+  return p.startsWith('/parts') || p.startsWith('/messages') || p.startsWith('/photos');
 }
 
 server.listen(PORT, () => {

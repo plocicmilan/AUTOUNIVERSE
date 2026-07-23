@@ -55,6 +55,11 @@ function removePartLocal(part_id) {
   localStorage.setItem(PARTS_KEY, JSON.stringify(list));
 }
 
+// POST /photos — upload jedne base64 slike, vraća {url}
+async function uploadPhoto(dataUrl) {
+  return apiCall('POST', '/photos', { data: dataUrl });
+}
+
 // POST /parts — Garage objavljuje deo
 async function publishPart(payload) {
   const data = await apiCall('POST', '/parts', payload);
@@ -85,6 +90,7 @@ async function isAvailable() {
 
 global.Autodelovi = {
   isAvailable,
+  uploadPhoto,
   publishPart,
   getMyParts,
   getMyPartDetail,

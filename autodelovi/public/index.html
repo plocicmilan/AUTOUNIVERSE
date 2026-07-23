@@ -607,6 +607,9 @@ header {
 <div class="overlay" id="overlay" onclick="closeModal(event)">
   <div class="modal" id="modal">
     <div class="modal-photo" id="modal-photo">🔧</div>
+    <div id="modal-photo2" style="display:none;width:100%;height:160px;background:var(--s2);overflow:hidden">
+      <img id="modal-photo2-img" src="" alt="" style="width:100%;height:100%;object-fit:cover">
+    </div>
     <div class="modal-strip"></div>
     <div class="modal-body">
       <div class="modal-title" id="modal-title"></div>
@@ -810,7 +813,12 @@ header {
     const p   = await res.json();
     document.getElementById('modal-title').textContent = p.title;
     document.getElementById('modal-price').textContent = fmtPrice(p);
-    document.getElementById('modal-photo').innerHTML = p.photos&&p.photos.length ? `<img src="${p.photos[0]}" alt="${p.title}">` : '🔧';
+    const photos = p.photos || [];
+    document.getElementById('modal-photo').innerHTML = photos.length ? `<img src="${photos[0]}" alt="${p.title}">` : '🔧';
+    const strip2 = document.getElementById('modal-photo2');
+    if (strip2) strip2.style.display = photos.length > 1 ? 'block' : 'none';
+    const img2 = document.getElementById('modal-photo2-img');
+    if (img2) img2.src = photos[1] || '';
     const meta = [];
     if (p.condition)   meta.push(`<span class="badge ${COND_CLS[p.condition]||''}">${COND_LABEL[p.condition]||p.condition}</span>`);
     if (p.category)    meta.push(`<span class="badge">${CAT_LABEL[p.category]||p.category}</span>`);

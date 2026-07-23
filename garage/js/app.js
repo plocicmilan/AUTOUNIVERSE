@@ -89,6 +89,24 @@
         render("home");
         registerSW();
         watchOnline();
+        // Prenesi Garage sesiju u AutoHub.js standard ključ (ako postoji)
+        if (window.AutoHub) {
+          var _ahSess = (function () { try { return JSON.parse(localStorage.getItem("autohub_garage_session")); } catch (_) { return null; } })();
+          if (_ahSess && _ahSess.token && !AutoHub.getSession()) AutoHub.setSession(_ahSess.token);
+        }
+        // Verifikuj sesiju pri startu — ako je istekla na serveru, očisti lokalno
+        if (window.AutoHub && AutoHub.getSession()) {
+          AutoHub.apiCall("GET", "/auth/me").then(function () {
+            pollNotifications();
+          }).catch(function (e) {
+            if (e.status === 401) {
+              AutoHub.setSession(null);
+              localStorage.removeItem("autohub_garage_session");
+              var bellBtn = el("bellBtn"); if (bellBtn) bellBtn.hidden = true;
+            }
+          });
+        }
+        _notifPollTimer = setInterval(pollNotifications, 5 * 60 * 1000);
       })
       .catch(function (err) {
         console.error("Boot greška:", err);
@@ -416,7 +434,12 @@
             field("f_plate", "vehicles.plate", v.plate) +
             '<label class="field"><span>' + t("vehicles.category") + '</span><select id="f_category">' + catOpts + '</select></label>' +
             '<label class="field"><span>' + t("vehicles.owner") + '</span><select id="f_owner">' + ownerOpts + '</select></label>' +
-            field("f_vin", "vehicles.vin", v.vin) +
+            '<label class="field"><span>' + t("vehicles.vin") + '</span>' +
+              '<div style="display:flex;gap:.4rem">' +
+                '<input id="f_vin" type="text" value="' + esc(v.vin) + '" style="flex:1" placeholder="17 chars" maxlength="17">' +
+                '<button type="button" class="btn btn-secondary sm" onclick="GT.decodeVin()" style="white-space:nowrap;padding:.4rem .7rem">Dekoduj</button>' +
+              '</div>' +
+            '</label>' +
             '<div class="field"><span>Foto vozila</span>' +
               '<label class="btn btn-secondary filelabel" style="display:inline-block;margin:.3rem 0">' +
                 '<span>📷 Odaberi sliku</span>' +
@@ -1457,6 +1480,12 @@
               '<option value="message">✉️ Poruka</option>' +
             '</select></label>' +
         '</div>' +
+        '<div class="card">' +
+          '<p style="font-weight:600;margin-bottom:.4rem">Fotografije (max 2)</p>' +
+          '<input type="file" id="sp_photos" accept="image/*" multiple style="display:none" onchange="GT.spPickPhotos(this)">' +
+          '<div id="sp_photo_strip" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.5rem"></div>' +
+          '<button class="btn btn-secondary" style="font-size:.85rem" onclick="document.getElementById(\'sp_photos\').click()">📷 Dodaj sliku</button>' +
+        '</div>' +
         '<p id="sp_err" style="color:var(--c-danger,#c0392b);font-size:.85rem;display:none"></p>' +
         '<button class="btn btn-primary" onclick="GT.savePartListing()">Objavi oglas</button>';
     },
@@ -1703,6 +1732,32 @@
       var mdls = window.Catalog.models(makeVal);
       var dl = el("cat_models");
       if (dl) dl.innerHTML = mdls.map(function (m) { return '<option value="' + esc(m) + '">'; }).join("");
+    },
+
+    decodeVin: function () {
+      var vinEl = el("f_vin");
+      if (!vinEl) return;
+      var vin = vinEl.value.trim().toUpperCase();
+      if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) { toast("VIN mora imati 17 znakova (bez I, O, Q)"); return; }
+      toast("Dekodovanje...");
+      fetch("https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/" + vin + "?format=json")
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var row = data.Results && data.Results[0];
+          if (!row) { toast("NHTSA nije vratio podatke"); return; }
+          var make  = (row.Make  || "").trim();
+          var model = (row.Model || "").trim();
+          var year  = parseInt(row.ModelYear || "0", 10) || null;
+          if (!make) { toast("VIN prepoznat, marka nepoznata"); return; }
+          var makeEl  = el("f_make");
+          var modelEl = el("f_model");
+          var yearEl  = el("f_year");
+          if (makeEl)  { makeEl.value  = make;  GT.onMakeInput(make); }
+          if (modelEl) { modelEl.value = model; }
+          if (yearEl && year)  { yearEl.value = year; }
+          toast("✓ " + make + " " + model + (year ? " (" + year + ")" : ""));
+        })
+        .catch(function () { toast("Greška — NHTSA nedostupan"); });
     },
 
     /* ----- Raniji unos (retroaktivna istorija) ----- */
@@ -2307,8 +2362,10 @@
             return autohubFetch("POST", "/auth/login", { email: email, password: pass }, true)
               .then(function (lr) {
                 localStorage.setItem(AH_SESSION_KEY, JSON.stringify({ token: lr.session, name: lr.user.name, email: lr.user.email }));
+                if (window.AutoHub) AutoHub.setSession(lr.session);
                 toast("AutoHub: prijavljen kao " + lr.user.name);
                 render("settings");
+                pollNotifications();
               });
           }
         })
@@ -2326,8 +2383,10 @@
       autohubFetch("POST", "/auth/login", { email: email, password: pass }, true)
         .then(function (r) {
           localStorage.setItem(AH_SESSION_KEY, JSON.stringify({ token: r.session, name: r.user.name, email: r.user.email }));
+          if (window.AutoHub) AutoHub.setSession(r.session);
           toast("AutoHub: prijavljen kao " + r.user.name);
           render("settings");
+          pollNotifications();
         })
         .catch(function (e) { if (errEl) errEl.textContent = e.message; });
     },
@@ -2360,6 +2419,9 @@
     autohubLogout: function () {
       autohubFetch("POST", "/auth/logout", {}).catch(function () {});
       localStorage.removeItem(AH_SESSION_KEY);
+      if (window.AutoHub) AutoHub.setSession(null);
+      var bellBtn = el("bellBtn"); if (bellBtn) bellBtn.hidden = true;
+      var bellCount = el("bellCount"); if (bellCount) bellCount.hidden = true;
       toast("Odjavljen sa AutoHub-a.");
       render("settings");
     },
@@ -2490,6 +2552,40 @@
       });
     },
 
+    spPickPhotos: function (input) {
+      var files = Array.from(input.files || []);
+      if (!files.length) return;
+      var existing = GT._spPhotos || [];
+      var remaining = 2 - existing.length;
+      if (remaining <= 0) { toast("Maksimalno 2 fotografije."); return; }
+      files = files.slice(0, remaining);
+      Photos.compressMany(files).then(function (arr) {
+        GT._spPhotos = (existing || []).concat(arr).slice(0, 2);
+        var strip = el("sp_photo_strip");
+        if (strip) {
+          strip.innerHTML = GT._spPhotos.map(function (src, i) {
+            return '<div style="position:relative;display:inline-block">' +
+              '<img src="' + src + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #334">' +
+              '<button onclick="GT.spDelPhoto(' + i + ')" style="position:absolute;top:-4px;right:-4px;background:#c0392b;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:18px;text-align:center">✕</button>' +
+            '</div>';
+          }).join("");
+        }
+      });
+    },
+
+    spDelPhoto: function (idx) {
+      GT._spPhotos = (GT._spPhotos || []).filter(function (_, i) { return i !== idx; });
+      var strip = el("sp_photo_strip");
+      if (strip) {
+        strip.innerHTML = (GT._spPhotos || []).map(function (src, i) {
+          return '<div style="position:relative;display:inline-block">' +
+            '<img src="' + src + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #334">' +
+            '<button onclick="GT.spDelPhoto(' + i + ')" style="position:absolute;top:-4px;right:-4px;background:#c0392b;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:18px;text-align:center">✕</button>' +
+          '</div>';
+        }).join("");
+      }
+    },
+
     savePartListing: function () {
       var title  = val("sp_title");
       var price  = parseFloat(val("sp_price"));
@@ -2531,10 +2627,24 @@
         toast("Autodelovi modul nije učitan.");
         return;
       }
-      Autodelovi.publishPart(payload).then(function (data) {
+
+      var photos = GT._spPhotos || [];
+      var btn = document.querySelector('.btn-primary[onclick="GT.savePartListing()"]');
+      if (btn) { btn.disabled = true; btn.textContent = "Objavljujem..."; }
+
+      var uploadAll = photos.length
+        ? Promise.all(photos.map(function (dataUrl) { return Autodelovi.uploadPhoto(dataUrl).then(function (r) { return r.url; }); }))
+        : Promise.resolve([]);
+
+      uploadAll.then(function (photoUrls) {
+        payload.photos = photoUrls;
+        return Autodelovi.publishPart(payload);
+      }).then(function () {
+        GT._spPhotos = [];
         toast("Oglas objavljen! 📦");
         render("my_parts");
       }).catch(function (e) {
+        if (btn) { btn.disabled = false; btn.textContent = "Objavi oglas"; }
         errEl.textContent = e.message || "Greška pri objavljivanju.";
         errEl.style.display = "block";
       });
@@ -2607,6 +2717,101 @@
     window.addEventListener("offline", upd);
     upd();
   }
+
+  // ─── Notification bell ────────────────────────────────────────────────────
+
+  var _notifPollTimer = null;
+
+  function updateBell(unread) {
+    var btn   = el("bellBtn");
+    var count = el("bellCount");
+    if (!btn) return;
+    btn.hidden = false;
+    if (unread > 0) {
+      count.hidden = false;
+      count.textContent = unread > 99 ? "99+" : String(unread);
+    } else {
+      count.hidden = true;
+    }
+  }
+
+  function pollNotifications() {
+    if (!window.AutoHub || !AutoHub.getSession()) return;
+    AutoHub.apiCall("GET", "/notifications?limit=1&unread=0")
+      .then(function (data) { updateBell(data.unread || 0); })
+      .catch(function () { /* server nedostupan — tiho */ });
+  }
+
+  function _relTime(iso) {
+    var d = new Date(iso); var now = Date.now(); var diff = (now - d) / 1000;
+    if (diff < 60) return "upravo";
+    if (diff < 3600) return Math.round(diff / 60) + " min";
+    if (diff < 86400) return Math.round(diff / 3600) + " h";
+    return Math.round(diff / 86400) + " d";
+  }
+
+  Actions.showNotifications = function () {
+    if (!window.AutoHub || !AutoHub.getSession()) { toast("Nisi prijavljen na AutoHub"); return; }
+    AutoHub.apiCall("GET", "/notifications?limit=30")
+      .then(function (data) {
+        var items = data.notifications || [];
+        var overlay = document.createElement("div");
+        overlay.className = "notif-overlay";
+        var sheet = document.createElement("div");
+        sheet.className = "notif-sheet";
+
+        var head = '<div class="notif-sheet-head">' +
+          '<h3>Obaveštenja</h3>' +
+          '<div style="display:flex;gap:.75rem;align-items:center">' +
+          (data.unread > 0 ? '<button class="notif-sheet-readall" id="notifReadAll">Označi sve</button>' : '') +
+          '<button style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:inherit" id="notifClose">✕</button>' +
+          '</div></div>';
+
+        var rows = items.length === 0
+          ? '<div class="notif-empty">Nema obaveštenja</div>'
+          : items.map(function (n) {
+            var isUnread = !n.read_at;
+            var hasUrl = n.action_url ? ' data-url="' + esc(n.action_url) + '"' : '';
+            var cursor = n.action_url ? ' style="cursor:pointer"' : '';
+            return '<div class="notif-row' + (isUnread ? ' unread' : '') + '" data-id="' + n.id + '"' + hasUrl + cursor + '>' +
+              '<div class="notif-row-title">' + esc(n.title) + (n.action_url ? ' <span style="font-size:.7rem;opacity:.6">↗</span>' : '') + '</div>' +
+              '<div class="notif-row-body">' + esc(n.body) + '</div>' +
+              '<div class="notif-row-time">' + _relTime(n.created_at) + '</div>' +
+              '</div>';
+          }).join('');
+
+        sheet.innerHTML = head + '<div class="notif-list">' + rows + '</div>';
+        overlay.appendChild(sheet);
+        document.body.appendChild(overlay);
+
+        function close() { document.body.removeChild(overlay); pollNotifications(); }
+
+        overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+        var closeBtn = document.getElementById("notifClose");
+        if (closeBtn) closeBtn.addEventListener("click", close);
+
+        var readAllBtn = document.getElementById("notifReadAll");
+        if (readAllBtn) readAllBtn.addEventListener("click", function () {
+          AutoHub.apiCall("POST", "/notifications/read-all")
+            .then(function () { close(); })
+            .catch(function () { toast("Greška"); });
+        });
+
+        sheet.querySelectorAll(".notif-row").forEach(function (row) {
+          row.addEventListener("click", function () {
+            var id = row.getAttribute("data-id");
+            var url = row.getAttribute("data-url");
+            if (row.classList.contains("unread")) {
+              AutoHub.apiCall("POST", "/notifications/read/" + id).catch(function(){});
+              row.classList.remove("unread");
+              updateBell(Math.max(0, (data.unread || 1) - 1));
+            }
+            if (url) { close(); window.open(url, "_blank", "noopener"); }
+          });
+        });
+      })
+      .catch(function () { toast("AutoHub nije dostupan"); });
+  };
 
   // helperi koje koristi workorder.js
   Actions.t = t;
