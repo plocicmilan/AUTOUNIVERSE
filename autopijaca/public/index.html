@@ -539,11 +539,23 @@ header {
 <div id="panel-main" class="tab-panel active">
 <div class="search-bar">
   <div class="search-inner">
-    <input type="text" id="f-make" placeholder="Marka (VW, BMW, Audi...)">
-    <input type="text" id="f-model" placeholder="Model">
-    <input type="text" id="f-city" placeholder="Grad">
-    <input type="number" id="f-max-price" placeholder="Max cena (EUR)">
+    <input type="text" id="f-make" placeholder="Marka (VW, BMW...)" onkeydown="if(event.key==='Enter')loadListings()">
+    <input type="text" id="f-model" placeholder="Model" onkeydown="if(event.key==='Enter')loadListings()">
     <button class="btn-search" onclick="loadListings()">PRETRAŽI</button>
+  </div>
+  <div class="search-inner" style="padding-top:6px">
+    <select id="f-fuel" style="flex:1;min-width:110px;padding:8px 10px;background:var(--s2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-b);font-size:.85rem;outline:none">
+      <option value="">Gorivo (sve)</option>
+      <option value="benzin">Benzin</option>
+      <option value="dizel">Dizel</option>
+      <option value="hibrid">Hibrid</option>
+      <option value="električno">Električno</option>
+      <option value="gas">Gas</option>
+    </select>
+    <input type="number" id="f-min-year" placeholder="God. od" min="1990" max="2026" style="flex:1;min-width:90px;padding:8px 10px;background:var(--s2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-b);font-size:.85rem;outline:none" onkeydown="if(event.key==='Enter')loadListings()">
+    <input type="number" id="f-max-year" placeholder="God. do" min="1990" max="2026" style="flex:1;min-width:90px;padding:8px 10px;background:var(--s2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-b);font-size:.85rem;outline:none" onkeydown="if(event.key==='Enter')loadListings()">
+    <input type="text" id="f-city" placeholder="Grad" style="flex:1;min-width:100px;padding:8px 10px;background:var(--s2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-b);font-size:.85rem;outline:none" onkeydown="if(event.key==='Enter')loadListings()">
+    <input type="number" id="f-max-price" placeholder="Max EUR" style="flex:1;min-width:90px;padding:8px 10px;background:var(--s2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-b);font-size:.85rem;outline:none" onkeydown="if(event.key==='Enter')loadListings()">
   </div>
 </div>
 
@@ -704,15 +716,21 @@ header {
   async function loadListings() {
     document.getElementById('grid').innerHTML = '<div class="loading">Učitavanje oglasa</div>';
     document.getElementById('stats').innerHTML = '';
-    const make  = document.getElementById('f-make').value.trim();
-    const model = document.getElementById('f-model').value.trim();
-    const city  = document.getElementById('f-city').value.trim();
-    const max   = document.getElementById('f-max-price').value.trim();
+    const make     = document.getElementById('f-make').value.trim();
+    const model    = document.getElementById('f-model').value.trim();
+    const city     = document.getElementById('f-city').value.trim();
+    const max      = document.getElementById('f-max-price').value.trim();
+    const fuel     = document.getElementById('f-fuel').value;
+    const minYear  = document.getElementById('f-min-year').value.trim();
+    const maxYear  = document.getElementById('f-max-year').value.trim();
     const params = new URLSearchParams();
-    if (make)  params.set('make', make);
-    if (model) params.set('model', model);
-    if (city)  params.set('city', city);
-    if (max)   params.set('max_price', max);
+    if (make)    params.set('make', make);
+    if (model)   params.set('model', model);
+    if (city)    params.set('city', city);
+    if (max)     params.set('max_price', max);
+    if (fuel)    params.set('fuel', fuel);
+    if (minYear) params.set('min_year', minYear);
+    if (maxYear) params.set('max_year', maxYear);
     params.set('limit', '40');
     try {
       const res  = await fetch(`${API}/listings?${params}`);
