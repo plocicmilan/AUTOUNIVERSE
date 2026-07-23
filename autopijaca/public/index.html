@@ -798,10 +798,18 @@ header {
       }
     }
     const isPhone = l.contact_method !== 'message';
+    const phone = l.contact_phone || '';
+    const viberNum = phone.replace(/\D/g, '');
     document.getElementById('modal-contact').innerHTML = `
       <div class="clabel">Kontakt prodavca</div>
       <div class="cname">${l.contact_name}</div>
-      ${isPhone ? `<a class="btn-call" href="tel:${l.contact_phone}">📞 ${l.contact_phone}</a>` : '<span style="font-size:.85rem;color:var(--muted)">Pošalji poruku ispod ↓</span>'}`;
+      ${isPhone ? `
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn-call" href="tel:${phone}" style="flex:1;justify-content:center">📞 Pozovi</a>
+          ${viberNum ? `<a class="btn-call" href="viber://chat?number=%2B${viberNum}" style="flex:1;justify-content:center;background:#7360f2">💬 Viber</a>` : ''}
+        </div>
+        <div style="margin-top:8px;font-size:.82rem;color:var(--muted)">${phone}</div>
+      ` : '<span style="font-size:.85rem;color:var(--muted)">Pošalji poruku ispod ↓</span>'}`;
     document.getElementById('msg-form').style.display = isPhone ? 'none' : 'block';
   }
 
