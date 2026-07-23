@@ -67,7 +67,7 @@ module.exports = function (router) {
 
   // GET /parts — javna lista (filteri: category, condition, make, model, city, max_price)
   router.get('/parts', async (req, res) => {
-    const { category, condition, make, model, city, max_price, limit, offset } = req.query;
+    const { category, condition, make, model, city, max_price, sort, limit, offset } = req.query;
 
     let sql = `SELECT p.*, GROUP_CONCAT(ph.url ORDER BY ph.sort_order) as photos
                FROM parts p
@@ -84,7 +84,10 @@ module.exports = function (router) {
     if (make)  { sql += ` AND (p.compatible LIKE ? OR p.title LIKE ?)`; params.push(`%${make}%`, `%${make}%`); }
     if (model) { sql += ` AND (p.compatible LIKE ? OR p.title LIKE ?)`; params.push(`%${model}%`, `%${model}%`); }
 
-    sql += ` GROUP BY p.id ORDER BY p.created_at DESC`;
+    const orderBy = sort === 'price_asc'  ? 'p.price ASC'
+                  : sort === 'price_desc' ? 'p.price DESC'
+                  : 'p.created_at DESC';
+    sql += ` GROUP BY p.id ORDER BY ${orderBy}`;
     sql += ` LIMIT ? OFFSET ?`;
     params.push(Number(limit) || 20, Number(offset) || 0);
 
