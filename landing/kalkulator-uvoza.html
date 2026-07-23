@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator uvoza vozila — AutoUniverse</title>
+<meta name="description" content="Izračunaj tačne troškove uvoza automobila u Srbiju: carina, PDV, homologacija. Besplatni kalkulator za uvoz vozila iz EU i van EU.">
+<meta name="keywords" content="kalkulator uvoza vozila, carina automobil Srbija, PDV uvoz auta, homologacija vozila, uvoz iz EU">
+<meta name="theme-color" content="#D5281B">
+
+<meta property="og:title" content="Kalkulator uvoza vozila — AutoUniverse">
+<meta property="og:description" content="Carina + PDV + homologacija. Besplatno, bez registracije.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://autouniverse.rs/kalkulator-uvoza">
+
+<link rel="canonical" href="https://autouniverse.rs/kalkulator-uvoza">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #F8F7F3;
+  color: #1C1F24;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+a { color: inherit; text-decoration: none; }
+
+:root {
+  --red:    #D5281B;
+  --dark:   #1C1F24;
+  --mid:    #4A4E58;
+  --muted:  #6B7280;
+  --line:   #E5E7EB;
+  --bg:     #ffffff;
+  --radius: 14px;
+}
+
+/* Nav */
+.nav {
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  padding: 0 20px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1rem; }
+.nav-logo .dot { width: 10px; height: 10px; background: var(--red); border-radius: 50%; }
+.nav-back { font-size: .85rem; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+.nav-back:hover { color: var(--red); }
+
+/* Hero */
+.hero {
+  background: var(--dark);
+  color: #fff;
+  padding: 48px 20px 40px;
+  text-align: center;
+}
+.hero-label {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #f87171;
+  margin-bottom: .8rem;
+  background: rgba(248,113,113,.12);
+  padding: .3rem .8rem;
+  border-radius: 20px;
+}
+.hero h1 {
+  font-size: clamp(1.7rem, 5vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: .8rem;
+  letter-spacing: -.02em;
+}
+.hero h1 span { color: #f87171; }
+.hero p {
+  font-size: 1rem;
+  color: #9ca3af;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.65;
+}
+
+/* Main */
+.main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+}
+
+/* Card */
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* Form */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+.field:last-child { margin-bottom: 0; }
+.field label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--mid);
+}
+.field input, .field select {
+  padding: 11px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 9px;
+  font-size: .95rem;
+  color: var(--dark);
+  background: #fafafa;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+.field input:focus, .field select:focus { border-color: var(--red); background: #fff; }
+.field .hint { font-size: .75rem; color: var(--muted); }
+
+/* Grid 2 col */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 440px) { .grid2 { grid-template-columns: 1fr; } }
+
+/* Stopa row */
+.stopa-row { display: none; }
+.stopa-row.show { display: flex; }
+
+/* Result */
+.result {
+  background: var(--dark);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+  display: none;
+}
+.result.show { display: block; }
+.result-title {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  font-size: .9rem;
+}
+.result-row:last-of-type { border-bottom: none; }
+.result-row .rl { color: #d1d5db; }
+.result-row .rv { font-weight: 600; white-space: nowrap; }
+.result-row .rsub { font-size: .75rem; color: #6b7280; display: block; }
+.result-total {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 2px solid rgba(255,255,255,.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.result-total .tl { font-size: .95rem; font-weight: 700; color: #fff; }
+.result-total .tv { font-size: 1.6rem; font-weight: 800; color: #f87171; }
+.result-eur { text-align: right; font-size: .8rem; color: #6b7280; margin-top: 4px; }
+
+/* Note */
+.note {
+  font-size: .78rem;
+  color: var(--muted);
+  line-height: 1.55;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+.note a { color: var(--red); text-decoration: underline; }
+
+/* CTA */
+.cta-box {
+  background: var(--red);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+}
+.cta-box h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+.cta-box p { font-size: .88rem; opacity: .85; margin-bottom: 18px; line-height: 1.5; }
+.cta-btn {
+  display: inline-block;
+  background: #fff;
+  color: var(--red);
+  font-weight: 700;
+  font-size: .95rem;
+  padding: 12px 28px;
+  border-radius: 9px;
+  transition: opacity .15s;
+}
+.cta-btn:hover { opacity: .9; }
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 20px;
+  font-size: .8rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+footer a { color: var(--red); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">
+    <span class="dot"></span>
+    AutoUniverse
+  </a>
+  <a href="/" class="nav-back">← Nazad na sajt</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-label">Besplatni alat</div>
+  <h1>Kalkulator uvoza<br><span>vozila u Srbiju</span></h1>
+  <p>Carina + PDV + homologacija. Unesite cenu i dobijte procenu svih troškova uvoza u sekundi.</p>
+</div>
+
+<div class="main">
+
+  <!-- INPUTS -->
+  <div class="card">
+    <div class="card-title">Podaci o vozilu</div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="uc_eur">Cena vozila (EUR)</label>
+        <input type="number" id="uc_eur" placeholder="npr. 8 000" min="100" max="500000" oninput="calc()">
+      </div>
+      <div class="field">
+        <label for="uc_kurs">Kurs EUR/RSD</label>
+        <input type="number" id="uc_kurs" placeholder="117" value="117" min="80" max="200" oninput="calc()">
+        <span class="hint">Proverite na NBS</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="uc_zemlja">Zemlja porekla / carinska stopa</label>
+      <select id="uc_zemlja" onchange="onZemlja()">
+        <option value="6.5">EU (SAA sporazum) — 6.5%</option>
+        <option value="0">CEFTA (BIH, Crna Gora, MK, AL...) — 0%</option>
+        <option value="15">Van sporazuma (SAD, UK, Azija...) — 15%</option>
+        <option value="custom">Ručni unos stope</option>
+      </select>
+    </div>
+
+    <div class="field stopa-row" id="stopa_row">
+      <label for="uc_stopa">Carinska stopa (%)</label>
+      <input type="number" id="uc_stopa" placeholder="npr. 10" min="0" max="100" step="0.5" oninput="calc()">
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="uc_transport">Transport (EUR)</label>
+        <input type="number" id="uc_transport" placeholder="0 — ako preuzimate lično" min="0" max="10000" oninput="calc()">
+      </div>
+      <div class="field">
+        <label for="uc_homolog">Homologacija (RSD)</label>
+        <input type="number" id="uc_homolog" placeholder="30 000" value="30000" min="0" max="200000" oninput="calc()">
+        <span class="hint">Individualni tehnički pregled</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result" id="result">
+    <div class="result-title">Procena troškova uvoza</div>
+    <div id="result_rows"></div>
+    <div class="result-total">
+      <span class="tl">UKUPNO uvoz</span>
+      <span class="tv" id="result_total">—</span>
+    </div>
+    <div class="result-eur" id="result_eur"></div>
+  </div>
+
+  <!-- NOTE -->
+  <div class="note">
+    <strong>Napomena:</strong> Carinska vrednost = cena vozila + transport. PDV (20%) se obračunava na carinsku vrednost + carinu.
+    Homologacija se plaća za individualni uvoz (tehnički pregled uvoznika). Registracija vozila <em>nije uključena</em> —
+    koristite <a href="/kalkulator-registracije">kalkulator registracije</a>.<br><br>
+    Proverite aktuelne carinske stope na <a href="https://www.carina.rs" target="_blank" rel="noopener">carina.rs</a> pre kupovine.
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box">
+    <h3>Pratite sve troškove vozila</h3>
+    <p>Driver Toolbox — besplatna aplikacija za praćenje servisa, troškova i istorije svakog vašeg vozila.</p>
+    <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="cta-btn">Otvori Driver →</a>
+  </div>
+
+</div>
+
+<footer>
+  <p>© 2026 <a href="/">AutoUniverse</a> · Belora Ventures Studio · Kruševac, Srbija</p>
+</footer>
+
+<script>
+function onZemlja() {
+  var sel = document.getElementById('uc_zemlja');
+  var row = document.getElementById('stopa_row');
+  row.classList.toggle('show', sel.value === 'custom');
+  calc();
+}
+
+function calc() {
+  var eur     = parseFloat(document.getElementById('uc_eur').value)       || 0;
+  var kurs    = parseFloat(document.getElementById('uc_kurs').value)      || 117;
+  var tranEur = parseFloat(document.getElementById('uc_transport').value) || 0;
+  var homolog = parseFloat(document.getElementById('uc_homolog').value);
+  if (isNaN(homolog)) homolog = 30000;
+
+  var sel = document.getElementById('uc_zemlja');
+  var pct = sel.value === 'custom'
+    ? (parseFloat(document.getElementById('uc_stopa').value) || 0)
+    : parseFloat(sel.value);
+
+  var res = document.getElementById('result');
+  if (!eur) { res.classList.remove('show'); return; }
+
+  var carinVred = eur + tranEur;              // EUR
+  var carinaEur = carinVred * (pct / 100);
+  var carinaRSD = Math.round(carinaEur * kurs);
+  var pdvOsn    = carinVred + carinaEur;      // EUR
+  var pdvRSD    = Math.round(pdvOsn * 0.20 * kurs);
+  var tranRSD   = Math.round(tranEur * kurs);
+  var ukupnoRSD = Math.round(carinVred * kurs) + carinaRSD + pdvRSD + Math.round(homolog);
+
+  var fmt = function(n) { return Math.round(n).toLocaleString('sr-RS'); };
+
+  var rows = [
+    { l: 'Cena vozila',    v: fmt(eur * kurs) + ' RSD',    s: eur.toLocaleString('sr-RS') + ' EUR × ' + kurs },
+    tranEur
+      ? { l: 'Transport',  v: fmt(tranRSD) + ' RSD',       s: tranEur.toLocaleString('sr-RS') + ' EUR × ' + kurs }
+      : null,
+    { l: 'Carina (' + pct + '%)', v: fmt(carinaRSD) + ' RSD', s: 'od carinske vrednosti ' + fmt(carinVred * kurs) + ' RSD' },
+    { l: 'PDV (20%)',      v: fmt(pdvRSD) + ' RSD',        s: 'osnova: ' + fmt(pdvOsn) + ' EUR × ' + kurs },
+    { l: 'Homologacija',   v: fmt(homolog) + ' RSD',       s: 'individualni tehnički pregled' },
+  ].filter(Boolean);
+
+  document.getElementById('result_rows').innerHTML = rows.map(function(r) {
+    return '<div class="result-row">' +
+      '<span class="rl">' + r.l + (r.s ? '<span class="rsub">' + r.s + '</span>' : '') + '</span>' +
+      '<span class="rv">' + r.v + '</span>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('result_total').textContent = fmt(ukupnoRSD) + ' RSD';
+  document.getElementById('result_eur').textContent = '≈ ' + fmt(ukupnoRSD / kurs) + ' EUR (po kursu ' + kurs + ')';
+  res.classList.add('show');
+}
+</script>
+
+</body>
+</html>
