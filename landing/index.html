@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoUniverse — Digitalna istorija svakog vozila</title>
+<meta name="description" content="Jedan ekosistem za kompletan životni ciklus svakog vozila. Driver za vlasnike, Garage za mehaničare, AU Core kao veza.">
+<meta name="theme-color" content="#D5281B">
+
+<!-- Open Graph -->
+<meta property="og:title" content="AutoUniverse">
+<meta property="og:description" content="Podatak se unosi jednom, ostaje trajno vezan za vozilo, i deli se samo uz odobrenje vlasnika.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://autouniverse.rs">
+
+<!-- Canonical — zameni GitHub Pages URL kad domen bude aktivan -->
+<link rel="canonical" href="https://autouniverse.rs">
+
+<style>
+/* === Reset & Base ===================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 17px; scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #fff;
+  color: #1C1F24;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* === Tokens =========================================== */
+:root {
+  --red:    #D5281B;
+  --dark:   #1C1F24;
+  --mid:    #4A4E58;
+  --muted:  #6B7280;
+  --line:   #E5E7EB;
+  --bg-alt: #F8F7F3;
+  --radius: 14px;
+}
+
+/* === Utility ========================================== */
+.container { max-width: 680px; margin: 0 auto; padding: 0 20px; }
+.container--wide { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+.label {
+  display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--red);
+  margin-bottom: .6rem;
+}
+.tag {
+  display: inline-block; background: #FEE2E0; color: var(--red);
+  font-size: .72rem; font-weight: 700; letter-spacing: .06em;
+  padding: 2px 10px; border-radius: 999px;
+}
+
+/* === Nav ============================================== */
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  background: #fff; border-bottom: 1px solid var(--line);
+  padding: 0 20px;
+}
+.nav__inner {
+  max-width: 1040px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+.nav__logo {
+  font-size: 1rem; font-weight: 800; letter-spacing: .04em; color: var(--dark);
+  border-left: 4px solid var(--red); padding-left: 10px;
+}
+.nav__links { display: flex; gap: 24px; align-items: center; }
+.nav__links a { font-size: .88rem; font-weight: 500; color: var(--mid); transition: color .15s; }
+.nav__links a:hover { color: var(--dark); }
+.btn {
+  display: inline-block;
+  padding: .55rem 1.2rem;
+  border-radius: 8px;
+  font-size: .88rem; font-weight: 700;
+  transition: opacity .15s;
+}
+.btn:hover { opacity: .88; }
+.btn--primary { background: var(--red); color: #fff; }
+.btn--outline { border: 2px solid var(--dark); color: var(--dark); }
+.btn--lg {
+  padding: .8rem 1.8rem;
+  font-size: 1rem; border-radius: 10px;
+}
+.btn--xl {
+  padding: 1rem 2.2rem;
+  font-size: 1.05rem; border-radius: 12px;
+  min-height: 54px;
+}
+
+/* === Hero ============================================= */
+.hero {
+  padding: 72px 0 56px;
+  text-align: center;
+}
+.hero__eyebrow {
+  font-size: .78rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--red);
+  margin-bottom: 1rem;
+}
+.hero__title {
+  font-size: clamp(1.9rem, 5vw, 2.8rem);
+  font-weight: 800; line-height: 1.15;
+  color: var(--dark); margin-bottom: 1rem;
+}
+.hero__sub {
+  font-size: 1.05rem; color: var(--mid);
+  max-width: 480px; margin: 0 auto 2rem;
+  line-height: 1.65;
+}
+.hero__sub b { color: var(--dark); }
+.hero__cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero__principles {
+  margin-top: 2.5rem;
+  display: flex; gap: 28px; justify-content: center;
+  flex-wrap: wrap;
+  font-size: .82rem; color: var(--muted); font-weight: 500;
+}
+.hero__principles span { display: flex; align-items: center; gap: 5px; }
+.hero__principles svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* === Apps ============================================= */
+.apps { background: var(--bg-alt); padding: 56px 0; }
+.apps__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 2rem;
+}
+.app-card {
+  background: #fff; border-radius: var(--radius);
+  padding: 28px 24px;
+  border: 1.5px solid var(--line);
+  display: flex; flex-direction: column;
+}
+.app-card__icon {
+  font-size: 2rem; margin-bottom: .8rem;
+}
+.app-card__title {
+  font-size: 1.15rem; font-weight: 800; margin-bottom: .5rem;
+}
+.app-card__desc {
+  font-size: .9rem; color: var(--mid); line-height: 1.6; flex: 1;
+}
+.app-card__features {
+  list-style: none; margin: 1rem 0 1.4rem;
+}
+.app-card__features li {
+  font-size: .85rem; color: var(--mid); padding: .3rem 0;
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.app-card__features li::before {
+  content: "✓"; color: var(--red); font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+.app-card__link {
+  display: block; text-align: center;
+  background: var(--dark); color: #fff;
+  padding: .7rem; border-radius: 10px;
+  font-size: .88rem; font-weight: 700;
+  transition: background .15s;
+}
+.app-card__link:hover { background: var(--red); }
+
+/* === How it works ===================================== */
+.how { padding: 64px 0; }
+.how__flow {
+  background: var(--dark); color: #fff;
+  border-radius: var(--radius); padding: 28px 24px;
+  margin: 2rem 0 1.5rem;
+  font-size: .95rem; line-height: 1.8;
+}
+.how__flow b { color: #F87171; }
+.how__flow .step { margin: .35rem 0; display: flex; gap: 10px; align-items: baseline; }
+.how__flow .arrow { color: #6B7280; font-size: .82rem; flex-shrink: 0; margin-left: 18px; }
+.how__flow .result { color: #86EFAC; font-weight: 600; }
+.how__footer { font-size: .88rem; color: var(--muted); text-align: center; margin-top: .5rem; }
+
+/* === Roles ============================================ */
+.roles { background: var(--bg-alt); padding: 64px 0; }
+.roles__grid {
+  display: grid; gap: 16px; margin-top: 2rem;
+}
+.role-card {
+  background: #fff; border-radius: var(--radius); padding: 24px 20px;
+  border: 1.5px solid var(--line);
+}
+.role-card__who {
+  font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--red); margin-bottom: .4rem;
+}
+.role-card__hook {
+  font-size: 1.05rem; font-weight: 700; color: var(--dark); margin-bottom: .6rem;
+  line-height: 1.3;
+}
+.role-card__body { font-size: .9rem; color: var(--mid); line-height: 1.65; }
+.role-card__body em {
+  font-style: normal; font-weight: 700; color: var(--dark);
+}
+
+/* === Differentiators ================================== */
+.diff { padding: 64px 0; }
+.diff__list { display: grid; gap: 20px; margin-top: 2rem; }
+.diff__item {
+  display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start;
+}
+.diff__vs {
+  font-size: .7rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted); background: var(--line);
+  padding: 4px 8px; border-radius: 5px; white-space: nowrap; margin-top: 2px;
+}
+.diff__text b { color: var(--dark); }
+.diff__text { font-size: .9rem; color: var(--mid); line-height: 1.6; }
+
+/* === Mission ========================================== */
+.mission {
+  background: var(--dark); color: #fff;
+  padding: 72px 0; text-align: center;
+}
+.mission__title {
+  font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 800;
+  margin-bottom: 1rem; line-height: 1.25;
+}
+.mission__body { font-size: .95rem; color: #9CA3AF; max-width: 480px; margin: 0 auto 2.5rem; line-height: 1.7; }
+.mission__cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn--white { background: #fff; color: var(--dark); }
+.btn--ghost { border: 2px solid rgba(255,255,255,.25); color: #fff; }
+
+/* === Footer =========================================== */
+.footer {
+  border-top: 1px solid var(--line); padding: 28px 20px;
+  text-align: center; font-size: .8rem; color: var(--muted);
+}
+.footer a { color: var(--muted); text-decoration: underline; }
+.footer__links { display: flex; gap: 20px; justify-content: center; margin-bottom: .6rem; flex-wrap: wrap; }
+
+/* === Section headings ================================= */
+.section-title {
+  font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+  font-weight: 800; color: var(--dark); margin-bottom: .5rem;
+}
+.section-sub {
+  font-size: .95rem; color: var(--mid); max-width: 500px; line-height: 1.65;
+}
+
+/* === Mobile tweaks ==================================== */
+@media (max-width: 640px) {
+  .nav__links .btn--outline { display: none; }
+}
+@media (max-width: 480px) {
+  .hero__cta { flex-direction: column; align-items: center; }
+  .mission__cta { flex-direction: column; align-items: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav__inner">
+    <a href="/" class="nav__logo">AutoUniverse</a>
+    <div class="nav__links">
+      <a href="#kako-radi">Kako radi</a>
+      <a href="#za-koga">Za koga</a>
+      <!-- Zameni linkove kad domen bude aktivan na driver.autouniverse.rs / garage.autouniverse.rs -->
+      <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="btn btn--primary">Isprobaj Driver</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <p class="hero__eyebrow">AutoUniverse ekosistem</p>
+    <h1 class="hero__title">
+      Jedan ekosistem<br>za kompletan životni ciklus<br>svakog vozila.
+    </h1>
+    <p class="hero__sub">
+      <b>Kupovina. Održavanje. Servis. Delovi. Dokumentacija. Prodaja.</b><br>
+      Sve povezano kroz jednu digitalnu istoriju vozila.
+    </p>
+    <div class="hero__cta">
+      <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="btn btn--primary btn--xl">
+        📱 Isprobaj Driver
+      </a>
+      <a href="https://plocicmilan.github.io/AUTOUNIVERSE/garage/" class="btn btn--outline btn--xl">
+        🔧 Isprobaj Garage
+      </a>
+    </div>
+    <div class="hero__principles">
+      <span>
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#D5281B" stroke-width="1.5"/><path d="M4.5 7l2 2 3-3" stroke="#D5281B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Podatak se unosi jednom
+      </span>
+      <span>
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#D5281B" stroke-width="1.5"/><path d="M4.5 7l2 2 3-3" stroke="#D5281B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Ostaje vezan za vozilo
+      </span>
+      <span>
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#D5281B" stroke-width="1.5"/><path d="M4.5 7l2 2 3-3" stroke="#D5281B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Deli se samo uz tvoje odobrenje
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- APPS -->
+<section class="apps" id="aplikacije">
+  <div class="container--wide">
+    <div class="container" style="padding:0 0 .25rem">
+      <span class="label">Aplikacije</span>
+      <h2 class="section-title">Dva alata. Jedna istorija.</h2>
+      <p class="section-sub">Driver za vlasnike vozila. Garage za mehaničare i servise. Oba rade offline, bez interneta, bez mesečnog pretplate.</p>
+    </div>
+    <div class="apps__grid">
+
+      <!-- DRIVER -->
+      <div class="app-card">
+        <div class="app-card__icon">📱</div>
+        <div class="app-card__title">Driver Toolbox</div>
+        <p class="app-card__desc">
+          Digitalni dosije svakog vozila koje posedujete ili vozite. Servisna knjižica, troškovi, dokumenti, podsetnici — sve na jednom mestu, uvek offline.
+        </p>
+        <ul class="app-card__features">
+          <li>Kompletna servisna istorija po vozilu</li>
+          <li>Praćenje troškova (gorivo, servis, registracija)</li>
+          <li>Podsetnici za tehničke preglede i servis</li>
+          <li>Trust Score — dokaz istorije vozila pri prodaji</li>
+          <li>Backup &amp; restore — podaci nikad ne gube</li>
+          <li>Trade mode za prodavce polovnih vozila</li>
+        </ul>
+        <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="app-card__link">
+          Otvori Driver →
+        </a>
+      </div>
+
+      <!-- GARAGE -->
+      <div class="app-card">
+        <div class="app-card__icon">🔧</div>
+        <div class="app-card__title">Garage Toolbox</div>
+        <p class="app-card__desc">
+          Alat za mehaničare i auto-servise. Radni nalog, predračun, PDF faktura — sve u jednom toku, bez papirnatih knjiga i Excel tabela.
+        </p>
+        <ul class="app-card__features">
+          <li>Radni nalog sa fotografijama i delovima</li>
+          <li>Predračuni i PDF fakture za klijente</li>
+          <li>Adresar klijenata i istorija po vozilu</li>
+          <li>Kategorije simptoma i radova za brži unos</li>
+          <li>Potpis klijenta direktno na ekranu</li>
+          <li>Poslato korisniku — istorija ostaje zauvek</li>
+        </ul>
+        <a href="https://plocicmilan.github.io/AUTOUNIVERSE/garage/" class="app-card__link">
+          Otvori Garage →
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="kako-radi">
+  <div class="container">
+    <span class="label">Jedan unos, pet koristi</span>
+    <h2 class="section-title">Automehaničar zameni diskove. Jedan klik.</h2>
+    <p class="section-sub">I onda se desi nešto drugačije od svega što ste koristili do sad.</p>
+
+    <div class="how__flow">
+      <div class="step"><b>Mehaničar unese servis u Garage.</b></div>
+      <div class="step arrow">↓ <span class="result">Klijent dobija obaveštenje.</span></div>
+      <div class="step arrow">↓ <span class="result">Istorija vozila se ažurira.</span></div>
+      <div class="step arrow">↓ <span class="result">PDF faktura odlazi u cloud.</span></div>
+      <div class="step arrow">↓ <span class="result">Trust Score raste na vozilu.</span></div>
+      <div class="step arrow">↓ <span class="result">Kupac vozila jednog dana vidi dokaz.</span></div>
+    </div>
+    <p class="how__footer">Jedan unos. Pet koristi. Bez duplog kucanja.</p>
+  </div>
+</section>
+
+<!-- ROLES -->
+<section class="roles" id="za-koga">
+  <div class="container">
+    <span class="label">Za koga</span>
+    <h2 class="section-title">Svako vozilo. Svaki korisnik.</h2>
+    <p class="section-sub">AutoUniverse je dizajniran za sve učesnike u životu jednog automobila.</p>
+
+    <div class="roles__grid">
+
+      <div class="role-card">
+        <div class="role-card__who">Za vozača</div>
+        <div class="role-card__hook">Driver nije aplikacija za automobil. Driver je digitalna servisna knjižica.</div>
+        <div class="role-card__body">
+          Registracija u fioci. Servisna knjižica negde u autu. Računi u Viberu. Slike na telefonu.
+          <em>Otvoriš Driver — sve je ovde.</em>
+        </div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-card__who">Za mehaničara</div>
+        <div class="role-card__hook">Jedan unos. Četiri koristi. Servisu, vozaču, oglasu, garanciji.</div>
+        <div class="role-card__body">
+          "Kad ste mi menjali kvačilo?" — "Ne znam. Moram da pogledam."
+          <br>Sa Garage-om: <em>jedno vozilo, sve intervencije, sve slike, svi računi, PDF, poslato korisniku.</em>
+        </div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-card__who">Za prodavca polovnih vozila</div>
+        <div class="role-card__hook">Ne moraš da se prisećaš. Vozilo pamti umesto tebe.</div>
+        <div class="role-card__body">
+          Trade mode aktivira purchase/sale polja na svakom vozilu. Profit kartica.
+          <em>Wizard za prodaju sa arhivskim ishodom.</em>
+        </div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-card__who">Za kupca polovnog vozila</div>
+        <div class="role-card__hook">Poverenje se ne obećava — dokazuje se.</div>
+        <div class="role-card__body">
+          Na oglasima piše "top stanje, bez ulaganja". Sa AutoUniverse istorijom:
+          <em>potvrđeni servisi, potvrđene kilometraže, slike svake popravke, računi.</em>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- DIFFERENTIATORS -->
+<section class="diff">
+  <div class="container">
+    <span class="label">Pozicija</span>
+    <h2 class="section-title">Nije kao ostali.</h2>
+    <p class="section-sub">AutoUniverse radi nešto što ni jedan od postojećih alata ne radi.</p>
+
+    <div class="diff__list">
+      <div class="diff__item">
+        <span class="diff__vs">vs oglasi</span>
+        <div class="diff__text"><b>AutoScout24, KupujemProdajem</b> — njihov posao se završava kad se auto proda. Naš tek počinje.</div>
+      </div>
+      <div class="diff__item">
+        <span class="diff__vs">vs istorija</span>
+        <div class="diff__text"><b>CARFAX</b> — skuplja podatke pasivno, iz servisa i registracija. AutoUniverse gradi istoriju aktivno, s vlasnikovom dozvolom.</div>
+      </div>
+      <div class="diff__item">
+        <span class="diff__vs">vs ERP</span>
+        <div class="diff__text"><b>Tekmetric, Shopmonkey</b> — oni prave alat za servis. Mi pravimo alat za vozilo, koji koriste i servis i vlasnik.</div>
+      </div>
+      <div class="diff__item">
+        <span class="diff__vs">vs app</span>
+        <div class="diff__text"><b>MyGarage aplikacije</b> — one traže od vlasnika da sve ručno unosi. Kod nas, kada mehaničar radi servis, vlasnik dobija zapis. Bez duplog kucanja.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MISSION -->
+<section class="mission">
+  <div class="container">
+    <h2 class="mission__title">Verujemo da svako vozilo zaslužuje svoju digitalnu istoriju.</h2>
+    <p class="mission__body">
+      Startujemo malim: Driver za vlasnika, Garage za mehaničara, AU Core kao veza.
+      Sve ostalo raste organski, kroz signale korisnika.
+    </p>
+    <div class="mission__cta">
+      <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="btn btn--white btn--lg">
+        📱 Isprobaj Driver besplatno
+      </a>
+      <a href="https://plocicmilan.github.io/AUTOUNIVERSE/garage/" class="btn btn--ghost btn--lg">
+        🔧 Isprobaj Garage besplatno
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer__links">
+    <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/">Driver Toolbox</a>
+    <a href="https://plocicmilan.github.io/AUTOUNIVERSE/garage/">Garage Toolbox</a>
+    <a href="mailto:info@autouniverse.rs">Kontakt</a>
+  </div>
+  <div>© 2026 AutoUniverse · Belora Ventures Studio · Srbija</div>
+  <div style="margin-top:.4rem; color:#9CA3AF; font-size:.72rem">
+    Offline-first PWA. Podaci ostaju na tvom telefonu.
+  </div>
+</footer>
+
+</body>
+</html>
