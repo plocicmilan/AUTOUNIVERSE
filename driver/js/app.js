@@ -1103,6 +1103,7 @@
             ['reg_calc',  '📋', 'Kalkulator registracije', 'Tehnički pregled + AO + taksa → RSD procena'],
             ['fuel_calc', '⛽', 'Potrošnja goriva',        'Koliko litara i dinara potrošiš mesečno/godišnje'],
             ['cost_calc', '💰', 'Troškovi vlasništva',     'Ukupni godišnji troškovi posedovanja auta'],
+            ['uvoz_calc', '🚢', 'Kalkulator uvoza',        'Carina + PDV + homologacija → ukupan uvozni trošak'],
           ].map(function (row, i, arr) {
             return '<button onclick="DR.go(\'' + row[0] + '\')" style="display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;background:none;border:none;border-bottom:' + (i < arr.length-1 ? '1px solid rgba(255,255,255,.07)' : 'none') + ';cursor:pointer;text-align:left;color:inherit">' +
               '<span style="font-size:1.6rem;line-height:1">' + row[1] + '</span>' +
@@ -1206,6 +1207,43 @@
         '<div id="cc_result" style="display:none" class="card">' +
           '<h2 style="margin:0 0 8px">Godišnji troškovi</h2>' +
           '<div id="cc_breakdown"></div>' +
+        '</div>';
+    },
+
+    /* ===== KALKULATOR UVOZA ===== */
+    uvoz_calc: function () {
+      return '<button class="linkback" onclick="DR.go(\'kalkulatori\')" data-i18n="common.back"></button>' +
+        '<h1>🚢 Kalkulator uvoza</h1>' +
+        '<p style="color:#64748b;font-size:.83rem;padding:0 0 12px">Procena carine, PDV-a i troškova homologacije pri uvozu vozila u Srbiju.</p>' +
+        '<div class="card">' +
+          '<label class="field"><span>Cena vozila (EUR)</span>' +
+            '<input type="number" id="uc_eur" placeholder="npr. 8000" min="100" max="500000" onchange="DR.calcUvoz()" oninput="DR.calcUvoz()">' +
+          '</label>' +
+          '<label class="field"><span>EUR/RSD kurs</span>' +
+            '<input type="number" id="uc_kurs" placeholder="117" value="117" min="80" max="200" onchange="DR.calcUvoz()" oninput="DR.calcUvoz()">' +
+          '</label>' +
+          '<label class="field"><span>Zemlja porekla / carinska stopa</span>' +
+            '<select id="uc_zemlja" onchange="DR.onUvozZemlja()">' +
+              '<option value="6.5">EU (SAA sporazum) — 6.5%</option>' +
+              '<option value="0">CEFTA (BIH, CG, MK, AL...) — 0%</option>' +
+              '<option value="15">Van sporazuma (SAD, UK, Azija...) — 15%</option>' +
+              '<option value="custom">Ručni unos</option>' +
+            '</select>' +
+          '</label>' +
+          '<label class="field" id="uc_carina_row" style="display:none"><span>Carinska stopa (%)</span>' +
+            '<input type="number" id="uc_carina_pct" placeholder="npr. 10" min="0" max="100" step="0.5" onchange="DR.calcUvoz()" oninput="DR.calcUvoz()">' +
+          '</label>' +
+          '<label class="field"><span>Transport (EUR, opciono)</span>' +
+            '<input type="number" id="uc_transport" placeholder="npr. 500" min="0" max="10000" onchange="DR.calcUvoz()" oninput="DR.calcUvoz()">' +
+          '</label>' +
+          '<label class="field"><span>Homologacija (RSD)</span>' +
+            '<input type="number" id="uc_homolog" placeholder="30000" value="30000" min="0" max="200000" onchange="DR.calcUvoz()" oninput="DR.calcUvoz()">' +
+          '</label>' +
+        '</div>' +
+        '<div id="uc_result" style="display:none" class="card">' +
+          '<h2 style="margin:0 0 8px">Procena uvoznih troškova</h2>' +
+          '<div id="uc_breakdown"></div>' +
+          '<p style="font-size:.75rem;color:#64748b;margin-top:10px">* Carinska vrednost = cena + transport. PDV (20%) se naplaćuje na carinsku vrednost + carinu.<br>Homologacija: individualna (tehnički pregled uvoza). Registracija nije uključena — koristite Kalkulator registracije.<br>Proverite aktuelne stope na <b>carina.rs</b> pre kupovine.</p>' +
         '</div>';
     }
   };
@@ -2252,6 +2290,58 @@
               '<td style="text-align:right;color:#64748b">' + perMonth.toLocaleString("sr") + ' RSD/mes</td></tr>' +
           (km > 0 ? '<tr><td style="padding:6px 0;color:#64748b">Po kilometru</td>' +
               '<td style="text-align:right;color:#64748b">' + perKm + ' RSD/km</td></tr>' : '') +
+        '</table>';
+      res.style.display = "block";
+    },
+
+    onUvozZemlja: function () {
+      var sel = el("uc_zemlja");
+      var row = el("uc_carina_row");
+      if (!sel || !row) return;
+      row.style.display = sel.value === "custom" ? "" : "none";
+      DR.calcUvoz();
+    },
+
+    calcUvoz: function () {
+      var eur       = parseFloat(el("uc_eur")        && el("uc_eur").value)       || 0;
+      var kurs      = parseFloat(el("uc_kurs")       && el("uc_kurs").value)      || 117;
+      var tranEur   = parseFloat(el("uc_transport")  && el("uc_transport").value) || 0;
+      var homolog   = parseFloat(el("uc_homolog")    && el("uc_homolog").value);
+      if (isNaN(homolog)) homolog = 30000;
+      var sel       = el("uc_zemlja");
+      var carinaPct = sel && sel.value !== "custom"
+        ? parseFloat(sel.value)
+        : (parseFloat(el("uc_carina_pct") && el("uc_carina_pct").value) || 0);
+      var res  = el("uc_result");
+      var brkd = el("uc_breakdown");
+      if (!res || !brkd) return;
+      if (!eur) { res.style.display = "none"; return; }
+
+      var carinVredEur = eur + tranEur;
+      var carinRSD     = carinVredEur * kurs;
+      var carinaEur    = carinVredEur * (carinaPct / 100);
+      var carinaRSD    = Math.round(carinaEur * kurs);
+      var pdvOsn       = carinVredEur + carinaEur;
+      var pdvRSD       = Math.round(pdvOsn * 0.20 * kurs);
+      var transportRSD = Math.round(tranEur * kurs);
+      var ukupnoRSD    = Math.round(carinVredEur * kurs) + carinaRSD + pdvRSD + Math.round(homolog);
+      var fmt          = function (n) { return Math.round(n).toLocaleString("sr"); };
+
+      var row = function (label, rsd, sub) {
+        return '<tr><td style="padding:5px 0;font-size:.88rem">' + label + (sub ? '<br><span style="color:#64748b;font-size:.77rem">' + sub + '</span>' : '') + '</td>' +
+          '<td style="text-align:right;font-weight:600;white-space:nowrap">' + fmt(rsd) + ' RSD</td></tr>';
+      };
+
+      brkd.innerHTML =
+        '<table style="width:100%;font-size:.9rem;border-collapse:collapse">' +
+          row("Cena vozila", eur * kurs, eur.toLocaleString("sr") + " EUR × " + kurs) +
+          (tranEur ? row("Transport", transportRSD, tranEur.toLocaleString("sr") + " EUR × " + kurs) : "") +
+          row("Carina (" + carinaPct + "%)", carinaRSD, "od carinske vrednosti " + fmt(carinVredEur * kurs) + " RSD") +
+          row("PDV (20%)", pdvRSD, "od " + fmt(pdvOsn) + " EUR × " + kurs) +
+          row("Homologacija", homolog, "individualni tehnički pregled uvoza") +
+          '<tr style="border-top:2px solid #334"><td style="padding:10px 0"><b>UKUPNO uvoz</b></td>' +
+            '<td style="text-align:right;font-weight:700;font-size:1.1rem">' + fmt(ukupnoRSD) + ' RSD</td></tr>' +
+          '<tr><td style="padding:5px 0;color:#64748b;font-size:.82rem" colspan="2">≈ ' + fmt(ukupnoRSD / kurs) + ' EUR (po kursu ' + kurs + ')</td></tr>' +
         '</table>';
       res.style.display = "block";
     }

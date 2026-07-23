@@ -404,7 +404,7 @@
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'inspection_form\',{vehicle_id:\'' + esc(v.id) + '\'})">🔍 Nova inspekcija</button>' : '') +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'checklist_form\',{vehicle_id:\'' + esc(v.id) + '\'})">📋 Nova provera</button>' : '') +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'tires_form\',{vehicle_id:\'' + esc(v.id) + '\'})">🔧 Gume</button>' : '') +
-            (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.exportDossier(\'' + esc(v.id) + '\')">📄 Dosije vozila PDF</button>' : '') +
+            (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.exportDossier(\'' + esc(v.id) + '\')">📋 Servisni pasoš PDF</button>' : '') +
             (licensed() ? '<button class="btn btn-secondary mt8" onclick="GT.go(\'reminder_form\',{vehicle_id:\'' + esc(v.id) + '\'})" data-i18n="reminders.add"></button>' : '') +
             '<button class="btn btn-secondary mt8" onclick="GT.go(\'vehicle_form\',{id:\'' + esc(v.id) + '\'})" data-i18n="common.edit"></button>';
         });
@@ -2334,7 +2334,7 @@
             return max;
           })()
         });
-        var fname = [v.make, v.model, v.plate, "dosije"].filter(Boolean).join("_").replace(/\s+/g, "_") + ".pdf";
+        var fname = [v.make, v.model, v.plate, "servisni-pasos"].filter(Boolean).join("_").replace(/\s+/g, "_") + ".pdf";
         doc.save(fname);
       });
     },

@@ -80,9 +80,9 @@ module.exports = function (router) {
     if (city)      { sql += ` AND p.city = ?`;        params.push(city); }
     if (max_price) { sql += ` AND p.price <= ?`;      params.push(Number(max_price)); }
 
-    // Pretraga po kompatibilnosti (make/model u JSON polju)
-    if (make)  { sql += ` AND p.compatible LIKE ?`; params.push(`%${make}%`); }
-    if (model) { sql += ` AND p.compatible LIKE ?`; params.push(`%${model}%`); }
+    // Pretraga po marci/modelu: compatible JSON ILI title
+    if (make)  { sql += ` AND (p.compatible LIKE ? OR p.title LIKE ?)`; params.push(`%${make}%`, `%${make}%`); }
+    if (model) { sql += ` AND (p.compatible LIKE ? OR p.title LIKE ?)`; params.push(`%${model}%`, `%${model}%`); }
 
     sql += ` GROUP BY p.id ORDER BY p.created_at DESC`;
     sql += ` LIMIT ? OFFSET ?`;

@@ -251,7 +251,7 @@
 
     /* Zaglavlje */
     setFont("bold").setFontSize(16).setTextColor.apply(doc, cAccent);
-    doc.text(sr ? "DOSIJE VOZILA" : "VEHICLE DOSSIER", ML, y);
+    doc.text(sr ? "SERVISNI PASOŠ" : "SERVICE PASSPORT", ML, y);
     doc.setFontSize(13).setTextColor.apply(doc, cPrimary);
     var vehTitle = [v.make, v.model].filter(Boolean).join(" ") + (v.year ? " (" + v.year + ")" : "");
     doc.text(vehTitle, MR, y, { align: "right" });
