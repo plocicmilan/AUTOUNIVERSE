@@ -70,6 +70,11 @@ function removeListingLocal(vehicleId) {
   localStorage.setItem(LISTINGS_KEY, JSON.stringify(map));
 }
 
+// POST /photos — upload jedne base64 slike, vraća {url}
+async function uploadPhoto(dataUrl) {
+  return apiCall('POST', '/photos', { data: dataUrl });
+}
+
 // POST /listings — objavi oglas
 async function publish(vehicleId, payload) {
   const data = await apiCall('POST', '/listings', payload);
@@ -112,6 +117,7 @@ async function isAvailable() {
 
 global.Autopijaca = {
   isAvailable,
+  uploadPhoto,
   publish,
   getMyListing,
   updateListing,

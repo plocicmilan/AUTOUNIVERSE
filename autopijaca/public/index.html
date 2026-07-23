@@ -208,6 +208,21 @@ header {
 .card-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.35s; }
 .card:hover .card-photo img { transform: scale(1.05); }
 .card-strip { height: 3px; background: linear-gradient(90deg, var(--accent), transparent); }
+.trust-pill {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: rgba(29, 158, 117, 0.95);
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  z-index: 2;
+}
+.card { position: relative; }
 .card-body { padding: 12px 14px 14px; }
 .card-title {
   font-family: var(--font-h);
@@ -543,6 +558,9 @@ header {
 <div class="overlay" id="overlay" onclick="closeModal(event)">
   <div class="modal" id="modal">
     <div class="modal-photo" id="modal-photo">🚗</div>
+    <div id="modal-photo2" style="display:none;width:100%;height:160px;background:var(--s2);overflow:hidden">
+      <img id="modal-photo2-img" src="" alt="" style="width:100%;height:100%;object-fit:cover">
+    </div>
     <div class="modal-strip"></div>
     <div class="modal-body">
       <div class="modal-title" id="modal-title"></div>
@@ -711,6 +729,7 @@ header {
         <div class="card" style="animation-delay:${i*55}ms" onclick="openListing(${l.id})">
           <div class="card-photo">${l.photos&&l.photos.length?`<img src="${l.photos[0]}" alt="${fmt(l)}" loading="lazy">`:'🚗'}</div>
           <div class="card-strip"></div>
+          ${l.history_token ? '<div class="trust-pill" title="Verifikovana istorija">✅ Dosije</div>' : ''}
           <div class="card-body">
             <div class="card-title">${fmt(l)}</div>
             <div class="card-price">${fmtPrice(l)}</div>
@@ -731,7 +750,12 @@ header {
     const l   = await res.json();
     document.getElementById('modal-title').textContent = fmt(l);
     document.getElementById('modal-price').textContent = fmtPrice(l);
-    document.getElementById('modal-photo').innerHTML = l.photos&&l.photos.length ? `<img src="${l.photos[0]}" alt="${fmt(l)}">` : '🚗';
+    const photos = l.photos || [];
+    document.getElementById('modal-photo').innerHTML = photos.length ? `<img src="${photos[0]}" alt="${fmt(l)}">` : '🚗';
+    const strip2 = document.getElementById('modal-photo2');
+    if (strip2) strip2.style.display = photos.length > 1 ? 'block' : 'none';
+    const img2 = document.getElementById('modal-photo2-img');
+    if (img2) img2.src = photos[1] || '';
     document.getElementById('modal-meta').innerHTML = fmtMeta(l).map(t=>`<span class="badge">${t}</span>`).join('');
     document.getElementById('modal-desc').textContent = l.description || 'Bez opisa.';
     const dosijeEl = document.getElementById('modal-dosije');

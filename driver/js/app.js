@@ -868,6 +868,12 @@
               '</select>' +
             '</label>' +
           '</div>' +
+          '<div class="card">' +
+            '<p style="font-weight:600;margin-bottom:.4rem">Fotografije (max 3)</p>' +
+            '<input type="file" id="pl_photos" accept="image/*" multiple style="display:none" onchange="DR.plPickPhotos(this)">' +
+            '<div id="pl_photo_strip" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.5rem"></div>' +
+            '<button class="btn btn-secondary" style="font-size:.85rem" onclick="document.getElementById(\'pl_photos\').click()">📷 Dodaj sliku</button>' +
+          '</div>' +
           '<button class="btn btn-primary" onclick="DR.publishListing()">' + t("d.publish_on_autopijaca") + '</button>' +
           '<button class="btn btn-secondary mt8" onclick="DR.saleSummaryPdf(\'' + esc(vid) + '\')">📄 Pripremi za prodaju (PDF)</button>' +
           '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.cancel"></button>';
@@ -1675,6 +1681,40 @@
 
     /* ----- Autopijaca akcije ----- */
 
+    plPickPhotos: function (input) {
+      var files = Array.from(input.files || []);
+      if (!files.length) return;
+      var existing = App._plPhotos || [];
+      var remaining = 3 - existing.length;
+      if (remaining <= 0) { toast("Maksimalno 3 fotografije."); return; }
+      files = files.slice(0, remaining);
+      Photos.compressMany(files).then(function (arr) {
+        App._plPhotos = (existing || []).concat(arr).slice(0, 3);
+        var strip = el("pl_photo_strip");
+        if (strip) {
+          strip.innerHTML = App._plPhotos.map(function (src, i) {
+            return '<div style="position:relative;display:inline-block">' +
+              '<img src="' + src + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #334">' +
+              '<button onclick="DR.plDelPhoto(' + i + ')" style="position:absolute;top:-4px;right:-4px;background:#c0392b;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:18px;text-align:center">✕</button>' +
+            '</div>';
+          }).join("");
+        }
+      });
+    },
+
+    plDelPhoto: function (idx) {
+      App._plPhotos = (App._plPhotos || []).filter(function (_, i) { return i !== idx; });
+      var strip = el("pl_photo_strip");
+      if (strip) {
+        strip.innerHTML = (App._plPhotos || []).map(function (src, i) {
+          return '<div style="position:relative;display:inline-block">' +
+            '<img src="' + src + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #334">' +
+            '<button onclick="DR.plDelPhoto(' + i + ')" style="position:absolute;top:-4px;right:-4px;background:#c0392b;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:18px;text-align:center">✕</button>' +
+          '</div>';
+        }).join("");
+      }
+    },
+
     publishListing: function () {
       var vid = App._publishVehicleId;
       if (!vid || !window.Autopijaca) return;
@@ -1705,22 +1745,42 @@
         };
         if (!payload.contact_phone) { toast("Unesite telefon za kontakt."); return; }
 
-        // Ako je vozilo synkovano na AutoHub → dodaj public dosije URL
-        var publishAndSend = function () {
-          Autopijaca.publish(vid, payload).then(function (data) {
-            toast("Oglas objavljen! #" + data.id);
-            render("publish_listing", { id: vid });
-          }).catch(function (e) { toast("Greška: " + e.message); });
+        var photos = App._plPhotos || [];
+        var btn = document.querySelector('.btn-primary[onclick="DR.publishListing()"]');
+        if (btn) { btn.disabled = true; btn.textContent = "Objavljujem..."; }
+
+        var uploadAll = photos.length
+          ? Promise.all(photos.map(function (dataUrl) { return Autopijaca.uploadPhoto(dataUrl).then(function (r) { return r.url; }); }))
+          : Promise.resolve([]);
+
+        var doPublish = function (photoUrls) {
+          payload.photos = photoUrls;
+          // Ako je vozilo synkovano na AutoHub → dodaj public dosije URL
+          var publishAndSend = function () {
+            Autopijaca.publish(vid, payload).then(function (data) {
+              App._plPhotos = [];
+              toast("Oglas objavljen! #" + data.id);
+              render("publish_listing", { id: vid });
+            }).catch(function (e) {
+              if (btn) { btn.disabled = false; btn.textContent = t("d.publish_on_autopijaca"); }
+              toast("Greška: " + e.message);
+            });
+          };
+
+          if (serverId && hubConnected()) {
+            AutoHub.getPlatformUrl().then(function (hubUrl) {
+              if (hubUrl) payload.history_token = hubUrl.replace(/\/$/, '') + '/public/v/' + serverId;
+              publishAndSend();
+            }).catch(publishAndSend);
+          } else {
+            publishAndSend();
+          }
         };
 
-        if (serverId && hubConnected()) {
-          AutoHub.getPlatformUrl().then(function (hubUrl) {
-            if (hubUrl) payload.history_token = hubUrl.replace(/\/$/, '') + '/public/v/' + serverId;
-            publishAndSend();
-          }).catch(publishAndSend);
-        } else {
-          publishAndSend();
-        }
+        uploadAll.then(doPublish).catch(function (e) {
+          if (btn) { btn.disabled = false; btn.textContent = t("d.publish_on_autopijaca"); }
+          toast("Greška pri upload slike: " + e.message);
+        });
       });
     },
 
