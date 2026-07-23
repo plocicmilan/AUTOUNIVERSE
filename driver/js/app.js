@@ -564,33 +564,82 @@
       });
     },
 
-    /* ===== ISTORIJA (timeline, sa trust prikazom) ===== */
+    /* ===== ISTORIJA (lista ili timeline — toggle) ===== */
     history: function () {
       return Promise.all([Store.all("events"), Store.all("vehicles")]).then(function (res) {
         var events = res[0], vehicles = res[1];
         var vById = {}; vehicles.forEach(function (v) { vById[v.id] = v; });
         events.sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
 
-        var list = events.length ? events.map(function (e) {
-          var v = vById[e.vehicle_id];
-          var totals = Models.formatTotals(Models.sumByCurrency(e.items));
-          return '<div class="card evt' + (e.retroactive ? " retro" : "") + '">' +
-            '<div class="evt-head"><b>' + esc(e.title || t("d.type_" + e.type)) + '</b>' +
-              '<span>' + esc(fmtEventDate(e)) + '</span></div>' +
-            '<div class="trust">' + trustIcon(e) + " " +
-              (v ? esc(v.make + " " + v.model) : "") +
-              (e.mileage_km != null ? " • " + esc(e.mileage_km) + " km" + (e.km_precision === "approx" ? " (~)" : "") : "") +
-              (e.retroactive ? '<span class="retro-tag">' + t("d.retro_tag") + '</span>' : '') +
-            '</div>' +
-            (e.description ? '<div class="evt-km">' + esc(e.description) + '</div>' : '') +
-            (totals ? '<div class="evt-total">' + t("common.total") + ': ' + totals + '</div>' : '') +
-            '<button class="linkback" onclick="DR.go(\'event_form\',{id:\'' + esc(e.id) + '\'})" data-i18n="common.edit"></button>' +
-          '</div>';
-        }).join("") : '<div class="card"><p class="empty" data-i18n="d.history_empty"></p></div>';
+        var mode = localStorage.getItem("dr_hist_mode") || "list";
 
-        return '<h1 data-i18n="d.nav_history"></h1>' + list +
+        var toggle = '<div style="display:flex;gap:8px;margin-bottom:12px">' +
+          '<button class="chip' + (mode === "list" ? " active" : "") + '" onclick="DR.setHistMode(\'list\')">📋 Lista</button>' +
+          '<button class="chip' + (mode === "timeline" ? " active" : "") + '" onclick="DR.setHistMode(\'timeline\')">📅 Timeline</button>' +
+        '</div>';
+
+        var content;
+        if (!events.length) {
+          content = '<div class="card"><p class="empty" data-i18n="d.history_empty"></p></div>';
+        } else if (mode === "timeline") {
+          // Grupiši po god-mes
+          var byMonth = {};
+          var monthOrder = [];
+          events.forEach(function (e) {
+            var ym = (e.date || "????-??").slice(0, 7);
+            if (!byMonth[ym]) { byMonth[ym] = []; monthOrder.push(ym); }
+            byMonth[ym].push(e);
+          });
+          content = '<div style="position:relative;padding-left:28px">' +
+            '<div style="position:absolute;left:10px;top:0;bottom:0;width:2px;background:rgba(255,255,255,.1)"></div>' +
+            monthOrder.map(function (ym) {
+              var parts = ym.split("-");
+              var MONTHS = ["","Jan","Feb","Mar","Apr","Maj","Jun","Jul","Avg","Sep","Okt","Nov","Dec"];
+              var label = (MONTHS[parseInt(parts[1], 10)] || parts[1]) + " " + parts[0];
+              return '<div style="margin-bottom:4px">' +
+                '<div style="position:relative;margin-bottom:8px">' +
+                  '<div style="position:absolute;left:-23px;top:50%;transform:translateY(-50%);width:10px;height:10px;border-radius:50%;background:#5c6bc0;border:2px solid #1a1a2e"></div>' +
+                  '<span style="font-size:.75rem;font-weight:700;letter-spacing:.06em;color:#5c6bc0;text-transform:uppercase">' + label + '</span>' +
+                '</div>' +
+                byMonth[ym].map(function (e) {
+                  var v = vById[e.vehicle_id];
+                  var totals = Models.formatTotals(Models.sumByCurrency(e.items));
+                  return '<div class="card evt' + (e.retroactive ? " retro" : "") + '" style="margin-bottom:6px">' +
+                    '<div class="evt-head"><b>' + esc(e.title || t("d.type_" + e.type)) + '</b>' +
+                      '<span style="font-size:.78rem">' + esc(fmtEventDate(e)) + '</span></div>' +
+                    '<div class="trust" style="font-size:.82rem">' + trustIcon(e) + " " +
+                      (v ? esc(v.make + " " + v.model) : "") +
+                      (e.mileage_km != null ? " • " + esc(e.mileage_km) + " km" : "") +
+                    '</div>' +
+                    (totals ? '<div class="evt-total" style="font-size:.82rem">' + totals + '</div>' : '') +
+                    '<button class="linkback" style="margin-top:4px;font-size:.78rem" onclick="DR.go(\'event_form\',{id:\'' + esc(e.id) + '\'})">Izmeni</button>' +
+                  '</div>';
+                }).join("") +
+              '</div>';
+            }).join("") +
+          '</div>';
+        } else {
+          content = events.map(function (e) {
+            var v = vById[e.vehicle_id];
+            var totals = Models.formatTotals(Models.sumByCurrency(e.items));
+            return '<div class="card evt' + (e.retroactive ? " retro" : "") + '">' +
+              '<div class="evt-head"><b>' + esc(e.title || t("d.type_" + e.type)) + '</b>' +
+                '<span>' + esc(fmtEventDate(e)) + '</span></div>' +
+              '<div class="trust">' + trustIcon(e) + " " +
+                (v ? esc(v.make + " " + v.model) : "") +
+                (e.mileage_km != null ? " • " + esc(e.mileage_km) + " km" + (e.km_precision === "approx" ? " (~)" : "") : "") +
+                (e.retroactive ? '<span class="retro-tag">' + t("d.retro_tag") + '</span>' : '') +
+              '</div>' +
+              (e.description ? '<div class="evt-km">' + esc(e.description) + '</div>' : '') +
+              (totals ? '<div class="evt-total">' + t("common.total") + ': ' + totals + '</div>' : '') +
+              '<button class="linkback" onclick="DR.go(\'event_form\',{id:\'' + esc(e.id) + '\'})" data-i18n="common.edit"></button>' +
+            '</div>';
+          }).join("");
+        }
+
+        return '<h1 data-i18n="d.nav_history"></h1>' + toggle + content +
           (vehicles.length
-            ? '<button class="btn btn-primary" onclick="DR.addEvent(null,false)" data-i18n="d.add_event"></button>'
+            ? '<button class="btn btn-primary" style="margin-top:8px" onclick="DR.addEvent(null,false)" data-i18n="d.add_event"></button>'
             : '');
       });
     },
@@ -2120,6 +2169,11 @@
 
     resetCarCheck: function () {
       document.querySelectorAll('#app input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
+    },
+
+    setHistMode: function (mode) {
+      localStorage.setItem("dr_hist_mode", mode);
+      render("history");
     },
 
     /* ----- Kalkulator potrošnje goriva ----- */
