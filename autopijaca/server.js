@@ -4,7 +4,7 @@ const fs   = require('fs');
 
 const PORT = process.env.PORT || 3001;
 
-// --- Mini router (isti pattern kao AutoHub) ---
+// --- Mini router (isti pattern kao AU Core) ---
 
 const routes = [];
 

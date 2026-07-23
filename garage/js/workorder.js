@@ -659,15 +659,15 @@
 
     shareWithOwner: function () {
       captureStep();
-      if (!window.AutoHub) { toast("AutoHub modul nije učitan."); return; }
+      if (!window.AUCore) { toast("AUCore modul nije učitan."); return; }
       var v = byId(WO.vehicles, WO.draft.vehicle_id);
       var profile = window.Store.settings.get("profile", { name: "" });
       // Payload BEZ cena (FEEDBACK #10)
       var safeItems = WO.draft.items.map(function (it) {
         return { name: it.name || "", brand: it.brand || "", model: it.model || "", qty: it.qty != null ? it.qty : 1, unit: it.unit || "kom" };
       });
-      window.AutoHub.getPlatformUrl().then(function (hubUrl) {
-        if (!hubUrl) { toast("AutoHub nije dostupan. Pokreni server."); return; }
+      window.AUCore.getPlatformUrl().then(function (hubUrl) {
+        if (!hubUrl) { toast("AUCore nije dostupan. Pokreni server."); return; }
         var payload = {
           event: {
             type:         WO.draft.docType === "estimate" ? "note" : "work_order",
@@ -684,11 +684,11 @@
           mechanic_name: profile.name || "Servis",
           hub_url:       hubUrl
         };
-        window.AutoHub.createShare(payload).then(function (res) {
+        window.AUCore.createShare(payload).then(function (res) {
           var url = res.url || "";
           showShareModal(url);
         }).catch(function (e) {
-          toast("Greška: " + (e.message || "AutoHub nije dostupan"));
+          toast("Greška: " + (e.message || "AUCore nije dostupan"));
         });
       });
     }

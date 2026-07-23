@@ -86,14 +86,24 @@
         }
         registerSW();
         watchOnline();
+        // Migracija localStorage ključeva autohub → aucore (jednokratno)
+        (function () {
+          var m = { 'autohub_session': 'aucore_session', 'autohub_url': 'aucore_url',
+            'autohub_user': 'aucore_user', 'autohub_last_sync': 'aucore_last_sync',
+            'autohub_vehicle_map': 'aucore_vehicle_map' };
+          Object.keys(m).forEach(function (o) {
+            var v = localStorage.getItem(o);
+            if (v !== null) { localStorage.setItem(m[o], v); localStorage.removeItem(o); }
+          });
+        })();
         // Verifikuj sesiju pri startu — ako je istekla na serveru, očisti lokalno
-        if (window.AutoHub && AutoHub.getSession()) {
-          AutoHub.apiCall("GET", "/auth/me").then(function () {
+        if (window.AUCore && AUCore.getSession()) {
+          AUCore.apiCall("GET", "/auth/me").then(function () {
             pollNotifications();
           }).catch(function (e) {
             if (e.status === 401) {
-              AutoHub.setSession(null);
-              localStorage.removeItem("autohub_user");
+              AUCore.setSession(null);
+              localStorage.removeItem("aucore_user");
               var bellBtn = el("bellBtn"); if (bellBtn) bellBtn.hidden = true;
             }
           });
@@ -823,7 +833,7 @@
         '</div>' +
         '<div class="card mt16" id="emailSignupCard">' + emailSignupCardHTML() + '</div>' +
         '<div class="card mt16" id="licenseCard">' + licenseCardHTML() + '</div>' +
-        '<div class="card mt16" id="autohubCard">' + autohubCardHTML() + '</div>' +
+        '<div class="card mt16" id="aucoreCard">' + aucoreCardHTML() + '</div>' +
         '<div style="text-align:center;padding:24px 0 8px;font-size:.75rem;color:#475569">' +
           '<a href="../legal/terms.html" style="color:#475569;margin:0 10px">Uslovi korišćenja</a>' +
           '<a href="../legal/privacy.html" style="color:#475569;margin:0 10px">Privatnost</a>' +
@@ -934,11 +944,11 @@
     hub_import: function (params) {
       var token  = params && params.token;
       var hubUrl = params && params.hub_url;
-      if (!token || !hubUrl || !window.AutoHub) {
+      if (!token || !hubUrl || !window.AUCore) {
         return '<div class="card"><p class="empty">Nevažeći link.</p>' +
           '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button></div>';
       }
-      return AutoHub.fetchShare(hubUrl, token).then(function (data) {
+      return AUCore.fetchShare(hubUrl, token).then(function (data) {
         var ev  = data.event  || {};
         var veh = data.vehicle || {};
         var mech = data.mechanic_name || 'Servis';
@@ -984,18 +994,18 @@
       if (!hubConnected()) {
         return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
           '<h1>Javni dosije</h1>' +
-          '<div class="card"><p class="empty">Poveži se sa AutoHub-om u podešavanjima da bi generisao javni dosije.</p></div>';
+          '<div class="card"><p class="empty">Poveži se sa AU Core-om u podešavanjima da bi generisao javni dosije.</p></div>';
       }
       var vehicleMap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
       var syncedLocalIds = Object.keys(vehicleMap);
       if (!syncedLocalIds.length) {
         return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
           '<h1>Javni dosije</h1>' +
-          '<div class="card"><p class="empty">Nema sinhronizovanih vozila. Najpre uradi Sync u AutoHub sekciji.</p>' +
+          '<div class="card"><p class="empty">Nema sinhronizovanih vozila. Najpre uradi Sync u AU Core sekciji.</p>' +
           '<button class="btn btn-primary mt8" onclick="DR.hubSync();DR.go(\'public_ids\')">Sync sada</button></div>';
       }
       return Store.all("vehicles").then(function (vehicles) {
-        return AutoHub.getPlatformUrl().then(function (hubUrl) {
+        return AUCore.getPlatformUrl().then(function (hubUrl) {
           var cards = syncedLocalIds.map(function (lid) {
             var serverId = vehicleMap[lid];
             var v = vehicles.find(function (x) { return x.id === lid; });
@@ -1200,21 +1210,21 @@
     }
   };
 
-  /* ---------- AutoHub helperi ---------- */
-  var HUB_MAP_KEY = "autohub_vehicle_map";
+  /* ---------- AUCore helperi ---------- */
+  var HUB_MAP_KEY = "aucore_vehicle_map";
 
-  function hubConnected() { return !!(window.AutoHub && AutoHub.getSession()); }
+  function hubConnected() { return !!(window.AUCore && AUCore.getSession()); }
 
-  function autohubCardHTML(mode) {
-    if (!window.AutoHub) {
-      return '<h2>AutoHub</h2><p class="empty">AutoHub modul nije učitan.</p>';
+  function aucoreCardHTML(mode) {
+    if (!window.AUCore) {
+      return '<h2>AU Core</h2><p class="empty">AU Core modul nije učitan.</p>';
     }
     if (hubConnected()) {
-      var lastSync = localStorage.getItem("autohub_last_sync");
-      var hubUser  = JSON.parse(localStorage.getItem("autohub_user") || "null");
+      var lastSync = localStorage.getItem("aucore_last_sync");
+      var hubUser  = JSON.parse(localStorage.getItem("aucore_user") || "null");
       var vehicleMap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
       var syncedVehicles = Object.keys(vehicleMap).length;
-      return '<h2>AutoHub</h2>' +
+      return '<h2>AU Core</h2>' +
         '<div class="hub-dashboard">' +
           '<div class="hub-row"><span class="hub-dot"></span><b>Sync aktivan</b></div>' +
           (hubUser ? '<div class="hub-row muted" style="font-size:.82rem">' + esc(hubUser.name || "") + ' · ' + esc(hubUser.email || "") + '</div>' : '') +
@@ -1227,7 +1237,7 @@
         '<button class="btn btn-secondary mt8" onclick="DR.hubLogout()">Odjavi se (' + esc((hubUser && hubUser.email) || '') + ')</button>';
     }
     if (mode === 'register') {
-      return '<h2>AutoHub</h2>' +
+      return '<h2>AU Core</h2>' +
         '<p class="empty" style="margin-bottom:.8rem">Kreiraj nalog — admin mora da te odobri.</p>' +
         '<label class="field"><span>Ime</span>' +
           '<input id="hub_name" type="text" autocomplete="name" placeholder="Tvoje ime"></label>' +
@@ -1239,7 +1249,7 @@
         '<button class="btn btn-primary mt8" onclick="DR.hubRegister()">Registruj se</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.showHubLogin()">Već imaš nalog? Prijavi se</button>';
     }
-    return '<h2>AutoHub</h2>' +
+    return '<h2>AU Core</h2>' +
       '<p class="empty" style="margin-bottom:.8rem">Poveži Driver sa serverom za backup i deljenje.</p>' +
       '<label class="field"><span>Email</span>' +
         '<input id="hub_email" type="email" autocomplete="email" placeholder="tvoj@email.com"></label>' +
@@ -1650,18 +1660,18 @@
       Store.remove("reminders", id).then(function () { render("reminders"); });
     },
 
-    /* ----- AutoHub ----- */
+    /* ----- AUCore ----- */
     hubLogin: function () {
-      if (!window.AutoHub) return;
+      if (!window.AUCore) return;
       var email = val("hub_email"), pass = val("hub_pass");
       var errEl = el("hubLoginErr");
       if (!email || !pass) { if (errEl) errEl.textContent = "Email i lozinka su obavezni."; return; }
       if (errEl) errEl.textContent = "";
-      AutoHub.apiCall("POST", "/auth/login", { email: email, password: pass })
+      AUCore.apiCall("POST", "/auth/login", { email: email, password: pass })
         .then(function (data) {
-          AutoHub.setSession(data.session);
-          if (data.user) localStorage.setItem("autohub_user", JSON.stringify(data.user));
-          toast("Povezano sa AutoHub-om!");
+          AUCore.setSession(data.session);
+          if (data.user) localStorage.setItem("aucore_user", JSON.stringify(data.user));
+          toast("Povezano sa AU Core-om!");
           render("settings");
           pollNotifications();
         })
@@ -1671,17 +1681,17 @@
     },
 
     showHubRegister: function () {
-      var card = el("autohubCard");
-      if (card) card.innerHTML = autohubCardHTML("register");
+      var card = el("aucoreCard");
+      if (card) card.innerHTML = aucoreCardHTML("register");
     },
 
     showHubLogin: function () {
-      var card = el("autohubCard");
-      if (card) card.innerHTML = autohubCardHTML("login");
+      var card = el("aucoreCard");
+      if (card) card.innerHTML = aucoreCardHTML("login");
     },
 
     hubRegister: function () {
-      if (!window.AutoHub) return;
+      if (!window.AUCore) return;
       var name  = val("hub_name");
       var email = val("hub_email");
       var pass  = val("hub_pass");
@@ -1690,22 +1700,22 @@
       if (pass.length < 6) { if (errEl) errEl.textContent = "Lozinka mora imati najmanje 6 karaktera."; return; }
       if (errEl) errEl.textContent = "";
 
-      AutoHub.apiCall("POST", "/auth/register", { name: name, email: email, password: pass })
+      AUCore.apiCall("POST", "/auth/register", { name: name, email: email, password: pass })
         .then(function (data) {
           if (data.status === "pending") {
-            var card = el("autohubCard");
+            var card = el("aucoreCard");
             if (card) card.innerHTML =
-              '<h2>AutoHub</h2>' +
+              '<h2>AU Core</h2>' +
               '<p class="lic-ok">✓ Nalog kreiran</p>' +
               '<p class="empty" style="margin:.6rem 0">Admin mora da te odobri pre prvog logina.</p>' +
               '<button class="btn btn-secondary mt8" onclick="DR.showHubLogin()">Prijavi se</button>';
           } else {
             // prvi korisnik (owner) — odmah aktivan, auto-login
-            return AutoHub.apiCall("POST", "/auth/login", { email: email, password: pass })
+            return AUCore.apiCall("POST", "/auth/login", { email: email, password: pass })
               .then(function (lr) {
-                AutoHub.setSession(lr.session);
-                if (lr.user) localStorage.setItem("autohub_user", JSON.stringify(lr.user));
-                toast("AutoHub: prijavljen kao " + (lr.user ? lr.user.name : name));
+                AUCore.setSession(lr.session);
+                if (lr.user) localStorage.setItem("aucore_user", JSON.stringify(lr.user));
+                toast("AU Core: prijavljen kao " + (lr.user ? lr.user.name : name));
                 render("settings");
                 pollNotifications();
               });
@@ -1718,11 +1728,11 @@
     },
 
     hubLogout: function () {
-      if (!window.AutoHub) return;
-      AutoHub.setSession(null);
+      if (!window.AUCore) return;
+      AUCore.setSession(null);
       localStorage.removeItem(HUB_MAP_KEY);
-      localStorage.removeItem("autohub_last_sync");
-      localStorage.removeItem("autohub_user");
+      localStorage.removeItem("aucore_last_sync");
+      localStorage.removeItem("aucore_user");
       var bellBtn = el("bellBtn"); if (bellBtn) bellBtn.hidden = true;
       var bellCount = el("bellCount"); if (bellCount) bellCount.hidden = true;
       toast("Odjavljeno.");
@@ -1771,7 +1781,7 @@
       var btn = document.querySelector("#emailSignupCard .btn-primary");
       if (btn) { btn.disabled = true; btn.textContent = "Šalje se..."; }
 
-      AutoHub.getPlatformUrl().then(function (hubUrl) {
+      AUCore.getPlatformUrl().then(function (hubUrl) {
         if (!hubUrl) throw new Error("Server nije dostupan");
         return fetch(hubUrl + "/accounts/register", {
           method: "POST",
@@ -1950,7 +1960,7 @@
 
         var doPublish = function (photoUrls) {
           payload.photos = photoUrls;
-          // Ako je vozilo synkovano na AutoHub → dodaj public dosije URL
+          // Ako je vozilo synkovano na AU Core → dodaj public dosije URL
           var publishAndSend = function () {
             Autopijaca.publish(vid, payload).then(function (data) {
               App._plPhotos = [];
@@ -1963,7 +1973,7 @@
           };
 
           if (serverId && hubConnected()) {
-            AutoHub.getPlatformUrl().then(function (hubUrl) {
+            AUCore.getPlatformUrl().then(function (hubUrl) {
               if (hubUrl) payload.history_token = hubUrl.replace(/\/$/, '') + '/public/v/' + serverId;
               publishAndSend();
             }).catch(publishAndSend);
@@ -2032,7 +2042,7 @@
     },
 
     hubSync: function () {
-      if (!window.AutoHub || !hubConnected()) { toast("Nisi povezan sa AutoHub-om."); return; }
+      if (!window.AUCore || !hubConnected()) { toast("Nisi povezan sa AU Core-om."); return; }
       var statusEl = el("hubSyncStatus");
       if (statusEl) statusEl.textContent = "Sinkronizujem...";
 
@@ -2042,7 +2052,7 @@
         // Korak 1 — resolve server vehicle IDs (kreiraj ako ne postoji)
         var mapOps = vehicles.map(function (v) {
           if (vehicleMap[v.id]) return Promise.resolve();
-          return AutoHub.apiCall("POST", "/vehicles", {
+          return AUCore.apiCall("POST", "/vehicles", {
             make: v.make, model: v.model, year: v.year || null,
             plate: v.plate || null, vin: v.vin || null
           }).then(function (r) { vehicleMap[v.id] = r.id; });
@@ -2088,7 +2098,7 @@
 
         // Korak 3 — batch upload po vozilu
         var syncOps = Object.keys(byServer).map(function (sid) {
-          return AutoHub.syncEvents(Number(sid), byServer[sid])
+          return AUCore.syncEvents(Number(sid), byServer[sid])
             .then(function (res) {
               var synced = res.synced || [];
               var syncedIds = {};
@@ -2105,7 +2115,7 @@
 
         return Promise.all(syncOps).then(function (counts) {
           var total = counts.reduce(function (s, n) { return s + n; }, 0);
-          localStorage.setItem("autohub_last_sync", new Date().toISOString());
+          localStorage.setItem("aucore_last_sync", new Date().toISOString());
           if (statusEl) statusEl.textContent = "";
           toast("Sync završen: " + total + " događaja poslano.");
           render("settings");
@@ -2305,8 +2315,8 @@
   }
 
   function pollNotifications() {
-    if (!window.AutoHub || !AutoHub.getSession()) return;
-    AutoHub.apiCall("GET", "/notifications?limit=1&unread=0")
+    if (!window.AUCore || !AUCore.getSession()) return;
+    AUCore.apiCall("GET", "/notifications?limit=1&unread=0")
       .then(function (data) { updateBell(data.unread || 0); })
       .catch(function () {});
   }
@@ -2320,8 +2330,8 @@
   }
 
   Actions.showNotifications = function () {
-    if (!window.AutoHub || !AutoHub.getSession()) { toast("Nisi prijavljen na AutoHub"); return; }
-    AutoHub.apiCall("GET", "/notifications?limit=30")
+    if (!window.AUCore || !AUCore.getSession()) { toast("Nisi prijavljen na AU Core"); return; }
+    AUCore.apiCall("GET", "/notifications?limit=30")
       .then(function (data) {
         var items = data.notifications || [];
         var overlay = document.createElement("div");
@@ -2361,7 +2371,7 @@
 
         var readAllBtn = document.getElementById("notifReadAll");
         if (readAllBtn) readAllBtn.addEventListener("click", function () {
-          AutoHub.apiCall("POST", "/notifications/read-all")
+          AUCore.apiCall("POST", "/notifications/read-all")
             .then(function () { close(); })
             .catch(function () { toast("Greška"); });
         });
@@ -2371,7 +2381,7 @@
             var id = row.getAttribute("data-id");
             var url = row.getAttribute("data-url");
             if (row.classList.contains("unread")) {
-              AutoHub.apiCall("POST", "/notifications/read/" + id).catch(function(){});
+              AUCore.apiCall("POST", "/notifications/read/" + id).catch(function(){});
               row.classList.remove("unread");
               updateBell(Math.max(0, (data.unread || 1) - 1));
             }
@@ -2379,7 +2389,7 @@
           });
         });
       })
-      .catch(function () { toast("AutoHub nije dostupan"); });
+      .catch(function () { toast("AU Core nije dostupan"); });
   };
 
   window.DR = Actions;

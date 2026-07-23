@@ -1,6 +1,6 @@
 auto-universe-both.zip
 auto-universe-both/
-autohub/
+aucore/
 node_modules/
 *.db
 *.log

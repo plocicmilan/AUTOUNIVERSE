@@ -14,7 +14,12 @@
 
   <header class="topbar">
     <span class="topbar-brand" id="brandName">DRIVER TOOLBOX</span>
-    <span class="topbar-badge" id="offlineBadge" hidden>OFFLINE</span>
+    <div class="topbar-right">
+      <span class="topbar-badge" id="offlineBadge" hidden>OFFLINE</span>
+      <button class="bell-btn" id="bellBtn" hidden onclick="DR.showNotifications()">
+        🔔<span class="bell-count" id="bellCount" hidden></span>
+      </button>
+    </div>
   </header>
 
   <main id="screen" class="screen">
@@ -54,7 +59,7 @@
   <script src="../core/js/pdf.js"></script>
   <script src="../core/js/license.js"></script>
   <script src="../core/js/reminders.js"></script>
-  <script src="../core/js/autohub.js"></script>
+  <script src="../core/js/aucore.js"></script>
   <script src="../core/js/autopijaca.js"></script>
   <script src="../core/js/catalog.js"></script>
   <script src="../core/js/tags.js"></script>
