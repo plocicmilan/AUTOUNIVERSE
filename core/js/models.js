@@ -83,6 +83,37 @@
 
   /* ---------- Fabrike (svaki objekat: id, created_at, updated_at) ---------- */
 
+  // Validacija Vehicle unosa pre kreiranja (Task 1 iz BRIEFING_2026_07_21_schema_agregacija).
+  // Poziva se iz UI-ja pri submit-u NOVOG vozila. Legacy zapisi ne prolaze kroz ovo.
+  // Vraca { ok: true } ili { ok: false, errors: {field: msg, ...} }
+  function validateVehicle(data) {
+    data = data || {};
+    var errors = {};
+    var makes = (typeof window !== "undefined" && window.Catalog && window.Catalog.makes) ? window.Catalog.makes() : [];
+
+    if (!data.make || !String(data.make).trim()) {
+      errors.make = "Marka je obavezna";
+    } else if (makes.length && makes.indexOf(String(data.make).trim()) === -1) {
+      // Slobodan unos dozvoljen ali sa upozorenjem (task acceptance)
+      errors.make_warning = "Marka '" + data.make + "' nije u standardnom katalogu — proveri unos";
+    }
+
+    if (!data.model || !String(data.model).trim()) {
+      errors.model = "Model je obavezan";
+    }
+
+    var year = Number(data.year);
+    if (!data.year || isNaN(year)) {
+      errors.year = "Godiste je obavezno";
+    } else if (year < 1970 || year > 2030) {
+      errors.year = "Godiste mora biti izmedju 1970 i 2030";
+    }
+
+    // Samo hard-error polja blokiraju submit; warning (make_warning) samo obavestenje.
+    var hardErrors = Object.keys(errors).filter(function (k) { return k.indexOf("_warning") === -1; });
+    return { ok: hardErrors.length === 0, errors: errors };
+  }
+
   function createVehicle(data) {
     data = data || {};
     return stamp({
@@ -151,8 +182,34 @@
       next_service: data.next_service || null,             // { km, date } → automatski podsetnik
       public_on_marketplace: data.public_on_marketplace !== false,  // default: true (opt-out)
       mechanic_name: data.mechanic_name || null,                   // ime mehaničara koji je delio (source: mechanic)
-      documents: data.documents || []
+      documents: data.documents || [],
+      // Task 2 iz BRIEFING_2026_07_21 — kategorijalni tagovi za buducu agregaciju.
+      // Opcioni, backward-compatible. Validirano preko window.Tags ako je ucitano.
+      symptom_categories: sanitizeTagList(data.symptom_categories, "symptom"),
+      work_categories:    sanitizeTagList(data.work_categories, "work")
     });
+  }
+
+  // Pomocnik: sanitizuje tag listu koristeci window.Tags ako je dostupno.
+  // Fallback: ako Tags modul nije ucitan, samo dedupe + string filter (bez semantike).
+  function sanitizeTagList(list, kind) {
+    if (!Array.isArray(list)) return [];
+    var tagsApi = (typeof window !== "undefined" && window.Tags)
+      ? window.Tags
+      : (typeof require !== "undefined" ? tryRequire("./tags.js") : null);
+    if (tagsApi) {
+      return kind === "symptom" ? tagsApi.sanitizeSymptoms(list) : tagsApi.sanitizeWork(list);
+    }
+    // Fallback bez Tags modula: samo dedupe validne stringove
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      if (typeof list[i] === "string" && list[i] && out.indexOf(list[i]) === -1) out.push(list[i]);
+    }
+    return out;
+  }
+
+  function tryRequire(p) {
+    try { return require(p); } catch (e) { return null; }
   }
 
   function createCost(data) {
@@ -319,6 +376,7 @@
     CURRENCIES: CURRENCIES,
     CONTACT_ROLES: CONTACT_ROLES,
     APPOINTMENT_STATUSES: APPOINTMENT_STATUSES,
+    validateVehicle: validateVehicle,
     createVehicle: createVehicle,
     createEvent: createEvent,
     createItem: createItem,

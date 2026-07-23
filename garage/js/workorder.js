@@ -69,6 +69,8 @@
       items: [],
       categories: [],
       klima_subs: [],
+      symptom_categories: [],
+      work_categories: [],
       next_service: null,
       signature: { customer: null, technician: null }
     };
@@ -96,6 +98,8 @@
       items: (ev.items || []).map(function (it) { return Object.assign({}, it); }),
       categories: [],
       klima_subs: [],
+      symptom_categories: [],
+      work_categories: [],
       next_service: null,
       signature: { customer: null, technician: null }
     };
@@ -192,6 +196,28 @@
         }).join("") + '</div>';
       }
 
+      var syms = WO.draft.symptom_categories || [];
+      var symptomChips = '';
+      if (window.Tags && window.Tags.SYMPTOM_TAGS) {
+        symptomChips =
+          '<p class="chip-label">Simptomi (šta je kupac prijavio)</p>' +
+          '<div class="svc-cats">' + window.Tags.SYMPTOM_TAGS.map(function (tg) {
+            var on = syms.indexOf(tg.id) >= 0 ? ' chip-on' : '';
+            return '<button type="button" class="chip chip-sm' + on + '" onclick="WOgo.toggleSym(\'' + esc(tg.id) + '\')" title="' + esc(tg.hint) + '">' + esc(tg.label) + '</button>';
+          }).join("") + '</div>';
+      }
+
+      var wrks = WO.draft.work_categories || [];
+      var workChips = '';
+      if (window.Tags && window.Tags.WORK_TAGS) {
+        workChips =
+          '<p class="chip-label">Vrsta rada</p>' +
+          '<div class="svc-cats">' + window.Tags.WORK_TAGS.map(function (tg) {
+            var on = wrks.indexOf(tg.id) >= 0 ? ' chip-on' : '';
+            return '<button type="button" class="chip chip-sm' + on + '" onclick="WOgo.toggleWork(\'' + esc(tg.id) + '\')">' + esc(tg.label) + '</button>';
+          }).join("") + '</div>';
+      }
+
       var ns = WO.draft.next_service || {};
       return '<div class="card">' +
         '<label class="field"><span data-i18n="wo.doc_type"></span>' +
@@ -199,6 +225,8 @@
         '<div class="svc-cats">' + catChips + '</div>' +
         klimaSubs +
         '<button type="button" class="btn btn-secondary btn-sm mt8" onclick="WOgo.presetVelikiServis()">🔧 Veliki servis</button>' +
+        symptomChips +
+        workChips +
         '<label class="field mt8"><span data-i18n="wo.step_description"></span>' +
           '<textarea id="wo_desc" rows="4" placeholder="' + t("wo.desc_placeholder") + '">' + esc(WO.draft.description) + '</textarea></label>' +
         '<button class="btn btn-secondary" id="wo_voicebtn" onclick="WOgo.voice()" data-i18n="wo.voice"></button>' +
@@ -518,6 +546,28 @@
       if (bodyEl) { bodyEl.innerHTML = STEP.description(); window.GT.translateNode(bodyEl); }
     },
 
+    toggleSym: function (id) {
+      var ta = document.getElementById("wo_desc"); if (ta) WO.draft.description = ta.value;
+      var dt = document.getElementById("wo_doctype"); if (dt) WO.draft.docType = dt.value;
+      var arr = WO.draft.symptom_categories || [];
+      var idx = arr.indexOf(id);
+      if (idx >= 0) arr.splice(idx, 1); else arr.push(id);
+      WO.draft.symptom_categories = arr;
+      var bodyEl = document.querySelector(".wo-body");
+      if (bodyEl) { bodyEl.innerHTML = STEP.description(); window.GT.translateNode(bodyEl); }
+    },
+
+    toggleWork: function (id) {
+      var ta = document.getElementById("wo_desc"); if (ta) WO.draft.description = ta.value;
+      var dt = document.getElementById("wo_doctype"); if (dt) WO.draft.docType = dt.value;
+      var arr = WO.draft.work_categories || [];
+      var idx = arr.indexOf(id);
+      if (idx >= 0) arr.splice(idx, 1); else arr.push(id);
+      WO.draft.work_categories = arr;
+      var bodyEl = document.querySelector(".wo-body");
+      if (bodyEl) { bodyEl.innerHTML = STEP.description(); window.GT.translateNode(bodyEl); }
+    },
+
     toggleKlimaSub: function (id) {
       var ta = document.getElementById("wo_desc");
       if (ta) WO.draft.description = ta.value;
@@ -542,6 +592,49 @@
       var idx = WO.steps.indexOf("items");
       if (idx >= 0) { WO.step = idx; renderStep(); }
       toast("Veliki servis — dopuni cene i obriši šta nije rađeno.");
+    },
+
+    showShareModal: function (url) {
+      var existing = document.getElementById("wo-share-modal");
+      if (existing) existing.remove();
+      var qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(url);
+      var modal = document.createElement("div");
+      modal.id = "wo-share-modal";
+      modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;";
+      modal.innerHTML = [
+        '<div style="background:#1a1a2e;border-radius:16px;padding:24px;max-width:320px;width:90%;text-align:center;color:#e0e0ff;">',
+          '<p style="margin:0 0 6px;font-size:13px;opacity:.7;">Servisni pasoš auta</p>',
+          '<p style="margin:0 0 16px;font-size:15px;font-weight:600;">Podeli sa vlasnikom vozila</p>',
+          '<img src="' + qrSrc + '" alt="QR" style="width:250px;height:250px;border-radius:8px;background:#fff;padding:8px;" />',
+          '<p style="margin:12px 0 4px;font-size:11px;opacity:.6;">Vlasnik skenira QR ili otvori link:</p>',
+          '<p style="margin:0 0 16px;font-size:11px;word-break:break-all;opacity:.8;">' + url + '</p>',
+          '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">',
+            '<button onclick="WOgo.shareNative(\'' + url.replace(/'/g, "\\'") + '\')" style="background:#5c6bc0;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;">📨 Podeli</button>',
+            '<button onclick="WOgo.copyShareLink(\'' + url.replace(/'/g, "\\'") + '\')" style="background:#37474f;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;">📋 Kopiraj</button>',
+            '<button onclick="document.getElementById(\'wo-share-modal\').remove()" style="background:#263238;color:#aaa;border:none;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;">Zatvori</button>',
+          '</div>',
+        '</div>'
+      ].join("");
+      modal.addEventListener("click", function (e) {
+        if (e.target === modal) modal.remove();
+      });
+      document.body.appendChild(modal);
+    },
+
+    shareNative: function (url) {
+      if (navigator.share) {
+        navigator.share({ title: "Servisni pasoš auta", text: "📨 Tvoj servisni zapis: " + url, url: url }).catch(function () {});
+      } else {
+        WOgo.copyShareLink(url);
+      }
+    },
+
+    copyShareLink: function (url) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function () { toast("Link kopiran!"); });
+      } else {
+        toast("Link: " + url);
+      }
     },
 
     shareWithOwner: function () {
@@ -573,14 +666,7 @@
         };
         window.AutoHub.createShare(payload).then(function (res) {
           var url = res.url || "";
-          var msg = "📨 Link: " + url;
-          if (navigator.share) {
-            navigator.share({ title: "Servisni zapis", text: msg, url: url }).catch(function () {});
-          } else if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).then(function () { toast("Link kopiran! " + url.slice(-20)); });
-          } else {
-            toast("Link: " + url);
-          }
+          showShareModal(url);
         }).catch(function (e) {
           toast("Greška: " + (e.message || "AutoHub nije dostupan"));
         });
@@ -612,6 +698,8 @@
         mileage_km: WO.draft.mileage_km ? parseInt(WO.draft.mileage_km, 10) : null,
         items: WO.draft.items,
         photos: WO.draft.photos,
+        symptom_categories: WO.draft.symptom_categories || [],
+        work_categories: WO.draft.work_categories || [],
         source: "mechanic",
         app: "garage",
         documents: []

@@ -86,6 +86,19 @@
         }
         registerSW();
         watchOnline();
+        // Verifikuj sesiju pri startu — ako je istekla na serveru, očisti lokalno
+        if (window.AutoHub && AutoHub.getSession()) {
+          AutoHub.apiCall("GET", "/auth/me").then(function () {
+            pollNotifications();
+          }).catch(function (e) {
+            if (e.status === 401) {
+              AutoHub.setSession(null);
+              localStorage.removeItem("autohub_user");
+              var bellBtn = el("bellBtn"); if (bellBtn) bellBtn.hidden = true;
+            }
+          });
+        }
+        _notifPollTimer = setInterval(pollNotifications, 5 * 60 * 1000);
       })
       .catch(function (err) {
         console.error("Boot greška:", err);
@@ -197,9 +210,9 @@
 
     /* ===== MOJE VOZILO ===== */
     vehicle: function () {
-      return Promise.all([Store.all("vehicles"), Store.all("events"), Store.all("reminders")])
+      return Promise.all([Store.all("vehicles"), Store.all("events"), Store.all("reminders"), Store.all("documents")])
         .then(function (res) {
-          var vehicles = res[0], events = res[1], reminders = res[2];
+          var vehicles = res[0], events = res[1], reminders = res[2], documents = res[3] || [];
 
           if (!vehicles.length) {
             return '' +
@@ -241,14 +254,29 @@
                 '<b class="' + cls + '">' + esc(r.due_date) + '</b></div>';
             }).join("");
 
+          // Trust Card — vidljiv samo ako ima bar 1 event (izbegava prazan bronze prikaz na novom vozilu)
+          var vehEvents = events.filter(function (e) { return e.vehicle_id === vid; });
+          var vehDocs = documents.filter(function (d) { return d.vehicle_id === vid; });
+          var trustCardHtml = (vehEvents.length && window.TrustCard)
+            ? window.TrustCard.style() + window.TrustCard.html(v, vehEvents, vehDocs, { showTips: true })
+            : '';
+
+          var hubBadge = hubConnected()
+            ? '<span class="hub-badge">☁️ Sync</span>'
+            : '';
+
           return '' +
             switcher +
             '<h1>' + esc(v.make + " " + v.model) + (v.year ? ' <span class="muted">(' + v.year + ')</span>' : '') + '</h1>' +
             '<p class="sub">' + esc(v.plate || "—") +
-              (curKm != null ? ' • ⏱ ' + esc(curKm) + ' km' : '') + '</p>' +
+              (curKm != null ? ' • ⏱ ' + esc(curKm) + ' km' : '') +
+              (hubBadge ? ' ' + hubBadge : '') + '</p>' +
+
+            // TRUST CARD (posle H1, pre onboarding-a — kupac ga prvi vidi)
+            trustCardHtml +
 
             // onboarding: ako nema nijednog događaja, ponudi početno stanje
-            (events.filter(function (e) { return e.vehicle_id === vid; }).length === 0
+            (vehEvents.length === 0
               ? '<div class="onboard"><b data-i18n="d.initial_title"></b>' +
                 '<p class="empty" data-i18n="d.initial_sub"></p>' +
                 '<button class="btn btn-primary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button></div>'
@@ -288,6 +316,7 @@
             '</div>' +
 
             '<button class="btn btn-primary" onclick="DR.addEvent(\'' + esc(vid) + '\',false)" data-i18n="d.add_event"></button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'reg_calc\')" style="background:#1e3a5f">🧮 Kalkulator registracije</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vid) + '\',true)" data-i18n="d.dig_drawer"></button>' +
             (moduleUnlocked("pdf_dossier")
@@ -346,7 +375,12 @@
             field("f_year", "vehicles.year", v.year || "", "number") +
             field("f_plate", "vehicles.plate", v.plate) +
             '<label class="field"><span>' + t("vehicles.category") + '</span><select id="f_category">' + catOpts + '</select></label>' +
-            field("f_vin", "vehicles.vin", v.vin) +
+            '<label class="field"><span>' + t("vehicles.vin") + '</span>' +
+              '<div style="display:flex;gap:.4rem">' +
+                '<input id="f_vin" type="text" value="' + esc(v.vin) + '" style="flex:1" placeholder="17 chars" maxlength="17">' +
+                '<button type="button" class="btn btn-secondary sm" onclick="DR.decodeVin()" style="white-space:nowrap;padding:.4rem .7rem">Dekoduj</button>' +
+              '</div>' +
+            '</label>' +
             '<label class="field"><span>' + t("d.vehicle_status") + '</span><select id="f_status">' + statusOpts + '</select></label>' +
             field("f_regowner", "d.vehicle_registered_owner", v.registered_owner || "") +
             field("f_fuel", "d.fuel", eng.fuel) +
@@ -928,6 +962,40 @@
             cards;
         });
       });
+    },
+
+    /* ===== KALKULATOR REGISTRACIJE ===== */
+    reg_calc: function () {
+      return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+        '<h1>🧮 Kalkulator registracije</h1>' +
+        '<p style="color:#64748b;font-size:.83rem;padding:0 0 12px">Procena ukupnih troškova registracije (tehnički pregled + osiguranje + taksa). Tačna vrednost zavisi od osiguravajuće kuće i varijabilnih taksi — ovo je okviran iznos.</p>' +
+        '<div class="card">' +
+          '<label class="field"><span>Snaga motora (kW)</span>' +
+            '<input type="number" id="rc_kw" placeholder="npr. 85" min="1" max="999" onchange="DR.calcReg()" oninput="DR.calcReg()">' +
+          '</label>' +
+          '<label class="field"><span>Gorivo</span>' +
+            '<select id="rc_fuel" onchange="DR.calcReg()">' +
+              '<option value="benzin">Benzin / Hibrid</option>' +
+              '<option value="dizel">Dizel</option>' +
+              '<option value="struja">Električno</option>' +
+              '<option value="gas">Gas (TNG/CNG)</option>' +
+            '</select>' +
+          '</label>' +
+          '<label class="field"><span>Godina vozila</span>' +
+            '<input type="number" id="rc_year" placeholder="npr. 2015" min="1970" max="2026" onchange="DR.calcReg()" oninput="DR.calcReg()">' +
+          '</label>' +
+          '<label class="field"><span>Kategorija</span>' +
+            '<select id="rc_cat" onchange="DR.calcReg()">' +
+              '<option value="M1">M1 — Putničko vozilo</option>' +
+              '<option value="N1">N1 — Lako teretno (do 3.5t)</option>' +
+            '</select>' +
+          '</label>' +
+        '</div>' +
+        '<div id="rc_result" style="display:none;" class="card" style="margin-top:12px">' +
+          '<h2 style="margin:0 0 8px">Procena troškova</h2>' +
+          '<div id="rc_breakdown"></div>' +
+          '<p style="font-size:.75rem;color:#64748b;margin-top:8px">* Osiguranje: AO minimum za M1. Tehnički pregled: JKP Putevi Srbije. Taksa: MUP republička taksa.<br>Proverite aktuelne cene na <b>osiguranik.com</b> pre plaćanja.</p>' +
+        '</div>';
     }
   };
 
@@ -942,13 +1010,20 @@
     }
     if (hubConnected()) {
       var lastSync = localStorage.getItem("autohub_last_sync");
+      var hubUser  = JSON.parse(localStorage.getItem("autohub_user") || "null");
+      var vehicleMap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+      var syncedVehicles = Object.keys(vehicleMap).length;
       return '<h2>AutoHub</h2>' +
-        '<p class="lic-ok">✓ Povezan</p>' +
-        (lastSync ? '<p class="muted" style="font-size:.8rem;margin:.4rem 0">Poslednji sync: ' + esc(lastSync.slice(0, 16).replace("T", " ")) + '</p>' : '') +
-        '<div id="hubSyncStatus"></div>' +
-        '<button class="btn btn-primary mt8" onclick="DR.hubSync()">Sync sada</button>' +
+        '<div class="hub-dashboard">' +
+          '<div class="hub-row"><span class="hub-dot"></span><b>Sync aktivan</b></div>' +
+          (hubUser ? '<div class="hub-row muted" style="font-size:.82rem">' + esc(hubUser.name || "") + ' · ' + esc(hubUser.email || "") + '</div>' : '') +
+          (syncedVehicles ? '<div class="hub-row muted" style="font-size:.82rem">🚗 ' + syncedVehicles + ' vozil' + (syncedVehicles === 1 ? 'o' : 'a') + ' sinhronizovano</div>' : '') +
+          (lastSync ? '<div class="hub-row muted" style="font-size:.82rem">🕐 Poslednji sync: ' + esc(lastSync.slice(0, 16).replace("T", " ")) + '</div>' : '<div class="hub-row muted" style="font-size:.82rem">Još nisi sync-ovao/la podatke.</div>') +
+        '</div>' +
+        '<div id="hubSyncStatus" style="font-size:.82rem;color:#6b7280;margin:.4rem 0"></div>' +
+        '<button class="btn btn-primary mt8" onclick="DR.hubSync()">☁️ Sync sada</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'public_ids\')">📋 Javni dosije / QR</button>' +
-        '<button class="btn btn-secondary mt8" onclick="DR.hubLogout()">Odjavi se</button>';
+        '<button class="btn btn-secondary mt8" onclick="DR.hubLogout()">Odjavi se (' + esc((hubUser && hubUser.email) || '') + ')</button>';
     }
     if (mode === 'register') {
       return '<h2>AutoHub</h2>' +
@@ -1073,6 +1148,33 @@
       var dl = el("cat_models");
       if (dl) dl.innerHTML = mdls.map(function (m) { return '<option value="' + esc(m) + '">'; }).join("");
     },
+
+    decodeVin: function () {
+      var vinEl = el("f_vin");
+      if (!vinEl) return;
+      var vin = vinEl.value.trim().toUpperCase();
+      if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) { toast("VIN mora imati 17 znakova (bez I, O, Q)"); return; }
+      toast("Dekodovanje...");
+      fetch("https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/" + vin + "?format=json")
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var row = data.Results && data.Results[0];
+          if (!row) { toast("NHTSA nije vratio podatke"); return; }
+          var make  = (row.Make  || "").trim();
+          var model = (row.Model || "").trim();
+          var year  = parseInt(row.ModelYear || "0", 10) || null;
+          if (!make) { toast("VIN prepoznat, marka nepoznata"); return; }
+          var makeEl  = el("f_make");
+          var modelEl = el("f_model");
+          var yearEl  = el("f_year");
+          if (makeEl)  { makeEl.value  = make;  DR.onMakeInput(make); }
+          if (modelEl) { modelEl.value = model; }
+          if (yearEl && year)  { yearEl.value = year; }
+          toast("✓ " + make + " " + model + (year ? " (" + year + ")" : ""));
+        })
+        .catch(function () { toast("Greška — NHTSA nedostupan"); });
+    },
+
     addEvent: function (vehId, retro) {
       render("event_form", { vehicle_id: vehId || App.activeVehicleId, retro: retro });
     },
@@ -1357,8 +1459,10 @@
       AutoHub.apiCall("POST", "/auth/login", { email: email, password: pass })
         .then(function (data) {
           AutoHub.setSession(data.session);
+          if (data.user) localStorage.setItem("autohub_user", JSON.stringify(data.user));
           toast("Povezano sa AutoHub-om!");
           render("settings");
+          pollNotifications();
         })
         .catch(function (e) {
           if (errEl) errEl.textContent = e.message || "Greška pri povezivanju.";
@@ -1386,13 +1490,25 @@
       if (errEl) errEl.textContent = "";
 
       AutoHub.apiCall("POST", "/auth/register", { name: name, email: email, password: pass })
-        .then(function () {
-          var card = el("autohubCard");
-          if (card) card.innerHTML =
-            '<h2>AutoHub</h2>' +
-            '<p class="lic-ok">✓ Nalog kreiran</p>' +
-            '<p class="empty" style="margin:.6rem 0">Admin mora da te odobri pre prvog logina.</p>' +
-            '<button class="btn btn-secondary mt8" onclick="DR.showHubLogin()">Prijavi se</button>';
+        .then(function (data) {
+          if (data.status === "pending") {
+            var card = el("autohubCard");
+            if (card) card.innerHTML =
+              '<h2>AutoHub</h2>' +
+              '<p class="lic-ok">✓ Nalog kreiran</p>' +
+              '<p class="empty" style="margin:.6rem 0">Admin mora da te odobri pre prvog logina.</p>' +
+              '<button class="btn btn-secondary mt8" onclick="DR.showHubLogin()">Prijavi se</button>';
+          } else {
+            // prvi korisnik (owner) — odmah aktivan, auto-login
+            return AutoHub.apiCall("POST", "/auth/login", { email: email, password: pass })
+              .then(function (lr) {
+                AutoHub.setSession(lr.session);
+                if (lr.user) localStorage.setItem("autohub_user", JSON.stringify(lr.user));
+                toast("AutoHub: prijavljen kao " + (lr.user ? lr.user.name : name));
+                render("settings");
+                pollNotifications();
+              });
+          }
         })
         .catch(function (e) {
           var msg = e.status === 409 ? "Email već postoji." : (e.message || "Greška pri registraciji.");
@@ -1405,6 +1521,9 @@
       AutoHub.setSession(null);
       localStorage.removeItem(HUB_MAP_KEY);
       localStorage.removeItem("autohub_last_sync");
+      localStorage.removeItem("autohub_user");
+      var bellBtn = el("bellBtn"); if (bellBtn) bellBtn.hidden = true;
+      var bellCount = el("bellCount"); if (bellCount) bellCount.hidden = true;
       toast("Odjavljeno.");
       render("settings");
     },
@@ -1741,6 +1860,56 @@
         if (statusEl) statusEl.textContent = "";
         toast("Sync greška: " + (e.message || "nepoznata greška"));
       });
+    },
+
+    /* ----- Kalkulator registracije ----- */
+    calcReg: function () {
+      var kw   = parseFloat(el("rc_kw")   && el("rc_kw").value)   || 0;
+      var year = parseInt(el("rc_year")   && el("rc_year").value,  10) || 0;
+      var fuel = el("rc_fuel")  ? el("rc_fuel").value  : "benzin";
+      var cat  = el("rc_cat")   ? el("rc_cat").value   : "M1";
+      var res  = el("rc_result");
+      var brkd = el("rc_breakdown");
+      if (!res || !brkd) return;
+      if (!kw || !year) { res.style.display = "none"; return; }
+
+      // Tehnički pregled (JKP Putevi Srbije, 2026 cenovnik — M1 stan. cena)
+      var teh = cat === "M1" ? 3700 : 4800;
+
+      // AO osiguranje procena (osiguranik.com formula — M1, bonus 0%)
+      // Osnova ≈ (kW × 580) + godišnje; za dizel +10%, za struju -30%
+      var ao = Math.round(kw * 580 + 8000);
+      if (fuel === "dizel") ao = Math.round(ao * 1.10);
+      if (fuel === "struja") ao = Math.round(ao * 0.70);
+      if (fuel === "gas") ao = Math.round(ao * 0.95);
+      // starost bonus: >10 god -5%, >15 god -10%
+      var age = 2026 - year;
+      if (age > 15) ao = Math.round(ao * 0.90);
+      else if (age > 10) ao = Math.round(ao * 0.95);
+
+      // Republička administrativna taksa (MUP, 2026 — tabela po kW)
+      var taksa = 0;
+      if (kw <= 55)       taksa = 3680;
+      else if (kw <= 75)  taksa = 5670;
+      else if (kw <= 100) taksa = 7350;
+      else if (kw <= 130) taksa = 10350;
+      else if (kw <= 160) taksa = 13800;
+      else                taksa = 18200;
+      if (cat === "N1") taksa = Math.round(taksa * 1.15);
+
+      var total = teh + ao + taksa;
+      brkd.innerHTML =
+        '<table style="width:100%;font-size:.9rem;border-collapse:collapse">' +
+          '<tr><td style="padding:6px 0">Tehnički pregled</td>' +
+              '<td style="text-align:right;font-weight:600">' + teh.toLocaleString("sr") + ' RSD</td></tr>' +
+          '<tr><td style="padding:6px 0">AO osiguranje (procena)</td>' +
+              '<td style="text-align:right;font-weight:600">' + ao.toLocaleString("sr") + ' RSD</td></tr>' +
+          '<tr><td style="padding:6px 0">Republička taksa</td>' +
+              '<td style="text-align:right;font-weight:600">' + taksa.toLocaleString("sr") + ' RSD</td></tr>' +
+          '<tr style="border-top:1px solid #334"><td style="padding:8px 0"><b>UKUPNO (okvirno)</b></td>' +
+              '<td style="text-align:right;font-weight:700;font-size:1.1rem">' + total.toLocaleString("sr") + ' RSD</td></tr>' +
+        '</table>';
+      res.style.display = "block";
     }
   };
 
@@ -1783,6 +1952,101 @@
     function upd() { badge.hidden = navigator.onLine; }
     window.addEventListener("online", upd); window.addEventListener("offline", upd); upd();
   }
+
+  // ─── Notification bell ────────────────────────────────────────────────────
+
+  var _notifPollTimer = null;
+
+  function updateBell(unread) {
+    var btn   = el("bellBtn");
+    var count = el("bellCount");
+    if (!btn) return;
+    btn.hidden = false;
+    if (unread > 0) {
+      count.hidden = false;
+      count.textContent = unread > 99 ? "99+" : String(unread);
+    } else {
+      count.hidden = true;
+    }
+  }
+
+  function pollNotifications() {
+    if (!window.AutoHub || !AutoHub.getSession()) return;
+    AutoHub.apiCall("GET", "/notifications?limit=1&unread=0")
+      .then(function (data) { updateBell(data.unread || 0); })
+      .catch(function () {});
+  }
+
+  function _relTime(iso) {
+    var d = new Date(iso); var diff = (Date.now() - d) / 1000;
+    if (diff < 60) return "upravo";
+    if (diff < 3600) return Math.round(diff / 60) + " min";
+    if (diff < 86400) return Math.round(diff / 3600) + " h";
+    return Math.round(diff / 86400) + " d";
+  }
+
+  Actions.showNotifications = function () {
+    if (!window.AutoHub || !AutoHub.getSession()) { toast("Nisi prijavljen na AutoHub"); return; }
+    AutoHub.apiCall("GET", "/notifications?limit=30")
+      .then(function (data) {
+        var items = data.notifications || [];
+        var overlay = document.createElement("div");
+        overlay.className = "notif-overlay";
+        var sheet = document.createElement("div");
+        sheet.className = "notif-sheet";
+
+        var head = '<div class="notif-sheet-head">' +
+          '<h3>Obaveštenja</h3>' +
+          '<div style="display:flex;gap:.75rem;align-items:center">' +
+          (data.unread > 0 ? '<button class="notif-sheet-readall" id="notifReadAll">Označi sve</button>' : '') +
+          '<button style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:inherit" id="notifClose">✕</button>' +
+          '</div></div>';
+
+        var rows = items.length === 0
+          ? '<div class="notif-empty">Nema obaveštenja</div>'
+          : items.map(function (n) {
+            var isUnread = !n.read_at;
+            var hasUrl = n.action_url ? ' data-url="' + esc(n.action_url) + '"' : '';
+            var cursor = n.action_url ? ' style="cursor:pointer"' : '';
+            return '<div class="notif-row' + (isUnread ? ' unread' : '') + '" data-id="' + n.id + '"' + hasUrl + cursor + '>' +
+              '<div class="notif-row-title">' + esc(n.title) + (n.action_url ? ' <span style="font-size:.7rem;opacity:.6">↗</span>' : '') + '</div>' +
+              '<div class="notif-row-body">' + esc(n.body) + '</div>' +
+              '<div class="notif-row-time">' + _relTime(n.created_at) + '</div>' +
+              '</div>';
+          }).join('');
+
+        sheet.innerHTML = head + '<div class="notif-list">' + rows + '</div>';
+        overlay.appendChild(sheet);
+        document.body.appendChild(overlay);
+
+        function close() { document.body.removeChild(overlay); pollNotifications(); }
+
+        overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+        var closeBtn = document.getElementById("notifClose");
+        if (closeBtn) closeBtn.addEventListener("click", close);
+
+        var readAllBtn = document.getElementById("notifReadAll");
+        if (readAllBtn) readAllBtn.addEventListener("click", function () {
+          AutoHub.apiCall("POST", "/notifications/read-all")
+            .then(function () { close(); })
+            .catch(function () { toast("Greška"); });
+        });
+
+        sheet.querySelectorAll(".notif-row").forEach(function (row) {
+          row.addEventListener("click", function () {
+            var id = row.getAttribute("data-id");
+            var url = row.getAttribute("data-url");
+            if (row.classList.contains("unread")) {
+              AutoHub.apiCall("POST", "/notifications/read/" + id).catch(function(){});
+              row.classList.remove("unread");
+              updateBell(Math.max(0, (data.unread || 1) - 1));
+            }
+            if (url) { close(); window.open(url, "_blank", "noopener"); }
+          });
+        });
+      })
+      .catch(function () { toast("AutoHub nije dostupan"); });
+  };
 
   window.DR = Actions;
   document.addEventListener("DOMContentLoaded", boot);
