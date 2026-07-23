@@ -1433,11 +1433,19 @@
         return '<option value="' + c + '"' + (c === currency ? " selected" : "") + '>' + c + '</option>';
       }).join("");
 
+      // Pre-fill iz WO (quickSellPart flow)
+      var qs = window._woQuickSell || {};
+      window._woQuickSell = null;
+      var qsBanner = qs.title
+        ? '<div style="background:#1a2e1a;border:1px solid #2d5a2d;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.85rem;color:#4caf50">📦 Podaci popunjeni iz radnog naloga — dodaj cenu i objavi.</div>'
+        : '';
+
       return '<button class="linkback" onclick="GT.go(\'home\')" data-i18n="common.back"></button>' +
         '<h1>📦 Prodaj deo</h1>' +
+        qsBanner +
         '<div class="card">' +
           '<label>Naziv dela *<br>' +
-            '<input id="sp_title" class="field" type="text" placeholder="npr. Filter ulja Mann W7018"></label>' +
+            '<input id="sp_title" class="field" type="text" placeholder="npr. Filter ulja Mann W7018" value="' + esc(qs.title || "") + '"></label>' +
           '<label style="margin-top:.6rem">Kategorija<br>' +
             '<select id="sp_cat" class="field">' + catOpts + '</select></label>' +
           '<label style="margin-top:.6rem">Stanje<br>' +
@@ -1447,15 +1455,15 @@
               '<option value="renoviran">Renoviran</option>' +
             '</select></label>' +
           '<label style="margin-top:.6rem">Kataloški broj (opciono)<br>' +
-            '<input id="sp_partno" class="field" type="text" placeholder="npr. W7018"></label>' +
+            '<input id="sp_partno" class="field" type="text" placeholder="npr. W7018" value="' + esc(qs.part_number || "") + '"></label>' +
         '</div>' +
         '<div class="card">' +
           '<p style="font-weight:600;margin-bottom:.4rem">Kompatibilnost (opciono)</p>' +
           '<div style="display:flex;gap:.4rem;flex-wrap:wrap">' +
-            '<input id="sp_make" class="field" type="text" placeholder="Marka" style="flex:1;min-width:100px">' +
-            '<input id="sp_model" class="field" type="text" placeholder="Model" style="flex:1;min-width:100px">' +
-            '<input id="sp_yf" class="field" type="number" placeholder="Od god." style="flex:1;min-width:70px">' +
-            '<input id="sp_yt" class="field" type="number" placeholder="Do god." style="flex:1;min-width:70px">' +
+            '<input id="sp_make" class="field" type="text" placeholder="Marka" style="flex:1;min-width:100px" value="' + esc(qs.make || "") + '">' +
+            '<input id="sp_model" class="field" type="text" placeholder="Model" style="flex:1;min-width:100px" value="' + esc(qs.model || "") + '">' +
+            '<input id="sp_yf" class="field" type="number" placeholder="Od god." style="flex:1;min-width:70px" value="' + esc(qs.year_from || "") + '">' +
+            '<input id="sp_yt" class="field" type="number" placeholder="Do god." style="flex:1;min-width:70px" value="' + esc(qs.year_to || "") + '">' +
           '</div>' +
         '</div>' +
         '<div class="card">' +

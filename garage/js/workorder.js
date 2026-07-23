@@ -343,6 +343,7 @@
           '<input class="it-qty" type="number" inputmode="decimal" placeholder="' + t("wo.item_qty") + '" value="' + esc(it.qty) + '" oninput="WOgo.editItem(' + i + ',\'qty\',this.value)">' +
           '<input class="it-price" type="number" inputmode="decimal" placeholder="' + t("wo.item_price") + '" value="' + esc(it.price) + '" oninput="WOgo.editItem(' + i + ',\'price\',this.value)">' +
           '<select class="it-cur" onchange="WOgo.editItem(' + i + ',\'currency\',this.value)">' + curOpts + '</select>' +
+          (it.kind === "part" && it.name ? '<button class="it-sell" title="Prodaj ovaj deo na Autodelovi" onclick="WOgo.quickSellPart(' + i + ')" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:0 2px;opacity:.7" title="Prodaj deo">📦</button>' : '') +
           '<button class="it-del" onclick="WOgo.removeItem(' + i + ')">✕</button>' +
         '</div>' +
       '</div>';
@@ -592,6 +593,25 @@
       var idx = WO.steps.indexOf("items");
       if (idx >= 0) { WO.step = idx; renderStep(); }
       toast("Veliki servis — dopuni cene i obriši šta nije rađeno.");
+    },
+
+    quickSellPart: function (idx) {
+      var it = WO.draft.items[idx];
+      if (!it) return;
+      var v = byId(WO.vehicles, WO.draft.vehicle_id);
+      window._woQuickSell = {
+        title:       (it.name || "") + (it.brand ? " " + it.brand : ""),
+        part_number: it.model || "",
+        make:        v ? (v.make || "") : "",
+        model:       v ? (v.model || "") : "",
+        year_from:   v ? (v.year || null) : null,
+        year_to:     v ? (v.year || null) : null,
+      };
+      if (window.GT && typeof window.GT.go === "function") {
+        window.GT.go("sell_part");
+      } else {
+        toast("Greška: GT.go nije dostupan.");
+      }
     },
 
     showShareModal: function (url) {
