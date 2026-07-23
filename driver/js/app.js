@@ -1100,10 +1100,11 @@
         '<p style="color:#64748b;font-size:.83rem;padding:0 0 16px">Proceni troškove pre nego što platite.</p>' +
         '<div class="card" style="padding:0;overflow:hidden">' +
           [
-            ['reg_calc',  '📋', 'Kalkulator registracije', 'Tehnički pregled + AO + taksa → RSD procena'],
-            ['fuel_calc', '⛽', 'Potrošnja goriva',        'Koliko litara i dinara potrošiš mesečno/godišnje'],
-            ['cost_calc', '💰', 'Troškovi vlasništva',     'Ukupni godišnji troškovi posedovanja auta'],
-            ['uvoz_calc', '🚢', 'Kalkulator uvoza',        'Carina + PDV + homologacija → ukupan uvozni trošak'],
+            ['reg_calc',   '📋', 'Kalkulator registracije', 'Tehnički pregled + AO + taksa → RSD procena'],
+            ['fuel_calc',  '⛽', 'Potrošnja goriva',        'Koliko litara i dinara potrošiš mesečno/godišnje'],
+            ['cost_calc',  '💰', 'Troškovi vlasništva',     'Ukupni godišnji troškovi posedovanja auta'],
+            ['uvoz_calc',  '🚢', 'Kalkulator uvoza',        'Carina + PDV + homologacija → ukupan uvozni trošak'],
+            ['kasko_calc', '🛡️', 'Procena kasko premije',   'Okvirna godišnja premija kasko osiguranja'],
           ].map(function (row, i, arr) {
             return '<button onclick="DR.go(\'' + row[0] + '\')" style="display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;background:none;border:none;border-bottom:' + (i < arr.length-1 ? '1px solid rgba(255,255,255,.07)' : 'none') + ';cursor:pointer;text-align:left;color:inherit">' +
               '<span style="font-size:1.6rem;line-height:1">' + row[1] + '</span>' +
@@ -1244,6 +1245,36 @@
           '<h2 style="margin:0 0 8px">Procena uvoznih troškova</h2>' +
           '<div id="uc_breakdown"></div>' +
           '<p style="font-size:.75rem;color:#64748b;margin-top:10px">* Carinska vrednost = cena + transport. PDV (20%) se naplaćuje na carinsku vrednost + carinu.<br>Homologacija: individualna (tehnički pregled uvoza). Registracija nije uključena — koristite Kalkulator registracije.<br>Proverite aktuelne stope na <b>carina.rs</b> pre kupovine.</p>' +
+        '</div>';
+    },
+
+    /* ===== KALKULATOR KASKO PREMIJE ===== */
+    kasko_calc: function () {
+      return '<button class="linkback" onclick="DR.go(\'kalkulatori\')" data-i18n="common.back"></button>' +
+        '<h1>🛡️ Procena kasko premije</h1>' +
+        '<p style="color:#64748b;font-size:.83rem;padding:0 0 12px">Okvirna godišnja premija kasko osiguranja. Stvarna cena zavisi od osiguravača, istorije šteta i bonus/malus klase.</p>' +
+        '<div class="card">' +
+          '<label class="field"><span>Vrednost vozila (EUR)</span>' +
+            '<input type="number" id="kk_val" placeholder="npr. 12000" min="500" max="500000" onchange="DR.calcKasko()" oninput="DR.calcKasko()"></label>' +
+          '<label class="field"><span>Godina vozila</span>' +
+            '<input type="number" id="kk_year" placeholder="npr. 2018" min="1990" max="2026" onchange="DR.calcKasko()" oninput="DR.calcKasko()"></label>' +
+          '<label class="field"><span>Istorija šteta</span>' +
+            '<select id="kk_claims" onchange="DR.calcKasko()">' +
+              '<option value="0">Bez šteta (bonus)</option>' +
+              '<option value="1">1 šteta u zadnje 3 god.</option>' +
+              '<option value="2">2+ šteta (malus)</option>' +
+            '</select></label>' +
+          '<label class="field"><span>Franšiza</span>' +
+            '<select id="kk_franchise" onchange="DR.calcKasko()">' +
+              '<option value="0">Bez franšize (skuplje)</option>' +
+              '<option value="150">150 EUR franšiza</option>' +
+              '<option value="300">300 EUR franšiza</option>' +
+            '</select></label>' +
+        '</div>' +
+        '<div id="kk_result" style="display:none" class="card">' +
+          '<h2 style="margin:0 0 8px">Procena kasko premije</h2>' +
+          '<div id="kk_breakdown"></div>' +
+          '<p style="font-size:.75rem;color:#64748b;margin-top:10px">Procena zasnovana na prosečnim stopama srpskog tržišta kasko osiguranja (2026). Zatražite ponude od Generali, Wiener, DDOR, Triglav i Uniqa za tačnu cenu.</p>' +
         '</div>';
     }
   };
@@ -2342,6 +2373,50 @@
           '<tr style="border-top:2px solid #334"><td style="padding:10px 0"><b>UKUPNO uvoz</b></td>' +
             '<td style="text-align:right;font-weight:700;font-size:1.1rem">' + fmt(ukupnoRSD) + ' RSD</td></tr>' +
           '<tr><td style="padding:5px 0;color:#64748b;font-size:.82rem" colspan="2">≈ ' + fmt(ukupnoRSD / kurs) + ' EUR (po kursu ' + kurs + ')</td></tr>' +
+        '</table>';
+      res.style.display = "block";
+    },
+
+    calcKasko: function () {
+      var val       = parseFloat(el("kk_val")       && el("kk_val").value)       || 0;
+      var year      = parseInt(el("kk_year")        && el("kk_year").value, 10)  || 0;
+      var claims    = parseInt(el("kk_claims")      && el("kk_claims").value, 10);
+      var franchise = parseInt(el("kk_franchise")   && el("kk_franchise").value, 10) || 0;
+      var res  = el("kk_result");
+      var brkd = el("kk_breakdown");
+      if (!res || !brkd) return;
+      if (!val || !year) { res.style.display = "none"; return; }
+
+      // Osnovna stopa kasko: ~3.5% vrednosti vozila
+      var baseRate = 0.035;
+      // Korekcija po starosti (starija vozila = jeftinija premija, manja vrednost)
+      var age = 2026 - year;
+      if (age <= 2)       baseRate = 0.040;
+      else if (age <= 5)  baseRate = 0.037;
+      else if (age <= 10) baseRate = 0.033;
+      else                baseRate = 0.028;
+      // Istorija šteta
+      if (claims === 1)   baseRate *= 1.15;
+      else if (claims >= 2) baseRate *= 1.35;
+      // Franšiza popust
+      var franchiseDiscount = franchise === 150 ? 0.12 : franchise === 300 ? 0.22 : 0;
+      var grossPremija = val * baseRate;
+      var popust       = grossPremija * franchiseDiscount;
+      var netPremija   = Math.round(grossPremija - popust);
+      var kurs = 117;
+      var fmt = function (n) { return Math.round(n).toLocaleString("sr"); };
+
+      brkd.innerHTML =
+        '<table style="width:100%;font-size:.9rem;border-collapse:collapse">' +
+          '<tr><td style="padding:5px 0">Vrednost vozila</td>' +
+              '<td style="text-align:right;font-weight:600">' + fmt(val) + ' EUR</td></tr>' +
+          '<tr><td style="padding:5px 0">Osnovna stopa (' + (baseRate*100).toFixed(1) + '%)</td>' +
+              '<td style="text-align:right;font-weight:600">' + fmt(grossPremija) + ' EUR</td></tr>' +
+          (franchise ? '<tr><td style="padding:5px 0">Franšiza popust (' + Math.round(franchiseDiscount*100) + '%)</td>' +
+              '<td style="text-align:right;font-weight:600;color:#22c55e">−' + fmt(popust) + ' EUR</td></tr>' : '') +
+          '<tr style="border-top:1px solid #334"><td style="padding:8px 0"><b>Godišnja premija (okvirno)</b></td>' +
+              '<td style="text-align:right;font-weight:700;font-size:1.1rem">' + fmt(netPremija) + ' EUR</td></tr>' +
+          '<tr><td style="padding:5px 0;color:#64748b;font-size:.82rem" colspan="2">≈ ' + fmt(netPremija * kurs) + ' RSD (po kursu ' + kurs + ')</td></tr>' +
         '</table>';
       res.style.display = "block";
     }
