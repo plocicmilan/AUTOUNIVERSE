@@ -73,6 +73,18 @@ require('./routes/listings')(router);
 require('./routes/messages')(router);
 require('./routes/photos')(router);
 
+router.get('/health', (req, res) => {
+  let dbOk = false;
+  try { require('./db').getDb().prepare('SELECT 1').get(); dbOk = true; } catch {}
+  res.json(dbOk ? 200 : 503, {
+    service:  'autopijaca',
+    status:   dbOk ? 'ok' : 'degraded',
+    uptime_s: Math.floor(process.uptime()),
+    db:       dbOk ? 'ok' : 'error',
+    ts:       new Date().toISOString(),
+  });
+});
+
 // --- Request dispatcher ---
 
 const server = http.createServer(async (req, res) => {
@@ -132,7 +144,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 function isApiPath(p) {
-  return p.startsWith('/listings') || p.startsWith('/messages') || p.startsWith('/photos');
+  return p.startsWith('/listings') || p.startsWith('/messages') || p.startsWith('/photos') || p === '/health';
 }
 
 server.listen(PORT, () => {

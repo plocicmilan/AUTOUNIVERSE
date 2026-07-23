@@ -63,6 +63,18 @@ require('./routes/parts')(router);
 require('./routes/messages')(router);
 require('./routes/photos')(router);
 
+router.get('/health', (req, res) => {
+  let dbOk = false;
+  try { require('./db').getDb().prepare('SELECT 1').get(); dbOk = true; } catch {}
+  res.json(dbOk ? 200 : 503, {
+    service:  'autodelovi',
+    status:   dbOk ? 'ok' : 'degraded',
+    uptime_s: Math.floor(process.uptime()),
+    db:       dbOk ? 'ok' : 'error',
+    ts:       new Date().toISOString(),
+  });
+});
+
 const server = http.createServer(async (req, res) => {
   makeRes(res);
 
@@ -117,7 +129,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 function isApiPath(p) {
-  return p.startsWith('/parts') || p.startsWith('/messages') || p.startsWith('/photos');
+  return p.startsWith('/parts') || p.startsWith('/messages') || p.startsWith('/photos') || p === '/health';
 }
 
 server.listen(PORT, () => {

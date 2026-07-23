@@ -100,6 +100,35 @@ module.exports = function authRoutes(router) {
     }
   });
 
+  /* ─── Sessions management ─── */
+
+  // GET /auth/sessions — lista aktivnih sesija za ulogovanog korisnika
+  router.get('/auth/sessions', (req, res) => {
+    const user = requireAuth(req);
+    const { getDb } = require('../db');
+    const now = new Date().toISOString();
+    const sessions = getDb().prepare(`
+      SELECT id, created_at, expires_at FROM sessions
+      WHERE user_id = ? AND expires_at > ?
+      ORDER BY created_at DESC
+    `).all(user.id, now);
+    // Označi trenutnu sesiju
+    const token = (req.headers['authorization'] || '').replace('Bearer ', '') ||
+      ((req.headers['cookie'] || '').match(/session=([a-f0-9]+)/) || [])[1];
+    res.json(200, sessions.map(s => ({ ...s, current: s.id === token })));
+  });
+
+  // DELETE /auth/sessions/:id — opozovi specifičnu sesiju
+  router.delete('/auth/sessions/:id', (req, res, body, params) => {
+    const user = requireAuth(req);
+    const { getDb } = require('../db');
+    const session = getDb().prepare(`SELECT * FROM sessions WHERE id = ?`).get(params.id);
+    if (!session) { const e = new Error('Sesija ne postoji'); e.status = 404; throw e; }
+    if (session.user_id !== user.id) { const e = new Error('Unauthorized'); e.status = 403; throw e; }
+    getDb().prepare(`DELETE FROM sessions WHERE id = ?`).run(params.id);
+    res.json(200, { ok: true });
+  });
+
   // Verifikuj token i kreiraj sesiju — GET /auth/verify?token=...
   router.get('/auth/verify', (req, res) => {
     const url = new URL(req.url, 'http://localhost');

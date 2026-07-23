@@ -513,6 +513,57 @@ header {
   transition: background 0.15s, border-color 0.15s;
 }
 .btn-feedback:hover { background: var(--s3); border-color: var(--accent); }
+
+/* ── Seller panel ─────────────────────────────────────────── */
+.seller-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
+}
+.seller-box label { display: block; font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+.seller-box input {
+  width: 100%; padding: 10px 13px;
+  background: var(--s2); border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--text); font-family: var(--font-b);
+  font-size: .88rem; outline: none; margin-bottom: 10px;
+  transition: border-color .2s;
+}
+.seller-box input:focus { border-color: var(--accent); }
+.btn-seller-load {
+  width: 100%; padding: 11px;
+  background: var(--accent); color: #fff; border: none;
+  border-radius: 8px; font-family: var(--font-h); font-size: 1rem;
+  font-weight: 700; letter-spacing: .04em; cursor: pointer;
+  transition: background .15s;
+}
+.btn-seller-load:hover { background: var(--accent2); }
+.seller-listing-info {
+  background: var(--s2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
+}
+.seller-listing-info .sli-title {
+  font-family: var(--font-h); font-size: 1.2rem; font-weight: 800;
+  color: #fff; margin-bottom: 4px;
+}
+.seller-listing-info .sli-price {
+  font-family: var(--font-h); font-size: 1.4rem; font-weight: 800;
+  color: var(--accent); margin-bottom: 8px;
+}
+.seller-listing-info .sli-meta { font-size: .82rem; color: var(--muted); }
+.msg-card {
+  background: var(--s2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+}
+.msg-card .mc-from { font-weight: 600; color: #fff; font-size: .92rem; margin-bottom: 3px; }
+.msg-card .mc-phone { font-size: .8rem; color: var(--accent); margin-bottom: 6px; }
+.msg-card .mc-body { font-size: .9rem; color: var(--text); line-height: 1.6; }
+.msg-card .mc-time { font-size: .75rem; color: var(--muted); margin-top: 6px; }
+.seller-status-btn {
+  display: inline-block; padding: 6px 14px;
+  border: none; border-radius: 6px; cursor: pointer;
+  font-family: var(--font-h); font-size: .88rem; font-weight: 700;
+  letter-spacing: .04em; transition: opacity .15s; margin-right: 6px;
+}
+.seller-status-btn:hover { opacity: .8; }
 </style>
 </head>
 <body>
@@ -680,10 +731,36 @@ header {
   </div>
 </div>
 
+<div id="panel-seller" class="tab-panel">
+  <div class="page-container">
+    <div class="page-section">
+      <div class="page-h">Moj oglas — Poruke</div>
+      <div class="seller-box">
+        <label>ID oglasa</label>
+        <input type="number" id="sl-id" placeholder="npr. 12">
+        <label>Vaš seller token</label>
+        <input type="text" id="sl-token" placeholder="32-znakovna šifra iz potvrde">
+        <button class="btn-seller-load" onclick="sellerLoad()">UČITAJ PORUKE</button>
+      </div>
+      <div id="seller-listing-wrap" style="display:none">
+        <div class="seller-listing-info" id="seller-listing-info"></div>
+        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="seller-actions"></div>
+        <div class="page-h" style="font-size:1.1rem">Primljene poruke</div>
+        <div id="seller-msgs"></div>
+      </div>
+      <div id="seller-err" style="display:none;color:#f87171;font-size:.9rem;padding:10px 0"></div>
+    </div>
+  </div>
+</div>
+
 <nav class="tab-bar">
   <button class="tab-btn active" data-tab="main" onclick="switchTab('main')">
     <span class="ti">🏷️</span>
     <span class="tl">Oglasi</span>
+  </button>
+  <button class="tab-btn" data-tab="seller" onclick="switchTab('seller')">
+    <span class="ti">📬</span>
+    <span class="tl">Moj oglas</span>
   </button>
   <button class="tab-btn" data-tab="about" onclick="switchTab('about')">
     <span class="ti">ℹ️</span>
@@ -898,8 +975,80 @@ header {
     currentListingId = null;
   }
 
+  async function sellerLoad() {
+    const id    = document.getElementById('sl-id').value.trim();
+    const token = document.getElementById('sl-token').value.trim();
+    const errEl = document.getElementById('seller-err');
+    const wrap  = document.getElementById('seller-listing-wrap');
+    errEl.style.display = 'none';
+    wrap.style.display  = 'none';
+    if (!id || !token) { errEl.textContent = 'Unesite ID oglasa i seller token.'; errEl.style.display = 'block'; return; }
+    try {
+      const res = await fetch(`${API}/listings/${id}/seller`, { headers: { 'x-seller-token': token } });
+      if (!res.ok) { const e = await res.json(); errEl.textContent = e.error || 'Greška.'; errEl.style.display = 'block'; return; }
+      const l = await res.json();
+      document.getElementById('seller-listing-info').innerHTML = `
+        <div class="sli-title">${fmt(l)}</div>
+        <div class="sli-price">${fmtPrice(l)}</div>
+        <div class="sli-meta">Status: <strong>${l.status}</strong> · Pregledi: <strong>${l.views}</strong>${l.city ? ' · 📍 ' + l.city : ''}</div>`;
+      const acts = document.getElementById('seller-actions');
+      acts.innerHTML = `
+        <button class="seller-status-btn" style="background:#166534;color:#4ade80" onclick="sellerSetStatus('${id}','${token}','active')">Aktiviraj</button>
+        <button class="seller-status-btn" style="background:#78350f;color:#fbbf24" onclick="sellerSetStatus('${id}','${token}','paused')">Pauziraj</button>
+        <button class="seller-status-btn" style="background:#1e3a5f;color:#93c5fd" onclick="sellerSetStatus('${id}','${token}','sold')">Prodato ✓</button>
+        <button class="seller-status-btn" style="background:#3f1010;color:#f87171" onclick="sellerDelete('${id}','${token}')">Obriši oglas</button>`;
+      const msgs = l.messages || [];
+      const msgsEl = document.getElementById('seller-msgs');
+      msgsEl.innerHTML = msgs.length === 0
+        ? '<div class="empty" style="padding:30px 0"><div class="ei">📭</div><p>Još nema poruka.</p></div>'
+        : msgs.map(m => `
+          <div class="msg-card">
+            <div class="mc-from">${m.buyer_name || 'Nepoznat'}</div>
+            ${m.buyer_phone ? `<div class="mc-phone"><a href="tel:${m.buyer_phone}" style="color:var(--accent);text-decoration:none">📞 ${m.buyer_phone}</a></div>` : ''}
+            <div class="mc-body">${m.content.replace(/</g,'&lt;')}</div>
+            <div class="mc-time">${new Date(m.created_at).toLocaleString('sr-RS')}</div>
+          </div>`).join('');
+      wrap.style.display = 'block';
+    } catch(e) {
+      errEl.textContent = 'Greška pri učitavanju.'; errEl.style.display = 'block';
+    }
+  }
+
+  async function sellerSetStatus(id, token, status) {
+    const res = await fetch(`${API}/listings/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-seller-token': token },
+      body: JSON.stringify({ status })
+    });
+    if (res.ok) { sellerLoad(); } else { alert('Greška pri promeni statusa.'); }
+  }
+
+  async function sellerDelete(id, token) {
+    if (!confirm('Da li ste sigurni? Oglas će biti trajno obrisan.')) return;
+    const res = await fetch(`${API}/listings/${id}`, { method: 'DELETE', headers: { 'x-seller-token': token } });
+    if (res.ok) {
+      document.getElementById('seller-listing-wrap').style.display = 'none';
+      document.getElementById('seller-err').textContent = 'Oglas je obrisan.';
+      document.getElementById('seller-err').style.color = 'var(--green)';
+      document.getElementById('seller-err').style.display = 'block';
+    } else { alert('Greška pri brisanju.'); }
+  }
+
+  // Auto-load seller panel from URL params
+  (function () {
+    const sp = new URLSearchParams(location.search);
+    const stok = sp.get('seller_token');
+    const sid  = sp.get('listing') || (location.pathname.match(/\/prodaja\/(\d+)/) || [])[1];
+    if (stok && sid) {
+      history.replaceState({}, '', location.pathname);
+      document.getElementById('sl-id').value    = sid;
+      document.getElementById('sl-token').value = stok;
+      switchTab('seller');
+      sellerLoad();
+    }
+  })();
+
   const match = location.pathname.match(/\/prodaja\/(\d+)/);
-  if (match) openListing(match[1]);
+  if (match && !new URLSearchParams(location.search).get('seller_token')) openListing(match[1]);
   loadListings();
 
   if ('serviceWorker' in navigator) {

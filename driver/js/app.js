@@ -78,9 +78,13 @@
         var urlP = new URL(location.href).searchParams;
         var importToken = urlP.get("hub_import");
         var importHub   = urlP.get("hub");
+        var resetToken  = urlP.get("token");
         if (importToken && importHub) {
           history.replaceState({}, "", location.pathname); // očisti URL
           render("hub_import", { token: importToken, hub_url: importHub });
+        } else if (resetToken) {
+          history.replaceState({}, "", location.pathname);
+          render("hub_reset", { token: resetToken });
         } else {
           render("vehicle");
         }
@@ -977,6 +981,17 @@
         '</div>';
     },
 
+    /* ===== HUB SESSIONS — aktivne sesije ===== */
+    hub_sessions: function () {
+      var html = '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+        '<h1>Aktivne sesije</h1>' +
+        '<div id="sessions_box"><p class="muted" style="text-align:center;padding:20px">Učitavam...</p></div>';
+      setTimeout(function () {
+        DR.loadSessions();
+      }, 0);
+      return html;
+    },
+
     /* ===== BROWSE AUTOPIJACA — pretraga vozila na prodaju ===== */
     browse_autopijaca: function () {
       return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
@@ -1382,6 +1397,7 @@
         '<div id="hubSyncStatus" style="font-size:.82rem;color:#6b7280;margin:.4rem 0"></div>' +
         '<button class="btn btn-primary mt8" onclick="DR.hubSync()">☁️ Sync sada</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'public_ids\')">📋 Javni dosije / QR</button>' +
+        '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_sessions\')">🔐 Aktivne sesije</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.hubLogout()">Odjavi se (' + esc((hubUser && hubUser.email) || '') + ')</button>';
     }
     if (mode === 'register') {
@@ -1855,6 +1871,34 @@
       }).catch(function (e) {
         if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = e.message || "Greška. Token možda istekao."; }
       });
+    },
+
+    loadSessions: function () {
+      if (!window.AUCore || !AUCore.getToken()) { el('sessions_box').innerHTML = '<p class="muted" style="text-align:center;padding:20px">Nisi prijavljen/a na AU Core.</p>'; return; }
+      AUCore.apiCall('GET', '/auth/sessions').then(function (sessions) {
+        if (!sessions.length) { el('sessions_box').innerHTML = '<p class="muted" style="text-align:center;padding:20px">Nema aktivnih sesija.</p>'; return; }
+        el('sessions_box').innerHTML = sessions.map(function (s) {
+          var ts = new Date(s.created_at).toLocaleString('sr-RS');
+          var exp = new Date(s.expires_at).toLocaleString('sr-RS');
+          return '<div class="card" style="margin-bottom:8px">' +
+            '<p style="font-size:.82rem;color:#94a3b8;margin-bottom:4px">Prijavljen: ' + ts + '</p>' +
+            '<p style="font-size:.82rem;color:#94a3b8;margin-bottom:8px">Ističe: ' + exp + '</p>' +
+            (s.current
+              ? '<span style="font-size:.78rem;color:#22c55e;font-weight:600">● Ova sesija</span>'
+              : '<button class="btn btn-secondary" style="font-size:.8rem;color:#f87171" onclick="DR.revokeSession(\'' + s.id + '\')">Odjavi uređaj</button>') +
+          '</div>';
+        }).join('');
+      }).catch(function () {
+        el('sessions_box').innerHTML = '<p class="muted" style="text-align:center;padding:20px">Greška pri učitavanju sesija.</p>';
+      });
+    },
+
+    revokeSession: function (sessionId) {
+      if (!window.AUCore) return;
+      AUCore.apiCall('DELETE', '/auth/sessions/' + sessionId).then(function () {
+        toast("Sesija odjavljena.");
+        DR.loadSessions();
+      }).catch(function () { toast("Greška."); });
     },
 
     showHubRegister: function () {

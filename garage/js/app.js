@@ -558,7 +558,8 @@
         return '<h1 data-i18n="nav.contacts"></h1>' +
           '<input id="conSearch" class="search" placeholder="Pretraži po imenu ili telefonu..." oninput="GT.conSearch()">' +
           '<div id="conList">' + contactListHTML(contacts) + '</div>' +
-          '<button class="btn btn-primary" onclick="GT.go(\'contact_form\')" data-i18n="contacts.add"></button>';
+          '<button class="btn btn-primary" onclick="GT.go(\'contact_form\')" data-i18n="contacts.add"></button>' +
+          '<button class="btn btn-secondary mt8" onclick="GT.exportContactsCSV()">📥 Export kontakti (CSV)</button>';
       });
     },
 
@@ -2074,6 +2075,37 @@
         a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
         toast("Export završen — " + (filtered.length) + " dokumenata.");
+      });
+    },
+
+    exportContactsCSV: function () {
+      Store.all("contacts").then(function (contacts) {
+        if (!contacts.length) { toast("Nema kontakata za export."); return; }
+        contacts.sort(function (a, b) { return a.name.localeCompare(b.name); });
+        var rows = [["Ime", "Telefon", "Email", "Adresa", "PIB", "MB", "Uloge", "Beleške", "Kreiran"]];
+        contacts.forEach(function (c) {
+          rows.push([
+            c.name || "",
+            c.phone || "",
+            c.email || "",
+            c.address || "",
+            c.pib || "",
+            c.mb || "",
+            (c.roles || []).join("; "),
+            c.notes || "",
+            (c.created_at || "").slice(0, 10)
+          ]);
+        });
+        var csv = rows.map(function (r) {
+          return r.map(function (cell) { return '"' + String(cell || "").replace(/"/g, '""') + '"'; }).join(",");
+        }).join("\r\n");
+        var blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "garage-kontakti-" + new Date().toISOString().slice(0, 10) + ".csv";
+        document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+        toast("Export završen — " + contacts.length + " kontakata.");
       });
     },
 
