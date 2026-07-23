@@ -316,7 +316,7 @@
             '</div>' +
 
             '<button class="btn btn-primary" onclick="DR.addEvent(\'' + esc(vid) + '\',false)" data-i18n="d.add_event"></button>' +
-            '<button class="btn btn-secondary mt8" onclick="DR.go(\'reg_calc\')" style="background:#1e3a5f">🧮 Kalkulator registracije</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'kalkulatori\')" style="background:#1e3a5f">🧮 Kalkulatori</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vid) + '\',true)" data-i18n="d.dig_drawer"></button>' +
             (moduleUnlocked("pdf_dossier")
@@ -970,9 +970,32 @@
       });
     },
 
+    /* ===== KALKULATORI HUB ===== */
+    kalkulatori: function () {
+      return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+        '<h1>🧮 Kalkulatori</h1>' +
+        '<p style="color:#64748b;font-size:.83rem;padding:0 0 16px">Proceni troškove pre nego što platite.</p>' +
+        '<div class="card" style="padding:0;overflow:hidden">' +
+          [
+            ['reg_calc',  '📋', 'Kalkulator registracije', 'Tehnički pregled + AO + taksa → RSD procena'],
+            ['fuel_calc', '⛽', 'Potrošnja goriva',        'Koliko litara i dinara potrošiš mesečno/godišnje'],
+            ['cost_calc', '💰', 'Troškovi vlasništva',     'Ukupni godišnji troškovi posedovanja auta'],
+          ].map(function (row, i, arr) {
+            return '<button onclick="DR.go(\'' + row[0] + '\')" style="display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;background:none;border:none;border-bottom:' + (i < arr.length-1 ? '1px solid rgba(255,255,255,.07)' : 'none') + ';cursor:pointer;text-align:left;color:inherit">' +
+              '<span style="font-size:1.6rem;line-height:1">' + row[1] + '</span>' +
+              '<div>' +
+                '<div style="font-weight:600;font-size:.95rem">' + row[2] + '</div>' +
+                '<div style="color:#64748b;font-size:.8rem;margin-top:2px">' + row[3] + '</div>' +
+              '</div>' +
+              '<span style="margin-left:auto;color:#64748b">›</span>' +
+            '</button>';
+          }).join("") +
+        '</div>';
+    },
+
     /* ===== KALKULATOR REGISTRACIJE ===== */
     reg_calc: function () {
-      return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+      return '<button class="linkback" onclick="DR.go(\'kalkulatori\')" data-i18n="common.back"></button>' +
         '<h1>🧮 Kalkulator registracije</h1>' +
         '<p style="color:#64748b;font-size:.83rem;padding:0 0 12px">Procena ukupnih troškova registracije (tehnički pregled + osiguranje + taksa). Tačna vrednost zavisi od osiguravajuće kuće i varijabilnih taksi — ovo je okviran iznos.</p>' +
         '<div class="card">' +
@@ -1001,6 +1024,65 @@
           '<h2 style="margin:0 0 8px">Procena troškova</h2>' +
           '<div id="rc_breakdown"></div>' +
           '<p style="font-size:.75rem;color:#64748b;margin-top:8px">* Osiguranje: AO minimum za M1. Tehnički pregled: JKP Putevi Srbije. Taksa: MUP republička taksa.<br>Proverite aktuelne cene na <b>osiguranik.com</b> pre plaćanja.</p>' +
+        '</div>';
+    },
+
+    /* ===== KALKULATOR POTROŠNJE GORIVA ===== */
+    fuel_calc: function () {
+      return '<button class="linkback" onclick="DR.go(\'kalkulatori\')" data-i18n="common.back"></button>' +
+        '<h1>⛽ Potrošnja goriva</h1>' +
+        '<p style="color:#64748b;font-size:.83rem;padding:0 0 12px">Koliko litara i dinara potrošiš na mesečnom ili godišnjem nivou.</p>' +
+        '<div class="card">' +
+          '<label class="field"><span>Prosečna potrošnja (L/100km)</span>' +
+            '<input type="number" id="fc_cons" placeholder="npr. 7.5" min="1" max="30" step="0.1" onchange="DR.calcFuel()" oninput="DR.calcFuel()">' +
+          '</label>' +
+          '<label class="field"><span>Mesečna kilometraža (km)</span>' +
+            '<input type="number" id="fc_km" placeholder="npr. 1500" min="1" max="50000" onchange="DR.calcFuel()" oninput="DR.calcFuel()">' +
+          '</label>' +
+          '<label class="field"><span>Cena goriva (RSD/L)</span>' +
+            '<input type="number" id="fc_price" placeholder="npr. 185" min="50" max="500" onchange="DR.calcFuel()" oninput="DR.calcFuel()">' +
+          '</label>' +
+        '</div>' +
+        '<div id="fc_result" style="display:none" class="card">' +
+          '<h2 style="margin:0 0 8px">Procena potrošnje</h2>' +
+          '<div id="fc_breakdown"></div>' +
+        '</div>';
+    },
+
+    /* ===== KALKULATOR TROŠKOVA VLASNIŠTVA ===== */
+    cost_calc: function () {
+      return '<button class="linkback" onclick="DR.go(\'kalkulatori\')" data-i18n="common.back"></button>' +
+        '<h1>💰 Troškovi vlasništva</h1>' +
+        '<p style="color:#64748b;font-size:.83rem;padding:0 0 12px">Ukupni godišnji troškovi posedovanja — gorivo, osiguranje, registracija, servis, gume.</p>' +
+        '<div class="card">' +
+          '<label class="field"><span>Godišnja kilometraža (km)</span>' +
+            '<input type="number" id="cc_km" placeholder="npr. 15000" min="1000" max="200000" onchange="DR.calcCost()" oninput="DR.calcCost()">' +
+          '</label>' +
+          '<label class="field"><span>Potrošnja (L/100km)</span>' +
+            '<input type="number" id="cc_cons" placeholder="npr. 7.5" min="1" max="30" step="0.1" onchange="DR.calcCost()" oninput="DR.calcCost()">' +
+          '</label>' +
+          '<label class="field"><span>Cena goriva (RSD/L)</span>' +
+            '<input type="number" id="cc_gprice" placeholder="npr. 185" min="50" max="500" onchange="DR.calcCost()" oninput="DR.calcCost()">' +
+          '</label>' +
+        '</div>' +
+        '<div class="card">' +
+          '<p style="font-weight:600;margin-bottom:.6rem">Godišnji fiksni troškovi</p>' +
+          '<label class="field"><span>Registracija (RSD) — iz kalkulatora registracije</span>' +
+            '<input type="number" id="cc_reg" placeholder="npr. 35000" onchange="DR.calcCost()" oninput="DR.calcCost()">' +
+          '</label>' +
+          '<label class="field"><span>Servis (RSD/god) — 1-2 servisa + ulje</span>' +
+            '<input type="number" id="cc_serv" placeholder="npr. 20000" onchange="DR.calcCost()" oninput="DR.calcCost()">' +
+          '</label>' +
+          '<label class="field"><span>Gume (RSD/god) — sezonska zamena</span>' +
+            '<input type="number" id="cc_tires" placeholder="npr. 10000" onchange="DR.calcCost()" oninput="DR.calcCost()">' +
+          '</label>' +
+          '<label class="field"><span>Parking/putarine (RSD/mes)</span>' +
+            '<input type="number" id="cc_park" placeholder="npr. 0" onchange="DR.calcCost()" oninput="DR.calcCost()">' +
+          '</label>' +
+        '</div>' +
+        '<div id="cc_result" style="display:none" class="card">' +
+          '<h2 style="margin:0 0 8px">Godišnji troškovi</h2>' +
+          '<div id="cc_breakdown"></div>' +
         '</div>';
     }
   };
@@ -1968,6 +2050,76 @@
               '<td style="text-align:right;font-weight:600">' + taksa.toLocaleString("sr") + ' RSD</td></tr>' +
           '<tr style="border-top:1px solid #334"><td style="padding:8px 0"><b>UKUPNO (okvirno)</b></td>' +
               '<td style="text-align:right;font-weight:700;font-size:1.1rem">' + total.toLocaleString("sr") + ' RSD</td></tr>' +
+        '</table>';
+      res.style.display = "block";
+    },
+
+    /* ----- Kalkulator potrošnje goriva ----- */
+    calcFuel: function () {
+      var cons  = parseFloat(el("fc_cons")  && el("fc_cons").value)  || 0;
+      var km    = parseFloat(el("fc_km")    && el("fc_km").value)    || 0;
+      var price = parseFloat(el("fc_price") && el("fc_price").value) || 0;
+      var res   = el("fc_result");
+      var brkd  = el("fc_breakdown");
+      if (!res || !brkd) return;
+      if (!cons || !km || !price) { res.style.display = "none"; return; }
+
+      var litresMes  = (cons / 100) * km;
+      var rsdMes     = litresMes * price;
+      var litresGod  = litresMes * 12;
+      var rsdGod     = rsdMes * 12;
+
+      brkd.innerHTML =
+        '<table style="width:100%;font-size:.9rem;border-collapse:collapse">' +
+          '<tr><td style="padding:6px 0">Mesečno — litara</td>' +
+              '<td style="text-align:right;font-weight:600">' + litresMes.toFixed(1) + ' L</td></tr>' +
+          '<tr><td style="padding:6px 0">Mesečno — troškovi</td>' +
+              '<td style="text-align:right;font-weight:600">' + Math.round(rsdMes).toLocaleString("sr") + ' RSD</td></tr>' +
+          '<tr style="border-top:1px solid #334"><td style="padding:8px 0">Godišnje — litara</td>' +
+              '<td style="text-align:right;font-weight:600">' + Math.round(litresGod) + ' L</td></tr>' +
+          '<tr><td style="padding:6px 0"><b>Godišnje — troškovi</b></td>' +
+              '<td style="text-align:right;font-weight:700;font-size:1.05rem">' + Math.round(rsdGod).toLocaleString("sr") + ' RSD</td></tr>' +
+        '</table>';
+      res.style.display = "block";
+    },
+
+    /* ----- Kalkulator troškova vlasništva ----- */
+    calcCost: function () {
+      var km     = parseFloat(el("cc_km")     && el("cc_km").value)     || 0;
+      var cons   = parseFloat(el("cc_cons")   && el("cc_cons").value)   || 0;
+      var gprice = parseFloat(el("cc_gprice") && el("cc_gprice").value) || 0;
+      var reg    = parseFloat(el("cc_reg")    && el("cc_reg").value)    || 0;
+      var serv   = parseFloat(el("cc_serv")   && el("cc_serv").value)   || 0;
+      var tires  = parseFloat(el("cc_tires")  && el("cc_tires").value)  || 0;
+      var park   = parseFloat(el("cc_park")   && el("cc_park").value)   || 0;
+      var res    = el("cc_result");
+      var brkd   = el("cc_breakdown");
+      if (!res || !brkd) return;
+      if (!km && !reg && !serv) { res.style.display = "none"; return; }
+
+      var gorivo    = km > 0 && cons > 0 && gprice > 0 ? Math.round((cons / 100) * km * gprice) : 0;
+      var parking   = Math.round(park * 12);
+      var total     = gorivo + reg + serv + tires + parking;
+      var perMonth  = Math.round(total / 12);
+      var perKm     = km > 0 ? (total / km).toFixed(1) : "—";
+
+      var row = function (label, val) {
+        return val ? '<tr><td style="padding:6px 0">' + label + '</td><td style="text-align:right;font-weight:600">' + Math.round(val).toLocaleString("sr") + ' RSD</td></tr>' : '';
+      };
+
+      brkd.innerHTML =
+        '<table style="width:100%;font-size:.9rem;border-collapse:collapse">' +
+          row("Gorivo", gorivo) +
+          row("Registracija", reg) +
+          row("Servis + održavanje", serv) +
+          row("Gume", tires) +
+          row("Parking / putarine", parking) +
+          '<tr style="border-top:1px solid #334"><td style="padding:8px 0"><b>UKUPNO godišnje</b></td>' +
+              '<td style="text-align:right;font-weight:700;font-size:1.1rem">' + total.toLocaleString("sr") + ' RSD</td></tr>' +
+          '<tr><td style="padding:6px 0;color:#64748b">Mesečno</td>' +
+              '<td style="text-align:right;color:#64748b">' + perMonth.toLocaleString("sr") + ' RSD/mes</td></tr>' +
+          (km > 0 ? '<tr><td style="padding:6px 0;color:#64748b">Po kilometru</td>' +
+              '<td style="text-align:right;color:#64748b">' + perKm + ' RSD/km</td></tr>' : '') +
         '</table>';
       res.style.display = "block";
     }
