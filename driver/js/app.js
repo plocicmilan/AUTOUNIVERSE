@@ -342,7 +342,8 @@
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'sell_vehicle\',{id:\'' + esc(vid) + '\'})" data-i18n="d.sell_vehicle"></button>'
               : '') +
             (v.trade_mode
-              ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'publish_listing\',{id:\'' + esc(vid) + '\'})" data-i18n="d.publish_listing"></button>'
+              ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'publish_listing\',{id:\'' + esc(vid) + '\'})" data-i18n="d.publish_listing"></button>' +
+                '<button class="btn btn-secondary mt8" onclick="DR.go(\'trade_summary\')" style="background:#1a2a1a">📊 Trade sažetak</button>'
               : '') +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'browse_autopijaca\')">🔍 Pretraži vozila na prodaju</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'browse_autodelovi\')">🔧 Pretraži auto delove</button>' +
@@ -1032,6 +1033,95 @@
           '<button class="btn btn-primary" onclick="DR.adSearch()">Pretraži</button>' +
         '</div>' +
         '<div id="ad_results" style="margin-top:8px"></div>';
+    },
+
+    /* ===== TRADE SUMMARY — godišnji sažetak preprodaje ===== */
+    trade_summary: function () {
+      return Store.all("vehicles").then(function (vehicles) {
+        var tradeVehs = vehicles.filter(function (v) { return v.trade_mode; });
+        if (!tradeVehs.length) {
+          return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+            '<h1>📊 Trade Sažetak</h1>' +
+            '<div class="card"><p class="empty">Nema vozila u trade modu. Uključi trade mod na vozilu.</p></div>';
+        }
+        var now = new Date();
+        var years = [];
+        tradeVehs.forEach(function (v) {
+          if (v.trade && v.trade.sale && v.trade.sale.date) {
+            var y = v.trade.sale.date.slice(0, 4);
+            if (years.indexOf(y) === -1) years.push(y);
+          }
+        });
+        if (!years.length) years.push(String(now.getFullYear()));
+        years.sort().reverse();
+
+        var activeYear = App._tradeSummaryYear || years[0];
+        App._tradeSummaryYear = activeYear;
+
+        var sold     = tradeVehs.filter(function (v) { return v.status === 'sold' && v.trade && v.trade.sale && v.trade.sale.date && v.trade.sale.date.startsWith(activeYear); });
+        var active   = tradeVehs.filter(function (v) { return v.status !== 'sold' && v.status !== 'archived' && v.status !== 'totaled'; });
+        var totalProfit = 0;
+        var profitData  = [];
+
+        sold.forEach(function (v) {
+          var buyPrice  = (v.trade && v.trade.purchase && v.trade.purchase.price) || 0;
+          var sellPrice = (v.trade && v.trade.sale && v.trade.sale.price) || 0;
+          var cur = (v.trade && v.trade.sale && v.trade.sale.currency) || 'EUR';
+          var days = 0;
+          if (v.trade.purchase && v.trade.purchase.date && v.trade.sale.date) {
+            days = Math.round((new Date(v.trade.sale.date) - new Date(v.trade.purchase.date)) / 86400000);
+          }
+          var profit = sellPrice - buyPrice;
+          totalProfit += profit;
+          profitData.push({ v: v, profit: profit, cur: cur, days: days });
+        });
+
+        var best  = profitData.sort(function (a, b) { return b.profit - a.profit; })[0];
+        var worst = profitData.length > 1 ? profitData[profitData.length - 1] : null;
+
+        var yearTabs = years.map(function (y) {
+          return '<button class="chip' + (y === activeYear ? ' active' : '') + '" onclick="App._tradeSummaryYear=\'' + y + '\';DR.go(\'trade_summary\')">' + y + '</button>';
+        }).join('');
+
+        var soldRows = profitData.map(function (d) {
+          var sign = d.profit >= 0 ? '+' : '';
+          var color = d.profit >= 0 ? '#10b981' : '#ef4444';
+          return '<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px">' +
+            '<div>' +
+              '<b style="font-size:.92rem">' + esc(d.v.make + ' ' + d.v.model + (d.v.year ? ' ' + d.v.year : '')) + '</b>' +
+              '<div class="muted" style="font-size:.78rem">' + (d.days ? d.days + ' dana' : '') + '</div>' +
+            '</div>' +
+            '<b style="color:' + color + '">' + sign + d.profit.toLocaleString('sr-RS') + ' ' + d.cur + '</b>' +
+          '</div>';
+        }).join('') || '<div class="card"><p class="empty">Nema prodatih vozila u ' + activeYear + '.</p></div>';
+
+        var activeCards = active.map(function (v) {
+          var buyPrice  = (v.trade && v.trade.purchase && v.trade.purchase.price) || 0;
+          var cur = (v.trade && v.trade.purchase && v.trade.purchase.currency) || 'EUR';
+          return '<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px">' +
+            '<div>' +
+              '<b style="font-size:.92rem">' + esc(v.make + ' ' + v.model + (v.year ? ' ' + v.year : '')) + '</b>' +
+              '<div class="muted" style="font-size:.78rem">Status: ' + (v.status || 'aktivno') + '</div>' +
+            '</div>' +
+            (buyPrice ? '<span class="muted">' + buyPrice.toLocaleString('sr-RS') + ' ' + cur + '</span>' : '') +
+          '</div>';
+        }).join('') || '<p class="muted">Nema aktivnih vozila u obrtu.</p>';
+
+        var sign = totalProfit >= 0 ? '+' : '';
+        var profitColor = totalProfit >= 0 ? '#10b981' : '#ef4444';
+
+        return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+          '<h1>📊 Trade Sažetak</h1>' +
+          '<div class="vehswitch">' + yearTabs + '</div>' +
+          '<div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center">' +
+            '<div><div style="font-size:1.6rem;font-weight:700;color:' + profitColor + '">' + sign + totalProfit.toLocaleString('sr-RS') + '</div><div class="muted" style="font-size:.75rem">Profit ' + activeYear + '</div></div>' +
+            '<div><div style="font-size:1.6rem;font-weight:700">' + sold.length + '</div><div class="muted" style="font-size:.75rem">Prodato vozila</div></div>' +
+            '<div><div style="font-size:1.6rem;font-weight:700">' + active.length + '</div><div class="muted" style="font-size:.75rem">U obrtu</div></div>' +
+            (best ? '<div><div style="font-size:1rem;font-weight:600;color:#10b981">' + esc(best.v.make + ' ' + best.v.model) + '</div><div class="muted" style="font-size:.75rem">Najuspešnije</div></div>' : '<div></div>') +
+          '</div>' +
+          '<h2 style="margin:.8rem 0 .5rem;font-size:.95rem">Prodato u ' + activeYear + '</h2>' + soldRows +
+          (active.length ? '<h2 style="margin:.8rem 0 .5rem;font-size:.95rem">Aktivno u obrtu</h2>' + activeCards : '');
+      });
     },
 
     /* ===== HUB IMPORT — vlasnik dobija link od mehaničara ===== */

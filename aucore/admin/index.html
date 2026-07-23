@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AU Core Admin</title>
+<style>
+  :root { --bg: #0f1117; --card: #1a1d27; --accent: #3b82f6; --text: #e2e8f0; --muted: #64748b; --border: #2d3142; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100vh; }
+  header { background: var(--card); border-bottom: 1px solid var(--border); padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 1rem; font-weight: 600; }
+  .tag { background: var(--accent); color: #fff; font-size: .7rem; padding: 2px 8px; border-radius: 999px; }
+  main { padding: 1.5rem; max-width: 960px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; }
+  .stat .n { font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .stat .lbl { font-size: .8rem; color: var(--muted); margin-top: .25rem; }
+  section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }
+  h2 { font-size: .9rem; color: var(--muted); margin-bottom: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+  table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  td, th { padding: .5rem .6rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; }
+  .login { max-width: 320px; margin: 10vh auto; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 2rem; }
+  .login h2 { text-align: center; margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text); }
+  input { width: 100%; padding: .65rem .8rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); margin-bottom: .75rem; font-size: .9rem; }
+  button { width: 100%; padding: .7rem; background: var(--accent); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: .9rem; font-weight: 600; }
+  button:hover { opacity: .9; }
+  .err { color: #f87171; font-size: .82rem; margin-bottom: .5rem; }
+  #refresh { float: right; background: none; border: 1px solid var(--border); color: var(--muted); padding: .3rem .8rem; font-size: .78rem; border-radius: 5px; width: auto; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const BASE = '';
+
+async function api(method, path, body) {
+  const res = await fetch(BASE + path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return { status: res.status, data: await res.json().catch(() => ({})) };
+}
+
+async function renderLogin() {
+  document.getElementById('app').innerHTML = `
+    <div class="login">
+      <h2>AU Core Admin</h2>
+      <div class="err" id="err"></div>
+      <input id="email" type="email" placeholder="Email" />
+      <input id="pass" type="password" placeholder="Lozinka" />
+      <button onclick="doLogin()">Prijavi se</button>
+    </div>`;
+}
+
+async function doLogin() {
+  const email = document.getElementById('email').value;
+  const pass  = document.getElementById('pass').value;
+  const { status, data } = await api('POST', '/auth/login', { email, password: pass });
+  if (status !== 200) { document.getElementById('err').textContent = data.error || 'Greška'; return; }
+  renderDashboard();
+}
+
+async function renderDashboard() {
+  const { status, data } = await api('GET', '/admin/briefing');
+  if (status === 401 || status === 403) { renderLogin(); return; }
+
+  document.getElementById('app').innerHTML = `
+    <header>
+      <h1>AU Core <span class="tag">Admin</span></h1>
+      <div style="display:flex;align-items:center;gap:12px">
+        <a href="/admin/about.html" style="color:#94a3b8;font-size:.85rem;text-decoration:none">O nama</a>
+        <button id="refresh" onclick="renderDashboard()">↻ Refresh</button>
+      </div>
+    </header>
+    <main>
+      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.8rem">
+        v${data.version || '—'} · uptime ${data.uptime_s ? Math.floor(data.uptime_s/3600)+'h '+(Math.floor(data.uptime_s/60)%60)+'min' : '—'} · ${data.as_of ? data.as_of.slice(0,16).replace('T',' ') : ''}
+      </div>
+      <div class="grid">
+        <div class="stat"><div class="n">${data.stats.users}</div><div class="lbl">Korisnika</div></div>
+        <div class="stat" style="${data.stats.pending > 0 ? 'border-color:#f59e0b' : ''}">
+          <div class="n" style="${data.stats.pending > 0 ? 'color:#f59e0b' : ''}">${data.stats.pending}</div>
+          <div class="lbl">Čeka odobrenje</div>
+        </div>
+        <div class="stat"><div class="n">${data.stats.vehicles}</div><div class="lbl">Vozila</div></div>
+        <div class="stat"><div class="n">${data.stats.grants}</div><div class="lbl">Aktivnih dozvola</div></div>
+        <div class="stat"><div class="n">${data.stats.events}</div><div class="lbl">Događaja</div></div>
+      </div>
+
+      ${data.pending_users.length > 0 ? `
+      <section style="border-color:#f59e0b">
+        <h2 style="color:#f59e0b">Čekaju odobrenje (${data.pending_users.length})</h2>
+        <table>
+          <tr><th>Email</th><th>Ime</th><th>Registrovan</th><th></th></tr>
+          ${data.pending_users.map(u => `
+            <tr>
+              <td>${u.email}</td>
+              <td>${u.name}</td>
+              <td>${u.created_at.slice(0,16).replace('T',' ')}</td>
+              <td style="display:flex;gap:.4rem">
+                <button onclick="approveUser(${u.id})" style="background:#10b981;color:#fff;border:none;padding:.3rem .7rem;border-radius:4px;cursor:pointer">✓ Odobri</button>
+                <button onclick="rejectUser(${u.id})" style="background:#ef4444;color:#fff;border:none;padding:.3rem .7rem;border-radius:4px;cursor:pointer">✕ Odbij</button>
+              </td>
+            </tr>`).join('')}
+        </table>
+      </section>` : ''}
+
+      <section>
+        <h2>Aktivne dozvole</h2>
+        <table>
+          <tr><th>Grantor</th><th>Grantee</th><th>Vozilo</th><th>Uloga</th><th>Ističe</th></tr>
+          ${data.active_grants.map(g => `
+            <tr>
+              <td>${g.grantor_email}</td>
+              <td>${g.grantee_email}</td>
+              <td>${g.make} ${g.model}</td>
+              <td>${g.role}</td>
+              <td>${g.expires_at ? g.expires_at.slice(0,10) : '∞'}</td>
+            </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">Nema aktivnih dozvola</td></tr>'}
+        </table>
+      </section>
+
+      <section>
+        <h2>Status servera <button onclick="loadHealth()" style="margin-left:.5rem;width:auto;padding:.3rem .8rem;background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;font-size:.78rem;cursor:pointer">↻</button></h2>
+        <div id="healthGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem;margin-top:.5rem">
+          <div style="color:var(--muted);font-size:.85rem">Učitavam...</div>
+        </div>
+      </section>
+
+      <section id="usersSection">
+        <h2>Svi korisnici <button id="refresh" onclick="loadUsers()" style="margin-left:.5rem">↻</button></h2>
+        <table id="usersTable"><tr><td style="color:var(--muted)">Učitavam...</td></tr></table>
+      </section>
+
+      <section>
+        <h2>Pošalji obaveštenje</h2>
+        <div id="notifForm" style="display:grid;gap:.6rem;max-width:520px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+            <div>
+              <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.25rem">Primalac</label>
+              <select id="nfUser" style="width:100%;padding:.5rem .6rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem">
+                <option value="">Učitavam...</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.25rem">Kategorija</label>
+              <select id="nfCat" style="width:100%;padding:.5rem .6rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem">
+                <option value="service_update">service_update</option>
+                <option value="system">system</option>
+                <option value="promo">promo</option>
+                <option value="reminder">reminder</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.25rem">Naslov</label>
+            <input id="nfTitle" type="text" placeholder="Naslov obaveštenja" style="width:100%;padding:.5rem .6rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;margin:0">
+          </div>
+          <div>
+            <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.25rem">Poruka</label>
+            <textarea id="nfBody" rows="2" placeholder="Tekst poruke..." style="width:100%;padding:.5rem .6rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;resize:vertical;font-family:inherit"></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <button onclick="sendNotif()" style="width:auto;padding:.5rem 1.2rem;font-size:.85rem">Pošalji</button>
+            <span id="nfStatus" style="font-size:.82rem;color:var(--muted)"></span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Istorija notifikacija <button id="refresh" onclick="loadNotifs()" style="margin-left:.5rem">↻</button></h2>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+          <select id="notifUserFilter" style="padding:.4rem .6rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.82rem">
+            <option value="">Svi korisnici</option>
+          </select>
+          <button onclick="loadNotifs()" style="width:auto;padding:.4rem .9rem;font-size:.82rem">Prikaži</button>
+        </div>
+        <table id="notifTable">
+          <tr><td style="color:var(--muted)">Klikni Prikaži...</td></tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Audit log <button id="refresh" onclick="loadAudit(0)" style="margin-left:.5rem">↻</button></h2>
+        <table id="auditTable">
+          <tr><td style="color:var(--muted)">Učitavam...</td></tr>
+        </table>
+        <div style="text-align:center;margin-top:.6rem">
+          <button id="auditMore" onclick="loadAuditMore()" style="display:none;width:auto;padding:.4rem 1.2rem;background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;cursor:pointer;font-size:.82rem">Učitaj još</button>
+        </div>
+      </section>
+
+      <p style="text-align:center;color:var(--muted);font-size:.75rem;margin-top:1rem">as_of: ${data.as_of.replace('T',' ').slice(0,19)}</p>
+    </main>`;
+  loadUsers();
+  loadAudit(0);
+  loadHealth();
+}
+
+async function loadHealth() {
+  const grid = document.getElementById('healthGrid');
+  if (!grid) return;
+  const servers = [
+    { name: 'AU Core',    url: '/health' },
+    { name: 'Autopijaca', url: 'http://localhost:3001/health' },
+    { name: 'Autodelovi', url: 'http://localhost:3002/health' },
+  ];
+  grid.innerHTML = '<div style="color:var(--muted);font-size:.85rem">Proveravam...</div>';
+  const cards = await Promise.all(servers.map(async s => {
+    try {
+      const r = await fetch(s.url, { signal: AbortSignal.timeout(3000) });
+      const d = await r.json();
+      const ok = d.status === 'ok';
+      const up = d.uptime_s != null ? (Math.floor(d.uptime_s / 3600) + 'h ' + (Math.floor(d.uptime_s / 60) % 60) + 'min') : '—';
+      return `<div style="background:${ok ? 'rgba(16,185,129,.08)' : 'rgba(239,68,68,.08)'};border:1px solid ${ok ? '#10b981' : '#ef4444'};border-radius:8px;padding:.9rem 1rem">
+        <div style="font-size:.78rem;font-weight:600;color:${ok ? '#10b981' : '#ef4444'};margin-bottom:.35rem">${ok ? '● OK' : '● DEGRADED'}</div>
+        <div style="font-weight:600;font-size:.92rem">${s.name}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">uptime: ${up}</div>
+        <div style="font-size:.75rem;color:var(--muted)">db: ${d.db || '—'}</div>
+      </div>`;
+    } catch {
+      return `<div style="background:rgba(100,116,139,.08);border:1px solid #475569;border-radius:8px;padding:.9rem 1rem">
+        <div style="font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:.35rem">● OFFLINE</div>
+        <div style="font-weight:600;font-size:.92rem">${s.name}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">Nije dostupan</div>
+      </div>`;
+    }
+  }));
+  grid.innerHTML = cards.join('');
+}
+
+let _auditOffset = 0;
+let _auditTotal  = 0;
+
+async function loadAudit(offset) {
+  _auditOffset = offset;
+  const tbl = document.getElementById('auditTable');
+  if (!tbl) return;
+  const { status, data } = await api('GET', `/admin/audit?limit=50&offset=${offset}`);
+  if (status !== 200) { tbl.innerHTML = '<tr><td style="color:#f87171">Greška</td></tr>'; return; }
+  _auditTotal = data.total;
+  const rows = data.rows;
+  const header = '<tr><th>Vreme</th><th>Korisnik</th><th>Akcija</th><th>Detalj</th></tr>';
+  const body = rows.map(a => `
+    <tr>
+      <td style="white-space:nowrap">${a.created_at.slice(0,16).replace('T',' ')}</td>
+      <td style="color:var(--muted);font-size:.78rem">${a.user_email || '—'}</td>
+      <td style="font-size:.82rem">${a.action}</td>
+      <td style="color:var(--muted);font-size:.78rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.detail ? JSON.stringify(JSON.parse(a.detail || '{}')).slice(0,60) : ''}</td>
+    </tr>`).join('') || '<tr><td colspan="4" style="color:var(--muted)">Nema zapisa</td></tr>';
+  tbl.innerHTML = header + body;
+  const moreBtn = document.getElementById('auditMore');
+  if (moreBtn) moreBtn.style.display = (_auditOffset + rows.length < _auditTotal) ? 'inline-block' : 'none';
+}
+
+async function loadAuditMore() {
+  const tbl = document.getElementById('auditTable');
+  if (!tbl) return;
+  const newOffset = _auditOffset + 50;
+  const { status, data } = await api('GET', `/admin/audit?limit=50&offset=${newOffset}`);
+  if (status !== 200) return;
+  _auditOffset = newOffset;
+  const rows = data.rows;
+  const body = rows.map(a => `
+    <tr>
+      <td style="white-space:nowrap">${a.created_at.slice(0,16).replace('T',' ')}</td>
+      <td style="color:var(--muted);font-size:.78rem">${a.user_email || '—'}</td>
+      <td style="font-size:.82rem">${a.action}</td>
+      <td style="color:var(--muted);font-size:.78rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.detail ? JSON.stringify(JSON.parse(a.detail || '{}')).slice(0,60) : ''}</td>
+    </tr>`).join('');
+  tbl.insertAdjacentHTML('beforeend', body);
+  const moreBtn = document.getElementById('auditMore');
+  if (moreBtn) moreBtn.style.display = (_auditOffset + rows.length < _auditTotal) ? 'inline-block' : 'none';
+}
+
+async function loadUsers() {
+  const tbl = document.getElementById('usersTable');
+  if (!tbl) return;
+  const { status, data } = await api('GET', '/admin/users');
+  if (status !== 200) { tbl.innerHTML = '<tr><td style="color:#f87171">Greška pri učitavanju</td></tr>'; return; }
+
+  // Popuni dropdown za slanje notifikacija (samo aktivni)
+  const sel = document.getElementById('nfUser');
+  if (sel) {
+    const active = data.filter(u => u.status === 'active');
+    sel.innerHTML = active.map(u => `<option value="${u.id}">${u.name} (${u.email})</option>`).join('');
+  }
+  // Popuni filter za pregled notifikacija (svi korisnici)
+  const nf = document.getElementById('notifUserFilter');
+  if (nf) {
+    nf.innerHTML = '<option value="">Svi korisnici</option>' +
+      data.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  }
+
+  const statusBadge = s => ({
+    active:   '<span style="color:#10b981">● aktivan</span>',
+    pending:  '<span style="color:#f59e0b">● pending</span>',
+    rejected: '<span style="color:#ef4444">● odbijen</span>',
+  }[s] || s);
+  tbl.innerHTML = `
+    <tr><th>Email</th><th>Ime</th><th>Telefon</th><th>Uloga</th><th>Status</th><th>Drip</th><th>Posl. login</th><th>Registrovan</th><th></th></tr>
+    ${data.map(u => `<tr>
+      <td>${u.email}</td>
+      <td>${u.name}</td>
+      <td style="color:var(--muted);font-size:.78rem">${u.phone || '—'}</td>
+      <td style="color:var(--muted)">${u.role}</td>
+      <td>${statusBadge(u.status)}</td>
+      <td style="color:var(--muted);font-size:.78rem;text-align:center">${u.drip_step != null ? u.drip_step + '/3' : '—'}</td>
+      <td style="color:var(--muted);font-size:.78rem">${u.last_login_at ? u.last_login_at.slice(0,16).replace('T',' ') : '—'}</td>
+      <td style="color:var(--muted);font-size:.78rem">${u.created_at.slice(0,10)}</td>
+      <td style="display:flex;gap:.3rem;flex-wrap:wrap">
+        ${u.status === 'pending' ? `<button onclick="approveUser(${u.id})" style="background:#10b981;color:#fff;border:none;padding:.2rem .5rem;border-radius:4px;cursor:pointer;font-size:.78rem">✓</button>
+          <button onclick="rejectUser(${u.id})" style="background:#ef4444;color:#fff;border:none;padding:.2rem .5rem;border-radius:4px;cursor:pointer;font-size:.78rem">✕</button>` : ''}
+        ${u.status === 'rejected' ? `<button onclick="approveUser(${u.id})" style="background:#3b82f6;color:#fff;border:none;padding:.2rem .5rem;border-radius:4px;cursor:pointer;font-size:.78rem">↺</button>` : ''}
+        <button onclick="notifUser(${u.id},'${u.name.replace(/'/g,'')}')" style="background:#6366f1;color:#fff;border:none;padding:.2rem .5rem;border-radius:4px;cursor:pointer;font-size:.78rem" title="Pošalji notifikaciju">🔔</button>
+      </td>
+    </tr>`).join('')}`;
+}
+
+async function loadNotifs() {
+  const tbl = document.getElementById('notifTable');
+  if (!tbl) return;
+  const uid = document.getElementById('notifUserFilter').value;
+  const url = '/notifications' + (uid ? `?user_id=${uid}&limit=50` : '?limit=50');
+  const { status, data } = await api('GET', '/admin' + url);
+  if (status !== 200) { tbl.innerHTML = '<tr><td style="color:#f87171">Greška</td></tr>'; return; }
+  if (!data.length) { tbl.innerHTML = '<tr><td style="color:var(--muted)">Nema notifikacija</td></tr>'; return; }
+  const readBadge = r => r ? '<span style="color:#10b981">✓</span>' : '<span style="color:#f59e0b">●</span>';
+  tbl.innerHTML = `
+    <tr><th>Primalac</th><th>Kategorija</th><th>Naslov</th><th>Poruka</th><th>Čita</th><th>Vreme</th></tr>
+    ${data.map(n => `<tr>
+      <td style="font-size:.78rem">${n.recipient_name}<br><span style="color:var(--muted)">${n.recipient_email}</span></td>
+      <td style="color:var(--muted);font-size:.78rem">${n.category}</td>
+      <td style="font-size:.82rem">${n.title}</td>
+      <td style="color:var(--muted);font-size:.78rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n.body}</td>
+      <td style="text-align:center">${readBadge(n.read_at)}</td>
+      <td style="color:var(--muted);font-size:.75rem">${n.created_at.slice(0,16).replace('T',' ')}</td>
+    </tr>`).join('')}`;
+}
+
+async function sendNotif() {
+  const uid   = document.getElementById('nfUser').value;
+  const cat   = document.getElementById('nfCat').value;
+  const title = document.getElementById('nfTitle').value.trim();
+  const body  = document.getElementById('nfBody').value.trim();
+  const st    = document.getElementById('nfStatus');
+  if (!uid || !title || !body) { st.style.color = '#f87171'; st.textContent = 'Primalac, naslov i poruka su obavezni'; return; }
+  st.style.color = 'var(--muted)'; st.textContent = 'Šaljem...';
+  const { status, data } = await api('POST', '/notifications', { recipient_user_id: Number(uid), category: cat, title, body });
+  if (status === 201) {
+    st.style.color = '#10b981'; st.textContent = '✓ Poslano (id: ' + data.id + ')';
+    document.getElementById('nfTitle').value = '';
+    document.getElementById('nfBody').value = '';
+  } else {
+    st.style.color = '#f87171'; st.textContent = data.error || 'Greška';
+  }
+}
+
+function notifUser(id, name) {
+  const sel = document.getElementById('nfUser');
+  if (sel) sel.value = String(id);
+  document.getElementById('nfTitle').focus();
+  document.getElementById('nfStatus').textContent = 'Primalac: ' + name;
+  sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function approveUser(id) {
+  const { status, data } = await api('POST', `/admin/users/${id}/approve`);
+  if (status === 200) { renderDashboard(); }
+  else alert(data.error || 'Greška');
+}
+
+async function rejectUser(id) {
+  if (!confirm('Odbiti ovog korisnika?')) return;
+  const { status, data } = await api('POST', `/admin/users/${id}/reject`);
+  if (status === 200) { renderDashboard(); }
+  else alert(data.error || 'Greška');
+}
+
+// Start
+api('GET', '/admin/briefing').then(({ status }) => {
+  if (status === 200) renderDashboard();
+  else renderLogin();
+});
+</script>
+</body>
+</html>

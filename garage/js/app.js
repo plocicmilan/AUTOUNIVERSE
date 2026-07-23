@@ -821,7 +821,8 @@
             '<label class="field"><span>Napomene</span><textarea id="insp_notes" rows="3" placeholder="Opšte napomene..."></textarea></label>' +
           '</div>' +
           '<div id="insp_summary" class="insp-summary"></div>' +
-          '<button class="btn btn-primary" onclick="GT.saveInspection()">Sačuvaj inspekciju</button>';
+          '<button class="btn btn-primary" onclick="GT.saveInspection()">Sačuvaj inspekciju</button>' +
+          '<button class="btn btn-secondary mt8" onclick="GT.exportInspectionPDF()">📄 Export PDF</button>';
       });
     },
 
@@ -2194,6 +2195,74 @@
         toast("Inspekcija sačuvana");
         render("vehicle_card", { id: vehId });
       });
+    },
+
+    exportInspectionPDF: function () {
+      if (!App._inspData || !App._inspData.length) { toast("Nema podataka inspekcije"); return; }
+      var veh = null;
+      var vehId = App._inspVehId || (document.getElementById("insp_vehicle") && document.getElementById("insp_vehicle").value);
+      if (vehId) veh = Store.getAll("vehicles").find(function (v) { return v.id === vehId; });
+
+      var doc = new jspdf.jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      var font = "DejaVu";
+      try { doc.setFont(font); } catch (e) { font = "helvetica"; doc.setFont(font); }
+
+      var pageW = 210, margin = 14, y = 20;
+
+      doc.setFontSize(16);
+      doc.setFont(font, "bold");
+      doc.text("DVI Inspekcija", margin, y); y += 8;
+
+      if (veh) {
+        doc.setFontSize(11);
+        doc.setFont(font, "normal");
+        doc.text((veh.make || "") + " " + (veh.model || "") + (veh.year ? " (" + veh.year + ")" : "") +
+          (veh.license_plate ? " — " + veh.license_plate : ""), margin, y);
+        y += 6;
+      }
+
+      doc.setFontSize(9);
+      doc.setFont(font, "italic");
+      doc.text("Datum: " + new Date().toLocaleDateString("sr-Latn"), margin, y); y += 8;
+
+      var counts = { ok: 0, prati: 0, hitno: 0 };
+      App._inspData.forEach(function (d) { counts[d.status]++; });
+      doc.setFontSize(10);
+      doc.setFont(font, "normal");
+      doc.text("Ukupno: " + counts.ok + " OK  |  " + counts.prati + " Prati  |  " + counts.hitno + " Hitno", margin, y);
+      y += 10;
+
+      INSP_TEMPLATE.forEach(function (grp, si) {
+        var rows = App._inspData.filter(function (d) { return d.si === si; });
+        if (!rows.length) return;
+
+        doc.setFontSize(11);
+        doc.setFont(font, "bold");
+        doc.setFillColor(230, 230, 230);
+        doc.rect(margin, y - 4, pageW - margin * 2, 7, "F");
+        doc.text(grp.s, margin + 2, y); y += 7;
+
+        rows.forEach(function (d) {
+          var icon  = d.status === "ok" ? "✓ OK" : d.status === "prati" ? "! Prati" : "✕ Hitno";
+          var item  = grp.ii[d.ii] || ("Stavka " + d.ii);
+          doc.setFontSize(10);
+          doc.setFont(font, "normal");
+          if (d.status === "hitno")       doc.setTextColor(180, 0, 0);
+          else if (d.status === "prati")  doc.setTextColor(150, 90, 0);
+          else                            doc.setTextColor(0, 120, 0);
+          doc.text(icon, margin + 2, y);
+          doc.setTextColor(0, 0, 0);
+          doc.text(item, margin + 22, y);
+          y += 6;
+          if (y > 270) { doc.addPage(); y = 20; }
+        });
+        y += 3;
+      });
+
+      var make  = veh ? (veh.make  || "vozilo").replace(/\s+/g, "-") : "vozilo";
+      var model = veh ? (veh.model || "").replace(/\s+/g, "-") : "";
+      var date  = new Date().toISOString().slice(0, 10);
+      doc.save("inspekcija-" + make + (model ? "-" + model : "") + "-" + date + ".pdf");
     },
 
     /* ----- Kalkulatori ----- */
