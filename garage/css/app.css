@@ -84,6 +84,7 @@
 /* Servisne kategorije — chip UI */
 .svc-cats { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 .3rem; }
 .chip-sub  { display: flex; flex-wrap: wrap; gap: .35rem; margin: .3rem 0 .2rem; padding-left: .5rem; }
+.chip-label { font-size: .72rem; font-weight: 600; color: var(--c-muted, #6b7280); margin: .6rem 0 .1rem; text-transform: uppercase; letter-spacing: .04em; }
 .chip {
   border: 1.5px solid var(--c-border, #e5e7eb);
   border-radius: 999px;
@@ -108,3 +109,39 @@
 .calc-result { margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--c-border, #e5e7eb); min-height: 1rem; }
 .calc-line { font-size: .9rem; margin: .2rem 0; }
 .calc-line b { color: var(--c-primary, #D5281B); }
+
+/* Nedeljni kalendar */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .4rem 0 .6rem; }
+.cal-nav span { font-size: .9rem; font-weight: 600; text-align: center; flex: 1; }
+.cal-day { background: var(--c-surface, #fff); border-radius: .5rem; border: 1px solid var(--c-border, #e5e7eb); margin-bottom: .4rem; overflow: hidden; }
+.cal-day.today { border-color: var(--c-primary, #D5281B); }
+.cal-day-hd { display: flex; align-items: center; justify-content: space-between; padding: .45rem .7rem; background: var(--c-bg, #f8f8f8); }
+.cal-day.today .cal-day-hd { background: rgba(213,40,27,.07); }
+.cal-day-hd span { font-size: .88rem; }
+.cal-day-hd span b { color: var(--c-primary, #D5281B); }
+.btn-mini { border: 1px solid var(--c-border, #e5e7eb); border-radius: 5px; background: var(--c-surface, #fff); color: var(--c-primary, #D5281B); font-size: .85rem; font-weight: 700; width: 26px; height: 26px; cursor: pointer; line-height: 1; }
+.cal-apt { padding: .35rem .7rem; border-bottom: 1px solid var(--c-border, #e5e7eb); font-size: .82rem; cursor: pointer; }
+.cal-apt:last-child { border-bottom: none; }
+.cal-apt:active { background: var(--c-bg, #f8f8f8); }
+.cal-apt b { color: var(--c-primary, #D5281B); margin-right: .25rem; }
+.cal-apt-active { border-left: 3px solid #f59e0b; background: rgba(245,158,11,.05); }
+.cal-empty { padding: .35rem .7rem; font-size: .8rem; color: var(--c-muted, #888); }
+
+/* Notification bell */
+.topbar-right { display: flex; align-items: center; gap: .5rem; }
+.bell-btn { position: relative; background: none; border: none; color: #fff; font-size: 1.25rem; cursor: pointer; padding: .2rem .3rem; line-height: 1; }
+.bell-count { position: absolute; top: -3px; right: -5px; min-width: 16px; height: 16px; background: #ef4444; border-radius: 999px; font-size: 10px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; padding: 0 3px; border: 2px solid var(--c-accent, #1C1F24); }
+
+/* Notification sheet */
+.notif-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.45); }
+.notif-sheet { position: fixed; bottom: 0; left: 0; right: 0; z-index: 101; background: var(--c-surface, #fff); border-radius: 1rem 1rem 0 0; max-height: 80vh; display: flex; flex-direction: column; }
+.notif-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1rem .6rem; border-bottom: 1px solid var(--c-border, #e5e7eb); }
+.notif-sheet-head h3 { margin: 0; font-size: 1rem; font-weight: 700; }
+.notif-sheet-readall { background: none; border: none; color: var(--c-primary, #D5281B); font-size: .82rem; font-weight: 600; cursor: pointer; padding: 0; }
+.notif-list { overflow-y: auto; flex: 1; }
+.notif-row { padding: .7rem 1rem; border-bottom: 1px solid var(--c-border, #e5e7eb); }
+.notif-row.unread { border-left: 3px solid var(--c-primary, #D5281B); background: rgba(213,40,27,.04); }
+.notif-row-title { font-size: .88rem; font-weight: 600; margin-bottom: .15rem; }
+.notif-row-body { font-size: .8rem; color: var(--c-muted, #6b7280); line-height: 1.35; }
+.notif-row-time { font-size: .7rem; color: var(--c-muted, #6b7280); margin-top: .2rem; }
+.notif-empty { padding: 2.5rem 1rem; text-align: center; color: var(--c-muted, #6b7280); font-size: .9rem; }

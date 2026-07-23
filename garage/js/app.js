@@ -1133,17 +1133,82 @@
         App._vehById = {}; res[1].forEach(function (v) { App._vehById[v.id] = v; });
         App._contactsById = {}; res[2].forEach(function (c) { App._contactsById[c.id] = c; });
 
-        var now = new Date();
-        var todayStr = now.toISOString().slice(0, 10);
-        var weekEnd = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+        var calMode = localStorage.getItem("gr_cal_mode") || "lista";
+        if (!Number.isFinite(App._calWeekOffset)) App._calWeekOffset = 0;
+
+        var modeToggle = '<div style="display:flex;gap:6px;margin-bottom:10px">' +
+          '<button class="chip' + (calMode === "lista" ? " chip-on" : "") + '" onclick="GT.calSetMode(\'lista\')">📋 Lista</button>' +
+          '<button class="chip' + (calMode === "nedelja" ? " chip-on" : "") + '" onclick="GT.calSetMode(\'nedelja\')">🗓 Nedelja</button>' +
+          '</div>';
+
+        function p2(n) { return n < 10 ? "0" + n : String(n); }
+
+        if (calMode === "nedelja") {
+          var offset = App._calWeekOffset || 0;
+          var now = new Date();
+          var todayStr = now.toISOString().slice(0, 10);
+          var mon = new Date(now);
+          var wd = mon.getDay();
+          mon.setDate(mon.getDate() + (wd === 0 ? -6 : 1 - wd) + offset * 7);
+
+          var days = [];
+          for (var i = 0; i < 7; i++) {
+            var d = new Date(mon); d.setDate(d.getDate() + i); days.push(d);
+          }
+
+          var wLabel = days[0].getDate() + "." + p2(days[0].getMonth()+1) +
+                       " – " + days[6].getDate() + "." + p2(days[6].getMonth()+1) + "." + days[6].getFullYear();
+
+          var DAY_NAMES = ["Ned", "Pon", "Uto", "Sre", "Čet", "Pet", "Sub"];
+
+          var daysHtml = days.map(function (day) {
+            var ds = day.toISOString().slice(0, 10);
+            var isToday = ds === todayStr;
+            var dayApts = apts.filter(function (a) {
+              return (a.scheduled_at || "").slice(0, 10) === ds && a.status !== "cancelled" && a.status !== "done";
+            }).sort(function (a, b) { return (a.scheduled_at || "").localeCompare(b.scheduled_at || ""); });
+
+            var aptsHtml = dayApts.length
+              ? dayApts.map(function (a) {
+                  var time = (a.scheduled_at || "").slice(11, 16);
+                  var name = esc(a.customer_name || (App._contactsById[a.contact_id] && App._contactsById[a.contact_id].name) || "—");
+                  var svc  = a.service_type ? " — " + esc(a.service_type) : "";
+                  var dur  = a.duration_min ? " (" + (a.duration_min < 60 ? a.duration_min + "m" : (a.duration_min / 60) + "h") + ")" : "";
+                  return '<div class="cal-apt' + (a.status === "active" ? " cal-apt-active" : "") + '" onclick="GT.go(\'appointment_form\',{id:\'' + esc(a.id) + '\'})">' +
+                    '<b>' + time + '</b>' + name + svc + '<span class="muted">' + dur + '</span></div>';
+                }).join("")
+              : '<div class="cal-empty">—</div>';
+
+            var preTime = ds + "T09:00";
+            return '<div class="cal-day' + (isToday ? " today" : "") + '">' +
+              '<div class="cal-day-hd"><span><b>' + DAY_NAMES[day.getDay()] + '</b> ' + day.getDate() + "." + p2(day.getMonth()+1) + ".</span>" +
+              '<button class="btn-mini" onclick="GT.go(\'appointment_form\',{prefill_time:\'' + preTime + '\'})">+</button></div>' +
+              aptsHtml + '</div>';
+          }).join("");
+
+          return '<h1>Dnevnik</h1>' + modeToggle +
+            '<div class="cal-nav">' +
+              '<button class="aptbtn start" onclick="GT.calPrevWeek()">←</button>' +
+              '<span>' + wLabel + '</span>' +
+              '<button class="aptbtn start" onclick="GT.calNextWeek()">→</button>' +
+            '</div>' +
+            (offset !== 0 ? '<button class="btn btn-secondary" style="margin-bottom:.5rem;font-size:.82rem" onclick="GT.calThisWeek()">Ova nedelja</button>' : '') +
+            daysHtml +
+            '<button class="btn btn-primary mt8" onclick="GT.go(\'appointment_form\')">+ Zakaži termin</button>';
+        }
+
+        /* ---- Lista view ---- */
+        var now2 = new Date();
+        var todayStr2 = now2.toISOString().slice(0, 10);
+        var weekEnd = new Date(now2.getTime() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
 
         var active = apts.filter(function (a) { return a.status === "active"; })
           .sort(function (a, b) { return (a.scheduled_at || "").localeCompare(b.scheduled_at || ""); });
 
         var upcoming = apts.filter(function (a) {
           if (a.status !== "scheduled") return false;
-          var d = (a.scheduled_at || "").slice(0, 10);
-          return d >= todayStr && d <= weekEnd;
+          var dStr = (a.scheduled_at || "").slice(0, 10);
+          return dStr >= todayStr2 && dStr <= weekEnd;
         }).sort(function (a, b) { return (a.scheduled_at || "").localeCompare(b.scheduled_at || ""); });
 
         function aptRowHTML(a, showStart) {
@@ -1176,7 +1241,7 @@
           ? upcoming.map(function (a) { return aptRowHTML(a, true); }).join("")
           : '<div class="card"><p class="empty">Nema zakazanih za ovu nedelju</p></div>';
 
-        return '<h1>Dnevnik</h1>' +
+        return '<h1>Dnevnik</h1>' + modeToggle +
           '<h2 class="secttitle">🔧 Aktivni radovi</h2>' +
           activeHtml +
           '<h2 class="secttitle">📅 Zakazano (danas + 7 dana)</h2>' +
@@ -1187,10 +1252,11 @@
 
     appointment_form: function (params) {
       var id = params && params.id;
+      var prefillTime = params && params.prefill_time;
       var p = id ? Store.get("appointments", id) : Promise.resolve(null);
       return Promise.all([p, Store.all("vehicles"), Store.all("contacts")]).then(function (res) {
         var a = res[0]; App._editingAppointment = a || null;
-        a = a || Models.createAppointment({});
+        a = a || Models.createAppointment(prefillTime ? { scheduled_at: prefillTime } : {});
         var vehicles = res[1], contacts = res[2];
 
         var vehOpts = '<option value="">— (bez vozila)</option>' + vehicles.map(function (v) {
@@ -2140,6 +2206,15 @@
         render("dnevnik");
       });
     },
+
+    /* ----- Kalendar ----- */
+    calSetMode: function (mode) {
+      localStorage.setItem("gr_cal_mode", mode);
+      render("dnevnik");
+    },
+    calPrevWeek: function () { App._calWeekOffset = (App._calWeekOffset || 0) - 1; render("dnevnik"); },
+    calNextWeek: function () { App._calWeekOffset = (App._calWeekOffset || 0) + 1; render("dnevnik"); },
+    calThisWeek: function () { App._calWeekOffset = 0; render("dnevnik"); },
 
     deleteAppointment: function (id) {
       if (!confirm(t("common.confirm_delete"))) return;
