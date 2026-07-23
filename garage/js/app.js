@@ -1246,7 +1246,8 @@
           activeHtml +
           '<h2 class="secttitle">📅 Zakazano (danas + 7 dana)</h2>' +
           upcomingHtml +
-          '<button class="btn btn-primary mt8" onclick="GT.go(\'appointment_form\')">+ Zakaži termin</button>';
+          '<button class="btn btn-primary mt8" onclick="GT.go(\'appointment_form\')">+ Zakaži termin</button>' +
+          '<button class="btn btn-secondary mt8" onclick="GT.exportICS()" title="Exportuj termine u Google/Apple kalendar">📅 Export u kalendar (.ics)</button>';
       });
     },
 
@@ -1993,6 +1994,38 @@
         document.body.appendChild(a);
         a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+      });
+    },
+
+    exportICS: function () {
+      Store.all("appointments").then(function (apts) {
+        if (!apts.length) { toast("Nema zakazanih termina za export."); return; }
+        var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Garage Toolbox//RS", "CALSCALE:GREGORIAN"];
+        apts.forEach(function (a) {
+          if (!a.date) return;
+          var d = a.date.replace(/-/g, "");
+          var timeStart = a.time ? a.time.replace(":", "") + "00" : "090000";
+          var durMin = a.duration_min || 60;
+          var hh = String(Math.floor(durMin / 60)).padStart(2, "0");
+          var mm = String(durMin % 60).padStart(2, "0");
+          var summary = (a.contact_name || "Termin") + (a.service_type ? " — " + a.service_type : "");
+          lines.push("BEGIN:VEVENT");
+          lines.push("UID:" + (a.id || d + timeStart) + "@garage-toolbox");
+          lines.push("DTSTART;TZID=Europe/Belgrade:" + d + "T" + timeStart);
+          lines.push("DURATION:PT" + hh + "H" + mm + "M");
+          lines.push("SUMMARY:" + summary.replace(/,/g, "\\,"));
+          if (a.note) lines.push("DESCRIPTION:" + a.note.replace(/\n/g, "\\n").replace(/,/g, "\\,"));
+          lines.push("END:VEVENT");
+        });
+        lines.push("END:VCALENDAR");
+        var blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+        var anchor = document.createElement("a");
+        anchor.href = URL.createObjectURL(blob);
+        anchor.download = "garage-termini-" + new Date().toISOString().slice(0, 10) + ".ics";
+        document.body.appendChild(anchor);
+        anchor.click();
+        setTimeout(function () { URL.revokeObjectURL(anchor.href); anchor.remove(); }, 500);
+        toast("Termini eksportovani kao .ics fajl.");
       });
     },
 
