@@ -247,10 +247,15 @@
     },
 
     items: function () {
+      var veh = byId(WO.vehicles, WO.draft.vehicle_id);
+      var adMake = veh ? encodeURIComponent(veh.make || '') : '';
+      var adBase = (window.Autodelovi && window.Autodelovi.getBaseUrl ? window.Autodelovi.getBaseUrl() : 'http://localhost:3002');
+      var adLink = adBase + '/delovi?' + (adMake ? 'make=' + adMake : '');
       return '<datalist id="parts_hist"></datalist>' +
         '<div class="card">' +
         '<div id="wo_items">' + itemsHTML() + '</div>' +
         '<button class="btn btn-secondary" onclick="WOgo.addItem()" data-i18n="wo.add_item"></button>' +
+        '<a class="btn btn-secondary mt8" href="' + adLink + '" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">🔧 Naruči deo na Autodelovi</a>' +
         '<div class="wo-runningtotal" id="wo_total">' + totalHTML() + '</div>' +
       '</div>';
     },

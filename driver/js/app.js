@@ -340,6 +340,8 @@
             (v.trade_mode
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'publish_listing\',{id:\'' + esc(vid) + '\'})" data-i18n="d.publish_listing"></button>'
               : '') +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'browse_autopijaca\')">🔍 Pretraži vozila na prodaju</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'browse_autodelovi\')">🔧 Pretraži auto delove</button>' +
             (moduleUnlocked("multi_vehicle")
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle_form\')" data-i18n="vehicles.add"></button>'
               : '');
@@ -938,6 +940,48 @@
           '<button class="btn btn-secondary mt8" onclick="DR.saleSummaryPdf(\'' + esc(vid) + '\')">📄 Pripremi za prodaju (PDF)</button>' +
           '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.cancel"></button>';
       });
+    },
+
+    /* ===== BROWSE AUTOPIJACA — pretraga vozila na prodaju ===== */
+    browse_autopijaca: function () {
+      return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+        '<h1>🔍 Vozila na prodaju</h1>' +
+        '<div class="card" style="padding:12px;display:flex;flex-direction:column;gap:8px">' +
+          '<div style="display:flex;gap:8px">' +
+            '<input type="text" id="ap_make" placeholder="Marka (npr. Golf)" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:inherit">' +
+            '<input type="text" id="ap_model" placeholder="Model" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:inherit">' +
+          '</div>' +
+          '<div style="display:flex;gap:8px">' +
+            '<input type="number" id="ap_min_year" placeholder="Od god." style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:inherit">' +
+            '<input type="number" id="ap_max_year" placeholder="Do god." style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:inherit">' +
+            '<input type="number" id="ap_max_price" placeholder="Max €" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:inherit">' +
+          '</div>' +
+          '<button class="btn btn-primary" onclick="DR.apSearch()">Pretraži</button>' +
+        '</div>' +
+        '<div id="ap_results" style="margin-top:8px"></div>';
+    },
+
+    /* ===== BROWSE AUTODELOVI — pretraga auto delova ===== */
+    browse_autodelovi: function () {
+      var catOpts = ['', 'motor', 'transmisija', 'kocnice', 'elektrika', 'karoserija', 'gume', 'auspuh', 'klima', 'svetla', 'ostalo'].map(function (c) {
+        return '<option value="' + c + '">' + (c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Sve kategorije') + '</option>';
+      }).join('');
+      return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+        '<h1>🔧 Auto delovi</h1>' +
+        '<div class="card" style="padding:12px;display:flex;flex-direction:column;gap:8px">' +
+          '<input type="text" id="ad_q" placeholder="Naziv dela (npr. disk kočnice)" style="padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:inherit">' +
+          '<div style="display:flex;gap:8px">' +
+            '<select id="ad_cat" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:inherit">' + catOpts + '</select>' +
+            '<input type="text" id="ad_make" placeholder="Marka auta" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:inherit">' +
+          '</div>' +
+          '<select id="ad_sort" style="padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:inherit">' +
+            '<option value="">Najnoviji</option>' +
+            '<option value="price_asc">Cena ↑</option>' +
+            '<option value="price_desc">Cena ↓</option>' +
+          '</select>' +
+          '<button class="btn btn-primary" onclick="DR.adSearch()">Pretraži</button>' +
+        '</div>' +
+        '<div id="ad_results" style="margin-top:8px"></div>';
     },
 
     /* ===== HUB IMPORT — vlasnik dobija link od mehaničara ===== */
@@ -2375,6 +2419,90 @@
           '<tr><td style="padding:5px 0;color:#64748b;font-size:.82rem" colspan="2">≈ ' + fmt(ukupnoRSD / kurs) + ' EUR (po kursu ' + kurs + ')</td></tr>' +
         '</table>';
       res.style.display = "block";
+    },
+
+    apSearch: function () {
+      var make     = (el("ap_make")      && el("ap_make").value.trim())      || '';
+      var model    = (el("ap_model")     && el("ap_model").value.trim())     || '';
+      var minYear  = (el("ap_min_year")  && el("ap_min_year").value.trim())  || '';
+      var maxYear  = (el("ap_max_year")  && el("ap_max_year").value.trim())  || '';
+      var maxPrice = (el("ap_max_price") && el("ap_max_price").value.trim()) || '';
+      var box = el("ap_results");
+      if (!box) return;
+      box.innerHTML = '<p style="color:#64748b;font-size:.85rem;padding:8px">Učitavam...</p>';
+
+      var params = new URLSearchParams();
+      if (make)     params.set("make",      make);
+      if (model)    params.set("model",     model);
+      if (minYear)  params.set("min_year",  minYear);
+      if (maxYear)  params.set("max_year",  maxYear);
+      if (maxPrice) params.set("max_price", maxPrice);
+
+      window.AUCore.getPlatformUrl().then(function (base) {
+        var apiBase = base ? base.replace(':3000', ':3001').replace(/\/$/, '') : 'http://localhost:3001';
+        return fetch(apiBase + '/listings?' + params.toString());
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        var items = data.data || data;
+        if (!items || !items.length) {
+          box.innerHTML = '<p style="color:#64748b;font-size:.85rem;padding:8px">Nema rezultata.</p>';
+          return;
+        }
+        box.innerHTML = items.map(function (l) {
+          var title = esc((l.make || '') + ' ' + (l.model || '') + (l.year ? ' ' + l.year : ''));
+          var price = l.price ? (l.price + ' ' + (l.currency || 'EUR')) : 'Cena na upit';
+          var km    = l.km    ? l.km.toLocaleString("sr") + ' km'  : '';
+          return '<div class="card" style="margin-bottom:8px">' +
+            '<div style="font-weight:700;font-size:1rem">' + title + '</div>' +
+            '<div style="display:flex;justify-content:space-between;margin-top:4px">' +
+              '<span style="color:#10B981;font-weight:600">' + esc(price) + '</span>' +
+              (km ? '<span style="color:#64748b;font-size:.85rem">' + km + '</span>' : '') +
+            '</div>' +
+            (l.city ? '<div style="color:#64748b;font-size:.82rem;margin-top:2px">📍 ' + esc(l.city) + '</div>' : '') +
+          '</div>';
+        }).join('');
+      }).catch(function () {
+        box.innerHTML = '<p style="color:#f87171;font-size:.85rem;padding:8px">Greška pri učitavanju. Server nije dostupan?</p>';
+      });
+    },
+
+    adSearch: function () {
+      var q    = (el("ad_q")    && el("ad_q").value.trim())    || '';
+      var cat  = (el("ad_cat")  && el("ad_cat").value)         || '';
+      var make = (el("ad_make") && el("ad_make").value.trim()) || '';
+      var sort = (el("ad_sort") && el("ad_sort").value)        || '';
+      var box  = el("ad_results");
+      if (!box) return;
+      box.innerHTML = '<p style="color:#64748b;font-size:.85rem;padding:8px">Učitavam...</p>';
+
+      var params = new URLSearchParams();
+      if (q)    params.set("q",    q);
+      if (cat)  params.set("cat",  cat);
+      if (make) params.set("make", make);
+      if (sort) params.set("sort", sort);
+
+      window.AUCore.getPlatformUrl().then(function (base) {
+        var apiBase = base ? base.replace(':3000', ':3002').replace(/\/$/, '') : 'http://localhost:3002';
+        return fetch(apiBase + '/parts?' + params.toString());
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        var items = data.data || data;
+        if (!items || !items.length) {
+          box.innerHTML = '<p style="color:#64748b;font-size:.85rem;padding:8px">Nema rezultata.</p>';
+          return;
+        }
+        box.innerHTML = items.map(function (p) {
+          var price = p.price ? (p.price + ' ' + (p.currency || 'EUR')) : 'Cena na upit';
+          return '<div class="card" style="margin-bottom:8px">' +
+            '<div style="font-weight:700;font-size:1rem">' + esc(p.name || p.title || '') + '</div>' +
+            (p.category ? '<div style="font-size:.8rem;color:#0EA5E9;margin-top:2px">' + esc(p.category) + '</div>' : '') +
+            '<div style="display:flex;justify-content:space-between;margin-top:4px">' +
+              '<span style="color:#10B981;font-weight:600">' + esc(price) + '</span>' +
+              (p.city ? '<span style="color:#64748b;font-size:.82rem">📍 ' + esc(p.city) + '</span>' : '') +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }).catch(function () {
+        box.innerHTML = '<p style="color:#f87171;font-size:.85rem;padding:8px">Greška pri učitavanju. Server nije dostupan?</p>';
+      });
     },
 
     calcKasko: function () {

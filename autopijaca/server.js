@@ -58,8 +58,10 @@ function readBody(req) {
 function serveStatic(res, filePath) {
   if (!fs.existsSync(filePath)) { res.json(404, { error: 'Not found' }); return; }
   const ext = path.extname(filePath);
-  const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
-                 '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
+  const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
+                 '.json': 'application/json', '.webmanifest': 'application/manifest+json',
+                 '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+                 '.webp': 'image/webp', '.ico': 'image/x-icon' };
   res.writeHead(200, { 'Content-Type': mime[ext] || 'application/octet-stream' });
   fs.createReadStream(filePath).pipe(res);
 }
@@ -89,9 +91,15 @@ const server = http.createServer(async (req, res) => {
     return serveStatic(res, path.join(__dirname, 'public', 'index.html'));
   }
 
+  // Service worker i manifest — iz public/ ali serviran sa root
+  if (pathname === '/sw.js' || pathname === '/manifest.json') {
+    return serveStatic(res, path.join(__dirname, 'public', pathname));
+  }
+
   // Static assets (public/) i upload slike
-  if (pathname.startsWith('/public/') || pathname.startsWith('/uploads/')) {
-    return serveStatic(res, path.join(__dirname, pathname.startsWith('/uploads/') ? 'public' + pathname : pathname));
+  if (pathname.startsWith('/public/') || pathname.startsWith('/uploads/') || pathname.startsWith('/icons/')) {
+    const rel = pathname.startsWith('/public/') ? pathname : ('public' + pathname);
+    return serveStatic(res, path.join(__dirname, rel));
   }
 
   // API routes — /api/* ili direktni paths
