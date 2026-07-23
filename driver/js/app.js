@@ -317,6 +317,7 @@
 
             '<button class="btn btn-primary" onclick="DR.addEvent(\'' + esc(vid) + '\',false)" data-i18n="d.add_event"></button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'kalkulatori\')" style="background:#1e3a5f">🧮 Kalkulatori</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vid) + '\',true)" data-i18n="d.dig_drawer"></button>' +
             (moduleUnlocked("pdf_dossier")
@@ -968,6 +969,69 @@
             cards;
         });
       });
+    },
+
+    /* ===== ŠTA PROVERITI PRI KUPOVINI ===== */
+    car_check: function () {
+      var sections = [
+        { title: "📄 Dokumenta", items: [
+          "Saobraćajna dozvola — ime vlasnika, VIN, godište",
+          "Knjižica vozila (servisna historija)",
+          "Polisa osiguranja — do kad važi",
+          "Registracija — važi li, do kad",
+          "Ukoliko kredit: banka mora odobriti prodaju",
+          "Nema upisane zabrane otuđenja (proveri MUP evidenciju)",
+        ]},
+        { title: "🔍 Karoserija", items: [
+          "Proverite sve boje pod različitim kutovima (razlike = farbanje)",
+          "Fugen (razmaci između vrata/haube/gepeka) — jednaki sa svih strana",
+          "Tragovi rđe ispod gumenih lajsni i ispod vrata",
+          "Stakla — pukotine, mjehurovi, neoriginalni UR kôd",
+          "Hvatajte magneteom duž pragova i krila (špahtla ne privlači magnet)",
+        ]},
+        { title: "🔧 Motor i pogon", items: [
+          "Nivo ulja — boja (crno=staro, mlečno=voda u ulju!)",
+          "Nivo rashladne tečnosti — boja i nivo",
+          "Tragovi curenja ispod automobila posle 10 min stajanja",
+          "Dim iz auspuha: beli (voda) / plavi (ulje) / crni (benzin) = problem",
+          "Motor hladnom — startovati, slušati klopotanje i šumove",
+          "Preveriti broj motora — mora odgovarati saobraćajnoj",
+        ]},
+        { title: "🚗 Probna vožnja", items: [
+          "Kočnice — auto ne sme da vuče u stranu",
+          "Volan — ne sme da vibrira ili vuče",
+          "Menjač — sve brzine ulaze glatko",
+          "Sva svetla, grijanje, klima, elektropodizači",
+          "ABS lampica, check engine — ništa ne sme svetleti",
+          "Test kočenja na 60 km/h — ravno kočenje",
+        ]},
+        { title: "💰 Cena i tržište", items: [
+          "Uporedi sa Polovniautomobili.rs — ista godišnja/km/oprema",
+          "Istorija cene — oglasi na KP/PA duže od 30 dana = pregovaraj",
+          "Kalkuliraj: reg + servis odmah + prvih 6 meseci troškova",
+          "Ne plaćaj avans bez overe kod notara",
+          "Kupoprodajni ugovor — obavezno u 2 primerka, overiti potpise",
+        ]},
+      ];
+      var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+        '<h1>🔎 Šta proveriti pri kupovini</h1>' +
+        '<p style="color:#64748b;font-size:.83rem;padding:0 0 12px">Checklist za pregled polovnog automobila. Štiklirati pre plaćanja.</p>';
+
+      sections.forEach(function (sec) {
+        html += '<div class="card" style="margin-bottom:.6rem">' +
+          '<h2 style="margin:0 0 10px;font-size:1rem">' + sec.title + '</h2>';
+        sec.items.forEach(function (item, i) {
+          var id = 'chk_' + sec.title.slice(2, 5).replace(/\s/g, '') + i;
+          html += '<label style="display:flex;align-items:flex-start;gap:10px;padding:6px 0;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04)">' +
+            '<input type="checkbox" id="' + id + '" style="margin-top:3px;min-width:16px;accent-color:#5c6bc0">' +
+            '<span style="font-size:.88rem;line-height:1.4">' + item + '</span>' +
+          '</label>';
+        });
+        html += '</div>';
+      });
+
+      html += '<button class="btn btn-secondary" onclick="DR.resetCarCheck()" style="font-size:.85rem">↩ Resetuj sve</button>';
+      return html;
     },
 
     /* ===== KALKULATORI HUB ===== */
@@ -2052,6 +2116,10 @@
               '<td style="text-align:right;font-weight:700;font-size:1.1rem">' + total.toLocaleString("sr") + ' RSD</td></tr>' +
         '</table>';
       res.style.display = "block";
+    },
+
+    resetCarCheck: function () {
+      document.querySelectorAll('#app input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
     },
 
     /* ----- Kalkulator potrošnje goriva ----- */
