@@ -19,7 +19,7 @@
 | Retroaktivni unos istorije ("Raniji unos") | ✅ | v1.1 |
 | Slika računa na događaju (receipt trust) | ✅ | v1.0 |
 | Katalog marki i modela vozila | 🔜 planned | — |
-| Multi-user / deljenje vozila | 🔜 AutoHub faza | — |
+| Multi-user / deljenje vozila | 🔜 AU Core faza | — |
 
 ---
 
@@ -36,7 +36,7 @@
 | # | Prijavio | Opis | Prioritet | Status |
 |---|---|---|---|---|
 | 2 | Claude (build) | Deljena IndexedDB između Garage i Driver na istom origin-u | srednji | 🟡 u analizi |
-| 3 | Marko | Multi-user (Marko+Pavle ista radionica) | nizak | 🟢 za AutoHub |
+| 3 | Marko | Multi-user (Marko+Pavle ista radionica) | nizak | 🟢 za AU Core |
 | 5 | Marko | Play Protect upozorenje pri instalaciji | visok | 🔴 docs fix needed |
 | 7 | Nikola+Milan | Katalog marki i modela (autocomplete) | srednji | 🔵 čeka Nikolinu potvrdu |
 

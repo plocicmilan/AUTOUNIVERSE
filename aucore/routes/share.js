@@ -1,4 +1,4 @@
-/* AutoHub — share routes
+/* AU Core — share routes
    POST /public/share      → mehaničar kreira token (no auth, javni)
    GET  /public/share/:tok → Driver fetchuje JSON payload (no auth)
    GET  /share/:tok        → browser HTML strana sa "Otvori u Driver" dugmetom  */

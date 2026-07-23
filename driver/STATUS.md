@@ -20,7 +20,7 @@
 | Slika računa / dokumenta | ✅ | v1.0 |
 | Retroaktivni unos (trust sloj) | ✅ | v1.0 |
 | Katalog marki i modela vozila | 🔜 planned | — |
-| Multi-user / deljenje | 🔜 AutoHub faza | — |
+| Multi-user / deljenje | 🔜 AU Core faza | — |
 
 ---
 
