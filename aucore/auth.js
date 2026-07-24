@@ -6,6 +6,31 @@ const SESSION_HOURS = 72;
 const MAGIC_LINK_MINUTES = 15;   // SPEC 6.3 predlog
 const VALID_PURPOSES = ['login', 'register', 'password_reset', 'device_link'];
 
+// Brute-force zaštita: Map<ip, { count, firstAt }>
+const LOGIN_ATTEMPTS = new Map();
+const MAX_ATTEMPTS  = 5;
+const WINDOW_MS     = 15 * 60 * 1000; // 15 minuta
+
+function _checkRateLimit(ip) {
+  if (!ip) return;
+  const now = Date.now();
+  const entry = LOGIN_ATTEMPTS.get(ip);
+  if (!entry || (now - entry.firstAt) > WINDOW_MS) {
+    LOGIN_ATTEMPTS.set(ip, { count: 1, firstAt: now });
+    return;
+  }
+  entry.count++;
+  if (entry.count > MAX_ATTEMPTS) {
+    const err = new Error('Previše pokušaja. Pokušaj ponovo za 15 minuta.');
+    err.status = 429;
+    throw err;
+  }
+}
+
+function _clearRateLimit(ip) {
+  if (ip) LOGIN_ATTEMPTS.delete(ip);
+}
+
 function register(email, password, name, phone = null, role = 'user') {
   const db = getDb();
   const hash = bcrypt.hashSync(password, 10);
@@ -21,12 +46,14 @@ function register(email, password, name, phone = null, role = 'user') {
 }
 
 function login(email, password, ip = null) {
+  _checkRateLimit(ip); // throws 429 if over limit
   const db = getDb();
   const user = db.prepare('SELECT * FROM users WHERE email=?').get(email.toLowerCase().trim());
   if (!user || !bcrypt.compareSync(password, user.password)) return null;
   if (user.status === 'pending')  return { error: 'pending' };
   if (user.status === 'rejected') return { error: 'rejected' };
 
+  _clearRateLimit(ip); // uspešan login resetuje brojač
   const sessionId = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + SESSION_HOURS * 3600 * 1000).toISOString();
   db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?,?,?)').run(sessionId, user.id, expiresAt);
@@ -200,12 +227,28 @@ function resetPassword(token, newPassword) {
   if (!user) throw Object.assign(new Error('Nalog ne postoji'), { status: 404 });
 
   const hash = bcrypt.hashSync(newPassword, 10);
-  db.prepare('UPDATE users SET password = ?, updated_at = ? WHERE id = ?').run(hash, now, user.id);
+  db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hash, user.id);
   db.prepare('UPDATE magic_links SET used_at = ? WHERE token = ?').run(now, token);
   // Poništi sve aktivne sesije (sigurnosna mjera)
   db.prepare('DELETE FROM sessions WHERE user_id = ?').run(user.id);
 
   audit('auth.password_reset', { userId: user.id, entity: 'user', entityId: user.id });
+  return { ok: true };
+}
+
+function changePassword(userId, currentPassword, newPassword) {
+  if (!currentPassword || !newPassword || newPassword.length < 8) {
+    throw Object.assign(new Error('Trenutna i nova lozinka (min 8 znakova) su obavezne'), { status: 400 });
+  }
+  const db = getDb();
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  if (!user) throw Object.assign(new Error('Korisnik ne postoji'), { status: 404 });
+  if (!bcrypt.compareSync(currentPassword, user.password)) {
+    throw Object.assign(new Error('Trenutna lozinka nije ispravna'), { status: 401 });
+  }
+  const hash = bcrypt.hashSync(newPassword, 10);
+  db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hash, userId);
+  audit('auth.password_change', { userId, entity: 'user', entityId: userId });
   return { ok: true };
 }
 
@@ -220,6 +263,6 @@ function pruneExpiredMagicLinks() {
 module.exports = {
   register, login, logout,
   getSession, requireAuth, requireAdmin,
-  requestMagicLink, verifyMagicLink, resetPassword, pruneExpiredMagicLinks,
+  requestMagicLink, verifyMagicLink, resetPassword, changePassword, pruneExpiredMagicLinks,
   MAGIC_LINK_MINUTES
 };

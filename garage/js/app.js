@@ -2223,7 +2223,20 @@
 
       doc.setFontSize(9);
       doc.setFont(font, "italic");
-      doc.text("Datum: " + new Date().toLocaleDateString("sr-Latn"), margin, y); y += 8;
+      var kmEl    = document.getElementById("insp_km");
+      var notesEl = document.getElementById("insp_notes");
+      var kmVal   = kmEl && kmEl.value ? kmEl.value.trim() : null;
+      var notesVal = notesEl && notesEl.value ? notesEl.value.trim() : null;
+      var metaLine = "Datum: " + new Date().toLocaleDateString("sr-Latn");
+      if (kmVal) metaLine += "   |   Km: " + kmVal;
+      doc.text(metaLine, margin, y); y += 6;
+      if (notesVal) {
+        doc.setFont(font, "normal");
+        doc.setFontSize(9);
+        var noteLines = doc.splitTextToSize("Napomena: " + notesVal, pageW - margin * 2);
+        doc.text(noteLines, margin, y); y += noteLines.length * 5;
+      }
+      y += 2;
 
       var counts = { ok: 0, prati: 0, hitno: 0 };
       App._inspData.forEach(function (d) { counts[d.status]++; });

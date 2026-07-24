@@ -1,4 +1,4 @@
-const { register, login, logout, requireAuth, requestMagicLink, verifyMagicLink, resetPassword, MAGIC_LINK_MINUTES } = require('../auth');
+const { register, login, logout, requireAuth, requestMagicLink, verifyMagicLink, resetPassword, changePassword, MAGIC_LINK_MINUTES } = require('../auth');
 const email = require('../email');
 const cfg = require('../config');
 
@@ -19,7 +19,12 @@ module.exports = function authRoutes(router) {
   router.post('/auth/login', (req, res, body) => {
     const { email, password } = body;
     if (!email || !password) return res.json(400, { error: 'email i password obavezni' });
-    const result = login(email, password, req.socket?.remoteAddress);
+    let result;
+    try {
+      result = login(email, password, req.socket?.remoteAddress);
+    } catch (e) {
+      return res.json(e.status || 500, { error: e.message });
+    }
     if (!result) return res.json(401, { error: 'Pogrešni kredencijali' });
     if (result.error === 'pending')  return res.json(403, { error: 'Nalog čeka odobrenje admina.' });
     if (result.error === 'rejected') return res.json(403, { error: 'Nalog je odbijen.' });
@@ -127,6 +132,18 @@ module.exports = function authRoutes(router) {
     if (session.user_id !== user.id) { const e = new Error('Unauthorized'); e.status = 403; throw e; }
     getDb().prepare(`DELETE FROM sessions WHERE id = ?`).run(params.id);
     res.json(200, { ok: true });
+  });
+
+  // POST /auth/change-password — promeni lozinku (korisnik je ulogovan)
+  router.post('/auth/change-password', (req, res, body) => {
+    const user = requireAuth(req);
+    const { current_password, new_password } = body || {};
+    try {
+      changePassword(user.id, current_password, new_password);
+      res.json(200, { ok: true });
+    } catch (e) {
+      res.json(e.status || 400, { error: e.message });
+    }
   });
 
   // Verifikuj token i kreiraj sesiju — GET /auth/verify?token=...

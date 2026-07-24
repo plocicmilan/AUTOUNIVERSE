@@ -724,7 +724,8 @@
           switcher + periodBar +
           (totalStr ? '<div class="card exptotal"><b>' + t("common.total") + ': ' + totalStr + '</b></div>' : '') +
           list +
-          '<button class="btn btn-primary" onclick="DR.go(\'expense_form\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.add_event"></button>';
+          '<button class="btn btn-primary" onclick="DR.go(\'expense_form\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.add_event"></button>' +
+          '<button class="btn btn-secondary mt8" onclick="DR.exportExpensesCSV()">📥 Export troškovi (CSV)</button>';
       });
     },
 
@@ -991,6 +992,22 @@
         DR.loadSessions();
       }, 0);
       return html;
+    },
+
+    /* ===== HUB CHANGE PASSWORD ===== */
+    hub_change_pass: function () {
+      return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+        '<h1>🔑 Promeni lozinku</h1>' +
+        '<div class="card">' +
+          '<label class="field"><span>Trenutna lozinka</span>' +
+            '<input id="cp_current" type="password" autocomplete="current-password"></label>' +
+          '<label class="field"><span>Nova lozinka</span>' +
+            '<input id="cp_new" type="password" autocomplete="new-password" placeholder="Min 8 znakova"></label>' +
+          '<label class="field"><span>Ponovi novu lozinku</span>' +
+            '<input id="cp_confirm" type="password" autocomplete="new-password"></label>' +
+          '<div id="cp_err" style="color:#f87171;font-size:.82rem;margin:.4rem 0"></div>' +
+          '<button class="btn btn-primary mt8" onclick="DR.hubChangePass()">Sačuvaj novu lozinku</button>' +
+        '</div>';
     },
 
     /* ===== BROWSE AUTOPIJACA — pretraga vozila na prodaju ===== */
@@ -1488,6 +1505,7 @@
         '<button class="btn btn-primary mt8" onclick="DR.hubSync()">☁️ Sync sada</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'public_ids\')">📋 Javni dosije / QR</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_sessions\')">🔐 Aktivne sesije</button>' +
+        '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_change_pass\')">🔑 Promeni lozinku</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.hubLogout()">Odjavi se (' + esc((hubUser && hubUser.email) || '') + ')</button>';
     }
     if (mode === 'register') {
@@ -1989,6 +2007,63 @@
         toast("Sesija odjavljena.");
         DR.loadSessions();
       }).catch(function () { toast("Greška."); });
+    },
+
+    hubChangePass: function () {
+      var current = val("cp_current");
+      var newPass  = val("cp_new");
+      var confirm  = val("cp_confirm");
+      var errEl    = el("cp_err");
+      if (!current || !newPass) { if (errEl) errEl.textContent = "Popuni sva polja."; return; }
+      if (newPass.length < 8)   { if (errEl) errEl.textContent = "Nova lozinka mora imati min 8 znakova."; return; }
+      if (newPass !== confirm)  { if (errEl) errEl.textContent = "Lozinke se ne poklapaju."; return; }
+      if (!window.AUCore) return;
+      AUCore.apiCall('POST', '/auth/change-password', { current_password: current, new_password: newPass })
+        .then(function () {
+          toast("Lozinka promenjena!");
+          render("settings");
+        })
+        .catch(function (e) {
+          if (errEl) errEl.textContent = (e && e.message) || "Greška — proveri trenutnu lozinku.";
+        });
+    },
+
+    exportExpensesCSV: function () {
+      var EXP_TYPES = ["expense_fuel","expense_tires","expense_bodywork",
+        "expense_registration","expense_insurance","expense_decorative","expense_other"];
+      var EXP_LABELS = {
+        expense_fuel: "Gorivo", expense_tires: "Gume", expense_bodywork: "Limar/boja",
+        expense_registration: "Registracija", expense_insurance: "Osiguranje",
+        expense_decorative: "Sitnice", expense_other: "Ostalo"
+      };
+      Store.getAll("vehicles").then(function (vehicles) {
+        var vmap = {};
+        vehicles.forEach(function (v) { vmap[v.id] = (v.make || "") + " " + (v.model || "") + (v.year ? " " + v.year : ""); });
+        return Store.getAll("events").then(function (events) {
+          var rows = events.filter(function (e) { return EXP_TYPES.indexOf(e.type) !== -1; });
+          rows.sort(function (a, b) { return (b.date || b.created_at || "").localeCompare(a.date || a.created_at || ""); });
+          var header = ["Datum", "Vozilo", "Kategorija", "Iznos", "Valuta", "Bez računa", "Napomena"];
+          var lines = [header.join(";")].concat(rows.map(function (e) {
+            var cost = e.cost || {};
+            var q = function (s) { return '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"'; };
+            return [
+              q(e.date || (e.created_at || "").slice(0, 10)),
+              q(vmap[e.vehicle_id] || e.vehicle_id || ""),
+              q(EXP_LABELS[e.type] || e.type),
+              q(cost.total != null ? cost.total : ""),
+              q(cost.currency || ""),
+              q(cost.informal ? "Da" : ""),
+              q(e.description || "")
+            ].join(";");
+          }));
+          var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "troskovi-" + new Date().toISOString().slice(0, 10) + ".csv";
+          a.click();
+          URL.revokeObjectURL(a.href);
+        });
+      });
     },
 
     showHubRegister: function () {
