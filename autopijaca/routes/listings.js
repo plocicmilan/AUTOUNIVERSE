@@ -7,6 +7,21 @@ function genToken() {
 
 module.exports = function (router) {
 
+  // GET /stats — javna statistika tržišta
+  router.get('/stats', async (req, res) => {
+    const db = getDb();
+    const active = db.prepare("SELECT COUNT(*) AS n FROM listings WHERE status='active'").get().n;
+    const sold   = db.prepare("SELECT COUNT(*) AS n FROM listings WHERE status='sold'").get().n;
+    const total  = db.prepare("SELECT COUNT(*) AS n FROM listings").get().n;
+    const avg    = db.prepare("SELECT AVG(price) AS a FROM listings WHERE status='active' AND currency='EUR'").get().a;
+    const recent = db.prepare("SELECT make, model, year, price, currency, city FROM listings WHERE status='active' ORDER BY created_at DESC LIMIT 5").all();
+    res.json(200, {
+      active, sold, total,
+      avg_price_eur: avg ? Math.round(avg) : null,
+      recent
+    });
+  });
+
   // POST /listings — Driver objavljuje oglas
   router.post('/listings', async (req, res, body) => {
     const { make, model, year, mileage_km, fuel, gearbox, vin,

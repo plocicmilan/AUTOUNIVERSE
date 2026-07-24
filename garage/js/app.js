@@ -1500,6 +1500,43 @@
       });
     },
 
+    /* ===== HUB VEHICLE EDIT (Garage) ===== */
+    hub_vehicle_edit: function (params) {
+      var sid = (params && params.id) ? Number(params.id) : 0;
+      var html = '<button class="linkback" onclick="GT.go(\'settings\')" data-i18n="common.back"></button>' +
+        '<h1>🚗 Izmeni vozilo na hub-u</h1>' +
+        '<div id="hve_loading" class="card"><p class="muted" style="text-align:center;padding:20px">Učitavam...</p></div>' +
+        '<div id="hve_form" class="card" style="display:none">' +
+          '<input type="hidden" id="hve_sid" value="' + sid + '">' +
+          '<label class="field"><span>Marka</span><input id="hve_make" type="text"></label>' +
+          '<label class="field"><span>Model</span><input id="hve_model" type="text"></label>' +
+          '<label class="field"><span>Godište</span><input id="hve_year" type="number" min="1970" max="2030"></label>' +
+          '<label class="field"><span>Registarska oznaka</span><input id="hve_plate" type="text"></label>' +
+          '<label class="field"><span>VIN (opciono)</span><input id="hve_vin" type="text" placeholder="17-znakovni VIN"></label>' +
+          '<div id="hve_err" style="color:#f87171;font-size:.82rem;margin:.4rem 0"></div>' +
+          '<button class="btn btn-primary mt8" onclick="GT.garHubSaveVehicle()">Sačuvaj izmene</button>' +
+        '</div>';
+      setTimeout(function () {
+        if (!sid) {
+          var l = document.getElementById('hve_loading');
+          if (l) l.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Greška: ID vozila nedostaje.</p>';
+          return;
+        }
+        aucoreFetch("GET", "/vehicles/" + sid).then(function (data) {
+          var v = data.vehicle || data;
+          var sv = function (id, val) { var i = document.getElementById(id); if (i) i.value = val || ''; };
+          sv('hve_make', v.make); sv('hve_model', v.model);
+          sv('hve_year', v.year); sv('hve_plate', v.plate); sv('hve_vin', v.vin);
+          var l = document.getElementById('hve_loading'); if (l) l.style.display = 'none';
+          var f = document.getElementById('hve_form'); if (f) f.style.display = '';
+        }).catch(function () {
+          var l = document.getElementById('hve_loading');
+          if (l) l.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Greška pri učitavanju vozila.</p>';
+        });
+      }, 0);
+      return html;
+    },
+
     /* ===== SELL PART — forma za objavljivanje dela ===== */
     sell_part: function () {
       var profile = Store.settings.get("profile") || {};
@@ -1671,7 +1708,29 @@
   function aucoreCardHTML() {
     var sess = ahSession();
     if (sess) {
+      var vmap = JSON.parse(localStorage.getItem(AH_VMAP_KEY) || "{}");
+      var vmapEntries = Object.entries(vmap);
+      var vmapHtml = '';
+      if (vmapEntries.length) {
+        var vdata = [];
+        try {
+          var raw = localStorage.getItem("gt_vehicles_cache");
+          if (raw) vdata = JSON.parse(raw);
+        } catch (_) {}
+        vmapHtml = '<div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;overflow:hidden;margin:.4rem 0">' +
+          vmapEntries.map(function (e) {
+            var lid = e[0], sid = e[1];
+            var v = vdata.filter(function (x) { return String(x.id) === String(lid); })[0];
+            var lbl = v ? ((v.make || '') + ' ' + (v.model || '') + (v.plate ? ' · ' + v.plate : '')) : 'ID ' + lid;
+            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.06)">' +
+              '<span style="font-size:.85rem">🚗 ' + esc(lbl.trim()) + '</span>' +
+              '<button class="btn btn-secondary" style="padding:3px 8px;font-size:.75rem" onclick="GT.go(\'hub_vehicle_edit\',{id:' + sid + '})">Izmeni</button>' +
+            '</div>';
+          }).join('') +
+          '</div>';
+      }
       return '<p style="font-size:.85rem;color:#94a3b8;margin-bottom:.6rem">Prijavljen: <b>' + esc(sess.name) + '</b> (' + esc(sess.email) + ')</p>' +
+        vmapHtml +
         '<button class="btn btn-secondary" onclick="GT.aucoreSync()">🔄 Sinhronizuj sve</button>' +
         '<button class="btn btn-secondary mt8" onclick="GT.go(\'grant_manager\')">🔑 Pristup vozilima</button>' +
         '<div id="ahSyncStatus" style="font-size:.8rem;color:#94a3b8;margin-top:.4rem"></div>' +
@@ -2767,6 +2826,9 @@
         var vehicles = res[0];
         var events   = res[1];
 
+        // Keširaj listu vozila za prikaz u connected mode panelu
+        try { localStorage.setItem("gt_vehicles_cache", JSON.stringify(vehicles.map(function (v) { return { id: v.id, make: v.make, model: v.model, plate: v.plate }; }))); } catch (_) {}
+
         // Faza 1: registruj vozila na AU Core-u ako nisu mapirana
         return vehicles.reduce(function (p, v) {
           return p.then(function () {
@@ -2948,6 +3010,29 @@
         render("my_parts");
       }).catch(function (e) {
         toast("Greška: " + (e.message || "nepoznata"));
+      });
+    },
+
+    garHubSaveVehicle: function () {
+      var sid   = Number((document.getElementById('hve_sid') || {}).value || 0);
+      var gv    = function (id) { var i = document.getElementById(id); return i ? i.value.trim() : ''; };
+      var make  = gv('hve_make');
+      var model = gv('hve_model');
+      var year  = gv('hve_year')  ? Number(gv('hve_year'))  : null;
+      var plate = gv('hve_plate');
+      var vin   = gv('hve_vin');
+      var errEl = document.getElementById('hve_err');
+      if (!make || !model) { if (errEl) errEl.textContent = 'Marka i model su obavezni.'; return; }
+      if (!sid) { if (errEl) errEl.textContent = 'Greška: ID vozila nije pronađen.'; return; }
+      var body = { make: make, model: model };
+      if (year)  body.year  = year;
+      if (plate) body.plate = plate;
+      if (vin)   body.vin   = vin;
+      aucoreFetch('PUT', '/vehicles/' + sid, body).then(function () {
+        toast('Vozilo ažurirano!');
+        GT.go('settings');
+      }).catch(function (e) {
+        if (errEl) errEl.textContent = (e && e.message) || 'Greška pri čuvanju.';
       });
     },
 

@@ -13,6 +13,17 @@ const CATEGORIES = [
 
 module.exports = function (router) {
 
+  // GET /stats — javna statistika
+  router.get('/stats', async (req, res) => {
+    const db = getDb();
+    const active = db.prepare("SELECT COUNT(*) AS n FROM parts WHERE status='active'").get().n;
+    const sold   = db.prepare("SELECT COUNT(*) AS n FROM parts WHERE status='sold'").get().n;
+    const total  = db.prepare("SELECT COUNT(*) AS n FROM parts").get().n;
+    const byCat  = db.prepare("SELECT category, COUNT(*) AS n FROM parts WHERE status='active' GROUP BY category ORDER BY n DESC").all();
+    const recent = db.prepare("SELECT title, category, price, currency, city FROM parts WHERE status='active' ORDER BY created_at DESC LIMIT 5").all();
+    res.json(200, { active, sold, total, by_category: byCat, recent });
+  });
+
   // POST /parts — Garage objavljuje deo
   router.post('/parts', async (req, res, body) => {
     const {

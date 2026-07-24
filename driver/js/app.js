@@ -331,6 +331,7 @@
 
             '<button class="btn btn-primary" onclick="DR.addEvent(\'' + esc(vid) + '\',false)" data-i18n="d.add_event"></button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'kalkulatori\')" style="background:#1e3a5f">🧮 Kalkulatori</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'timeline\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1c2a3a">📅 Timeline događaja</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vid) + '\',true)" data-i18n="d.dig_drawer"></button>' +
@@ -1266,6 +1267,16 @@
       });
     },
 
+    /* ===== TIMELINE — vizuelni pregled događaja ===== */
+    timeline: function (params) {
+      var vid = (params && params.vehicle_id) ? params.vehicle_id : App.vehicleId;
+      var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+        '<h1>📅 Timeline</h1>' +
+        '<div id="tl_body"><p class="muted" style="text-align:center;padding:40px">Učitavam...</p></div>';
+      setTimeout(function () { DR.loadTimeline(vid); }, 0);
+      return html;
+    },
+
     /* ===== ŠTA PROVERITI PRI KUPOVINI ===== */
     car_check: function () {
       var sections = [
@@ -2121,6 +2132,80 @@
         .catch(function (e) {
           if (errEl) errEl.textContent = (e && e.message) || "Greška pri čuvanju.";
         });
+    },
+
+    loadTimeline: function (vid) {
+      var TL_ICONS = {
+        service: '🔧', oil_change: '🛢️', tire_change: '🔄', tire_rotation: '🔁',
+        inspection: '📋', registration: '📄', insurance: '🛡️', repair: '🔩',
+        fuel: '⛽', mileage: '📍', note: '📝', initial: '🏁', work_order: '📃',
+        estimate: '💼', other: '❓',
+        expense_fuel: '⛽', expense_tires: '🔄', expense_bodywork: '🚗',
+        expense_registration: '📄', expense_insurance: '🛡️',
+        expense_decorative: '✨', expense_other: '💳'
+      };
+      var TL_LABELS = {
+        service: 'Servis', oil_change: 'Zamena ulja', tire_change: 'Zamena guma',
+        tire_rotation: 'Rotacija guma', inspection: 'Tehnički pregled',
+        registration: 'Registracija', insurance: 'Osiguranje', repair: 'Popravka',
+        fuel: 'Gorivo', mileage: 'Kilometraža', note: 'Beleška', initial: 'Početno stanje',
+        work_order: 'Radni nalog', estimate: 'Predračun', other: 'Ostalo',
+        expense_fuel: 'Gorivo', expense_tires: 'Gume', expense_bodywork: 'Limar/boja',
+        expense_registration: 'Registracija', expense_insurance: 'Osiguranje',
+        expense_decorative: 'Sitnice', expense_other: 'Trošak'
+      };
+      if (!vid) {
+        var b = el('tl_body'); if (b) b.innerHTML = '<p class="muted" style="text-align:center;padding:40px">Odaberi vozilo.</p>';
+        return;
+      }
+      Store.getAll("events").then(function (all) {
+        var events = all.filter(function (e) { return String(e.vehicle_id) === String(vid); });
+        events.sort(function (a, b) { return (b.date || b.created_at || '').localeCompare(a.date || a.created_at || ''); });
+        var b = el('tl_body');
+        if (!b) return;
+        if (!events.length) {
+          b.innerHTML = '<div class="empty" style="padding:60px 0"><div class="ei">📭</div><p>Još nema događaja.</p></div>';
+          return;
+        }
+        // Grupišemo po godini
+        var byYear = {};
+        events.forEach(function (e) {
+          var y = (e.date || e.created_at || '').slice(0, 4) || '—';
+          if (!byYear[y]) byYear[y] = [];
+          byYear[y].push(e);
+        });
+        var html = '<div style="position:relative;padding:0 0 16px">';
+        Object.keys(byYear).sort(function (a, b) { return b.localeCompare(a); }).forEach(function (year) {
+          html += '<div style="font-size:.78rem;font-weight:700;color:#64748b;letter-spacing:.08em;padding:20px 0 8px;text-transform:uppercase">' + year + '</div>';
+          html += '<div style="border-left:2px solid rgba(255,255,255,.12);margin-left:18px;padding-left:0">';
+          byYear[year].forEach(function (e) {
+            var icon  = TL_ICONS[e.type] || '❓';
+            var label = TL_LABELS[e.type] || e.type;
+            var date  = (e.date || (e.created_at || '').slice(0, 10));
+            var km    = e.mileage_km ? e.mileage_km.toLocaleString('sr-RS') + ' km' : '';
+            var desc  = e.description || (e.subtype ? e.subtype.replace(/_/g, ' ') : '');
+            var cost  = e.cost && e.cost.total ? (e.cost.total + ' ' + (e.cost.currency || 'RSD')) : '';
+            var retroTag = e.retroactive ? '<span style="font-size:.7rem;color:#94a3b8;background:rgba(255,255,255,.06);border-radius:4px;padding:1px 5px;margin-left:6px">retro</span>' : '';
+            html += '<div style="display:flex;gap:10px;margin-bottom:12px">' +
+              '<div style="flex-shrink:0;width:36px;height:36px;background:rgba(255,255,255,.07);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-left:-19px;border:2px solid var(--bg, #0c1117)">' + icon + '</div>' +
+              '<div style="flex:1;background:var(--surface,#111520);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px">' +
+                '<div style="font-weight:600;font-size:.9rem">' + esc(label) + retroTag + '</div>' +
+                '<div style="font-size:.78rem;color:#64748b;margin-top:2px">' +
+                  (date ? esc(date) : '') +
+                  (km ? '<span style="margin-left:8px">• ' + km + '</span>' : '') +
+                  (cost ? '<span style="margin-left:8px;color:#4ade80">• ' + esc(cost) + '</span>' : '') +
+                '</div>' +
+                (desc ? '<div style="font-size:.83rem;color:#94a3b8;margin-top:4px;white-space:pre-line">' + esc(desc) + '</div>' : '') +
+              '</div>' +
+            '</div>';
+          });
+          html += '</div>';
+        });
+        html += '</div>';
+        b.innerHTML = html;
+      }).catch(function () {
+        var b = el('tl_body'); if (b) b.innerHTML = '<p class="muted" style="text-align:center;padding:40px">Greška pri učitavanju.</p>';
+      });
     },
 
     loadVehicleForEdit: function (vid) {

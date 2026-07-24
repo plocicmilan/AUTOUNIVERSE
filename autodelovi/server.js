@@ -129,7 +129,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 function isApiPath(p) {
-  return p.startsWith('/parts') || p.startsWith('/messages') || p.startsWith('/photos') || p === '/health';
+  return p.startsWith('/parts') || p.startsWith('/messages') || p.startsWith('/photos') || p === '/health' || p === '/stats';
 }
 
 server.listen(PORT, () => {
