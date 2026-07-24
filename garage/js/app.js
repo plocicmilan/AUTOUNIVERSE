@@ -1537,6 +1537,27 @@
       return html;
     },
 
+    /* ===== HUB NOTES — beleške za vozilo (shared vozilo vlasnika) ===== */
+    hub_notes: function (params) {
+      var sid = (params && params.sid) ? Number(params.sid) : 0;
+      var vLabel = (params && params.label) ? params.label : 'vozilo';
+      var html = '<button class="linkback" onclick="GT.go(\'settings\')" data-i18n="common.back"></button>' +
+        '<h1>📝 Beleške — ' + esc(vLabel) + '</h1>' +
+        '<div class="card" style="padding:12px">' +
+          '<label class="field"><span>Nova beleška</span>' +
+            '<textarea id="hub_note_input" rows="3" style="resize:none;width:100%;box-sizing:border-box" placeholder="Napomena za vlasnika ili za sebe..."></textarea>' +
+          '</label>' +
+          '<select id="hub_note_vis" style="margin:.4rem 0;padding:6px;background:#1a2a3a;color:#e2e8f0;border:1px solid #334155;border-radius:6px;width:100%">' +
+            '<option value="shared">Vidljivo vlasniku</option>' +
+            '<option value="owner">Samo ja vidim</option>' +
+          '</select>' +
+          '<button class="btn btn-primary mt8" onclick="GT.garAddNote(' + sid + ')">Dodaj</button>' +
+        '</div>' +
+        '<div id="notes_body"><p class="muted" style="text-align:center;padding:40px">Učitavam...</p></div>';
+      setTimeout(function () { GT.garLoadNotes(sid); }, 0);
+      return html;
+    },
+
     /* ===== SELL PART — forma za objavljivanje dela ===== */
     sell_part: function () {
       var profile = Store.settings.get("profile") || {};
@@ -1724,7 +1745,10 @@
             var lbl = v ? ((v.make || '') + ' ' + (v.model || '') + (v.plate ? ' · ' + v.plate : '')) : 'ID ' + lid;
             return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.06)">' +
               '<span style="font-size:.85rem">🚗 ' + esc(lbl.trim()) + '</span>' +
-              '<button class="btn btn-secondary" style="padding:3px 8px;font-size:.75rem" onclick="GT.go(\'hub_vehicle_edit\',{id:' + sid + '})">Izmeni</button>' +
+              '<div style="display:flex;gap:4px">' +
+                '<button class="btn btn-secondary" style="padding:3px 8px;font-size:.75rem" onclick="GT.go(\'hub_notes\',{sid:' + sid + ',label:\'' + esc(lbl.trim()) + '\'})">📝</button>' +
+                '<button class="btn btn-secondary" style="padding:3px 8px;font-size:.75rem" onclick="GT.go(\'hub_vehicle_edit\',{id:' + sid + '})">Izmeni</button>' +
+              '</div>' +
             '</div>';
           }).join('') +
           '</div>';
@@ -3011,6 +3035,48 @@
       }).catch(function (e) {
         toast("Greška: " + (e.message || "nepoznata"));
       });
+    },
+
+    garLoadNotes: function (sid) {
+      var body = document.getElementById("notes_body");
+      if (!body) return;
+      aucoreFetch("GET", "/vehicles/" + sid + "/notes")
+        .then(function (r) {
+          if (!r.notes || !r.notes.length) {
+            body.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Nema beleški.</p>';
+            return;
+          }
+          body.innerHTML = r.notes.map(function (n) {
+            var visTag = n.visibility === 'shared' ? ' <span style="color:#38bdf8;font-size:.72rem">[vidljivo vlasniku]</span>' : '';
+            return '<div class="card" style="padding:10px 12px;margin:.5rem 0;display:flex;justify-content:space-between;align-items:flex-start">' +
+              '<div><p style="margin:0 0 4px">' + esc(n.content) + '</p>' +
+              '<span class="muted" style="font-size:.74rem">' + esc(n.author_name || '') + ' · ' + esc(n.created_at ? n.created_at.slice(0,10) : '') + visTag + '</span></div>' +
+              '<button style="background:none;border:none;color:#f87171;cursor:pointer;font-size:1.1rem;padding:0 0 0 8px" onclick="GT.garDeleteNote(' + sid + ',' + n.id + ')">✕</button>' +
+            '</div>';
+          }).join('');
+        })
+        .catch(function () { body.innerHTML = '<p style="color:#f87171;text-align:center;padding:20px">Greška pri učitavanju.</p>'; });
+    },
+
+    garAddNote: function (sid) {
+      var inp = document.getElementById("hub_note_input");
+      var vis = document.getElementById("hub_note_vis");
+      if (!inp || !inp.value.trim()) { toast("Unesi tekst beleške."); return; }
+      aucoreFetch("POST", "/vehicles/" + sid + "/notes", { content: inp.value.trim(), visibility: vis ? vis.value : "shared" })
+        .then(function (r) {
+          if (r.id) { inp.value = ""; GT.garLoadNotes(sid); toast("Beleška sačuvana."); }
+          else toast("Greška: " + (r.error || "nepoznato"));
+        })
+        .catch(function (e) { toast((e && e.message) || "Greška."); });
+    },
+
+    garDeleteNote: function (sid, nid) {
+      aucoreFetch("DELETE", "/vehicles/" + sid + "/notes/" + nid)
+        .then(function (r) {
+          if (r.ok) { GT.garLoadNotes(sid); toast("Beleška obrisana."); }
+          else toast("Greška: " + (r.error || "nepoznato"));
+        })
+        .catch(function (e) { toast((e && e.message) || "Greška."); });
     },
 
     garHubSaveVehicle: function () {

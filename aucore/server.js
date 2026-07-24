@@ -76,6 +76,7 @@ require('./routes/notifications')(router);
 require('./routes/share')(router);
 require('./routes/public')(router);
 require('./routes/admin')(router);
+require('./routes/notes')(router);
 
 // Health check — bez auth, za monitoring/uptime alate
 router.get('/health', (req, res) => {

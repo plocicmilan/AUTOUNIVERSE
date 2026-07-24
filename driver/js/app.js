@@ -278,6 +278,8 @@
           var hubBadge = hubConnected()
             ? '<span class="hub-badge">☁️ Sync</span>'
             : '';
+          var _vmap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+          var hubServerId = hubConnected() ? (_vmap[vid] || 0) : 0;
 
           return '' +
             switcher +
@@ -332,6 +334,7 @@
             '<button class="btn btn-primary" onclick="DR.addEvent(\'' + esc(vid) + '\',false)" data-i18n="d.add_event"></button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'kalkulatori\')" style="background:#1e3a5f">🧮 Kalkulatori</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'timeline\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1c2a3a">📅 Timeline događaja</button>' +
+            (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vid) + '\',true)" data-i18n="d.dig_drawer"></button>' +
@@ -1267,6 +1270,26 @@
       });
     },
 
+    /* ===== HUB NOTES — beleške za vozilo ===== */
+    hub_notes: function (params) {
+      var sid = (params && params.sid) ? Number(params.sid) : 0;
+      var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+        '<h1>📝 Beleške</h1>' +
+        '<div class="card" style="padding:12px">' +
+          '<label class="field"><span>Nova beleška</span>' +
+            '<textarea id="hub_note_input" rows="3" style="resize:none;width:100%;box-sizing:border-box" placeholder="Upiši napomenu za mehaničara..."></textarea>' +
+          '</label>' +
+          '<select id="hub_note_vis" style="margin:.4rem 0;padding:6px;background:#1a2a3a;color:#e2e8f0;border:1px solid #334155;border-radius:6px;width:100%">' +
+            '<option value="owner">Samo ja vidim</option>' +
+            '<option value="shared">Vidljivo mehaničaru</option>' +
+          '</select>' +
+          '<button class="btn btn-primary mt8" onclick="DR.hubAddNote(' + sid + ')">Dodaj</button>' +
+        '</div>' +
+        '<div id="notes_body"><p class="muted" style="text-align:center;padding:40px">Učitavam...</p></div>';
+      setTimeout(function () { DR.loadNotes(sid); }, 0);
+      return html;
+    },
+
     /* ===== TIMELINE — vizuelni pregled događaja ===== */
     timeline: function (params) {
       var vid = (params && params.vehicle_id) ? params.vehicle_id : App.vehicleId;
@@ -2132,6 +2155,51 @@
         .catch(function (e) {
           if (errEl) errEl.textContent = (e && e.message) || "Greška pri čuvanju.";
         });
+    },
+
+    loadNotes: function (sid) {
+      var body = document.getElementById("notes_body");
+      if (!body) return;
+      if (!hubConnected()) { body.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Nisi povezan sa AU Core-om.</p>'; return; }
+      AUCore.apiCall("GET", "/vehicles/" + sid + "/notes")
+        .then(function (r) {
+          if (!r.notes || !r.notes.length) {
+            body.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Nema beleški.</p>';
+            return;
+          }
+          body.innerHTML = r.notes.map(function (n) {
+            var visTag = n.visibility === 'shared' ? ' <span style="color:#38bdf8;font-size:.72rem">[vidljivo mehaničaru]</span>' : '';
+            return '<div class="card" style="padding:10px 12px;margin:.5rem 0;display:flex;justify-content:space-between;align-items:flex-start">' +
+              '<div><p style="margin:0 0 4px">' + esc(n.content) + '</p>' +
+              '<span class="muted" style="font-size:.74rem">' + esc(n.created_at ? n.created_at.slice(0,10) : '') + visTag + '</span></div>' +
+              '<button style="background:none;border:none;color:#f87171;cursor:pointer;font-size:1.1rem;padding:0 0 0 8px" onclick="DR.hubDeleteNote(' + sid + ',' + n.id + ')">✕</button>' +
+            '</div>';
+          }).join('');
+        })
+        .catch(function () { body.innerHTML = '<p style="color:#f87171;text-align:center;padding:20px">Greška pri učitavanju.</p>'; });
+    },
+
+    hubAddNote: function (sid) {
+      if (!hubConnected()) { toast("Nisi povezan sa AU Core-om."); return; }
+      var inp = document.getElementById("hub_note_input");
+      var vis = document.getElementById("hub_note_vis");
+      if (!inp || !inp.value.trim()) { toast("Unesi tekst beleške."); return; }
+      AUCore.apiCall("POST", "/vehicles/" + sid + "/notes", { content: inp.value.trim(), visibility: vis ? vis.value : "owner" })
+        .then(function (r) {
+          if (r.id) { inp.value = ""; DR.loadNotes(sid); toast("Beleška sačuvana."); }
+          else toast("Greška: " + (r.error || "nepoznato"));
+        })
+        .catch(function (e) { toast((e && e.message) || "Greška."); });
+    },
+
+    hubDeleteNote: function (sid, nid) {
+      if (!hubConnected()) return;
+      AUCore.apiCall("DELETE", "/vehicles/" + sid + "/notes/" + nid)
+        .then(function (r) {
+          if (r.ok) { DR.loadNotes(sid); toast("Beleška obrisana."); }
+          else toast("Greška: " + (r.error || "nepoznato"));
+        })
+        .catch(function (e) { toast((e && e.message) || "Greška."); });
     },
 
     loadTimeline: function (vid) {
