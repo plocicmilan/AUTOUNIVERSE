@@ -1492,12 +1492,96 @@
             '</div>';
           }).join("");
 
+          // Async: load shared vehicles (where garage is grantee)
+          aucoreFetch("GET", "/vehicles").then(function (r) {
+            var shared = (r && r.shared) || [];
+            var box = document.getElementById("gm_shared_box");
+            if (!box) return;
+            if (!shared.length) { box.style.display = "none"; return; }
+            box.innerHTML = '<h2 style="margin:.8rem 0 .4rem;font-size:1rem">🔑 Vozila podeljena sa mnom</h2>' +
+              shared.map(function (v) {
+                var lbl = esc((v.make || '') + ' ' + (v.model || '') + (v.year ? ' ' + v.year : '') + (v.plate ? ' · ' + v.plate : ''));
+                return '<div class="card" style="margin-bottom:.5rem;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">' +
+                  '<span style="font-size:.85rem">🚗 ' + lbl + ' <span class="muted">(' + esc(v.my_role || '') + ')</span></span>' +
+                  '<div style="display:flex;gap:4px">' +
+                    '<button class="btn btn-secondary" style="padding:3px 8px;font-size:.74rem" onclick="GT.go(\'hub_notes\',{sid:' + v.id + ',label:\'' + lbl.replace(/'/g, '') + '\'})">📝</button>' +
+                    '<button class="btn btn-secondary" style="padding:3px 8px;font-size:.74rem" onclick="GT.go(\'customer_vehicle\',{sid:' + v.id + ',label:\'' + lbl.replace(/'/g, '') + '\'})">Istorija</button>' +
+                  '</div>' +
+                '</div>';
+              }).join('');
+          }).catch(function () {});
+
           return '<button class="linkback" onclick="GT.go(\'settings\')" data-i18n="common.back"></button>' +
             '<h1>Pristup vozilima ☁</h1>' +
             '<p class="sub" style="margin-bottom:.8rem">Ko može da vidi ili upisuje istoriju tvojih vozila.</p>' +
-            cards;
+            cards +
+            '<div id="gm_shared_box" style="margin-top:.8rem"></div>';
         });
       });
+    },
+
+    /* ===== CUSTOMER VEHICLE — istorija shared vozila ===== */
+    customer_vehicle: function (params) {
+      var sid   = (params && params.sid)   ? Number(params.sid)   : 0;
+      var label = (params && params.label) ? params.label         : 'vozilo';
+      var html = '<button class="linkback" onclick="GT.go(\'grant_manager\')" data-i18n="common.back"></button>' +
+        '<h1>🔑 ' + esc(label) + '</h1>' +
+        '<div id="cv_body"><p class="muted" style="text-align:center;padding:40px">Učitavam...</p></div>';
+      setTimeout(function () {
+        if (!sid) {
+          var b = document.getElementById("cv_body");
+          if (b) b.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Greška: ID vozila nedostaje.</p>';
+          return;
+        }
+        var TYPE_LABELS = {
+          service: 'Servis', oil_change: 'Ulje', tire_change: 'Menjanje guma',
+          tire_rotation: 'Rotacija guma', inspection: 'Inspekcija', registration: 'Registracija',
+          insurance: 'Osiguranje', repair: 'Popravka', fuel: 'Gorivo', mileage: 'Kilometraža',
+          note: 'Beleška', initial: 'Početno stanje', work_order: 'Radni nalog',
+          estimate: 'Predračun', other: 'Ostalo'
+        };
+        Promise.all([
+          aucoreFetch("GET", "/vehicles/" + sid + "/events/summary"),
+          aucoreFetch("GET", "/vehicles/" + sid + "/events?limit=20")
+        ]).then(function (res) {
+          var summary = res[0];
+          var evList  = (res[1] && res[1].events) || [];
+          var b = document.getElementById("cv_body");
+          if (!b) return;
+
+          var summaryHtml = '<div class="card" style="padding:12px;margin-bottom:.8rem">' +
+            '<h2 style="margin:0 0 8px;font-size:.95rem">Sažetak</h2>' +
+            (summary.by_type || []).map(function (t) {
+              return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:.82rem">' +
+                '<span>' + esc(TYPE_LABELS[t.type] || t.type) + '</span>' +
+                '<span class="muted">' + esc(t.last_date ? t.last_date.slice(0,10) : '') + ' (' + t.count + 'x)</span>' +
+              '</div>';
+            }).join('') +
+            (!summary.by_type || !summary.by_type.length ? '<p class="muted">Nema zapisa.</p>' : '') +
+          '</div>';
+
+          var evHtml = evList.map(function (e) {
+            var d;
+            try { d = JSON.parse(e.data || "{}"); } catch(_) { d = {}; }
+            return '<div class="card" style="padding:10px 12px;margin:.4rem 0">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center">' +
+                '<b style="font-size:.88rem">' + esc(TYPE_LABELS[e.type] || e.type) + '</b>' +
+                '<span class="muted" style="font-size:.78rem">' + esc(e.event_date ? e.event_date.slice(0,10) : '') + '</span>' +
+              '</div>' +
+              (d.description ? '<p style="margin:.3rem 0 0;font-size:.82rem;color:#cbd5e1">' + esc(d.description) + '</p>' : '') +
+              (d.mileage_km  ? '<p class="muted" style="font-size:.78rem;margin:.2rem 0 0">⏱ ' + d.mileage_km + ' km</p>' : '') +
+            '</div>';
+          }).join('');
+
+          b.innerHTML = summaryHtml +
+            '<h2 style="font-size:.95rem;margin:.6rem 0 .3rem">Poslednji događaji</h2>' +
+            (evHtml || '<p class="muted" style="text-align:center;padding:20px">Nema zapisa.</p>');
+        }).catch(function (e) {
+          var b = document.getElementById("cv_body");
+          if (b) b.innerHTML = '<p style="color:#f87171;text-align:center;padding:20px">Greška: ' + esc((e && e.message) || "nepoznata") + '</p>';
+        });
+      }, 0);
+      return html;
     },
 
     /* ===== HUB VEHICLE EDIT (Garage) ===== */

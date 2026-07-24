@@ -1580,6 +1580,21 @@
           if (box) box.innerHTML = rows;
         });
       }
+      // Async: fetch shared vehicles from AU Core
+      AUCore.apiCall("GET", "/vehicles").then(function (r) {
+        var shared = (r && r.shared) || [];
+        var box = el("hub_shared_list");
+        if (!box) return;
+        if (!shared.length) { box.style.display = "none"; return; }
+        box.innerHTML = '<p style="font-size:.78rem;color:#94a3b8;margin:.4rem 0 .2rem">Vozila podeljena sa mnom:</p>' +
+          shared.map(function (v) {
+            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+              '<span style="font-size:.85rem">🔑 ' + esc((v.make || '') + ' ' + (v.model || '') + (v.year ? ' ' + v.year : '')) + ' <span class="muted">(' + esc(v.my_role || '') + ')</span></span>' +
+              '<button class="btn btn-secondary" style="padding:3px 8px;font-size:.74rem" onclick="DR.go(\'hub_notes\',{sid:' + v.id + '})">Beleške</button>' +
+            '</div>';
+          }).join('');
+      }).catch(function () {});
+
       return '<h2>AU Core</h2>' +
         '<div class="hub-dashboard">' +
           '<div class="hub-row"><span class="hub-dot"></span><b>Sync aktivan</b></div>' +
@@ -1587,6 +1602,7 @@
           (lastSync ? '<div class="hub-row muted" style="font-size:.82rem">🕐 Poslednji sync: ' + esc(lastSync.slice(0, 16).replace("T", " ")) + '</div>' : '<div class="hub-row muted" style="font-size:.82rem">Još nisi sync-ovao/la podatke.</div>') +
         '</div>' +
         (syncedEntries.length ? '<div id="hub_vehicles_list" style="margin:.6rem 0;border:1px solid var(--border);border-radius:8px;padding:8px 12px"></div>' : '') +
+        '<div id="hub_shared_list" style="margin:.4rem 0;border:1px solid var(--border);border-radius:8px;padding:6px 12px"></div>' +
         '<div id="hubSyncStatus" style="font-size:.82rem;color:#6b7280;margin:.4rem 0"></div>' +
         '<button class="btn btn-primary mt8" onclick="DR.hubSync()">☁️ Sync sada</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'public_ids\')">📋 Javni dosije / QR</button>' +
@@ -1944,7 +1960,25 @@
       }
       if (!base.vehicle_id) { toast(t("d.need_vehicle")); return; }
       Store.put("events", base).then(function () {
-        toast(t("common.saved")); render("vehicle");
+        toast(t("common.saved"));
+        if (hubConnected()) {
+          var _vmap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+          var sid = _vmap[base.vehicle_id];
+          if (sid) {
+            AUCore.apiCall("POST", "/vehicles/" + sid + "/events", {
+              type: base.type || "other",
+              data: { title: base.title || null, description: base.description || null, mileage_km: base.mileage_km || null, source: base.source || null },
+              event_date: base.date || new Date().toISOString().slice(0, 10),
+              retroactive: !!base.retroactive,
+              source: base.source || "app",
+              app: "driver"
+            }).then(function () {
+              base.synced_at = new Date().toISOString();
+              Store.put("events", base);
+            }).catch(function () {}); // greška pri push-u ne blokira lokalni save
+          }
+        }
+        render("vehicle");
       });
     },
     deleteEvent: function (id) {

@@ -104,6 +104,35 @@ module.exports = function eventRoutes(router) {
     res.json(200, { events, total, limit, offset });
   });
 
+  // Summary — poslednji event po tipu + ukupan broj + poslednih 5
+  router.get('/vehicles/:id/events/summary', (req, res, _, params) => {
+    const user = requireAuth(req);
+    const vehicleId = Number(params.id);
+    if (!hasAccess(user.id, vehicleId, 'read')) return res.json(403, { error: 'Nemaš pristup' });
+
+    const db = getDb();
+
+    const byType = db.prepare(`
+      SELECT type,
+             MAX(event_date) AS last_date,
+             COUNT(*)        AS count,
+             (SELECT data FROM events WHERE vehicle_id=? AND type=e.type ORDER BY event_date DESC LIMIT 1) AS last_data
+      FROM events e
+      WHERE vehicle_id=?
+      GROUP BY type
+      ORDER BY last_date DESC
+    `).all(vehicleId, vehicleId);
+
+    const recent = db.prepare(`
+      SELECT id, type, event_date, data, retroactive, source
+      FROM events WHERE vehicle_id=? ORDER BY event_date DESC LIMIT 5
+    `).all(vehicleId);
+
+    const total = db.prepare('SELECT COUNT(*) AS n FROM events WHERE vehicle_id=?').get(vehicleId).n;
+
+    res.json(200, { total, by_type: byType, recent });
+  });
+
   // Jedan event
   router.get('/vehicles/:vid/events/:eid', (req, res, _, params) => {
     const user = requireAuth(req);
