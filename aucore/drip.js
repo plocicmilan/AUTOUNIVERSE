@@ -49,6 +49,46 @@ async function runDrip(dryRun = false) {
   return results;
 }
 
+function checkOverdueReminders() {
+  const db  = getDb();
+  const today = new Date().toISOString().slice(0, 10);
+  const dedup_cutoff = new Date(Date.now() - 30 * 86400_000).toISOString();
+
+  const overdue = db.prepare(`
+    SELECT r.id, r.vehicle_id, r.title, r.due_date, v.owner_id, v.make, v.model
+    FROM reminders r JOIN vehicles v ON r.vehicle_id = v.id
+    WHERE r.done=0 AND r.due_date IS NOT NULL AND r.due_date < ?
+  `).all(today);
+
+  let count = 0;
+  for (const rem of overdue) {
+    const exists = db.prepare(`
+      SELECT id FROM notifications
+      WHERE recipient_user_id=? AND category='reminder_overdue'
+        AND json_extract(metadata,'$.reminder_id')=?
+        AND created_at > ?
+    `).get(rem.owner_id, rem.id, dedup_cutoff);
+    if (exists) continue;
+
+    const vName    = `${rem.make} ${rem.model}`;
+    const daysLate = Math.max(1, Math.floor((Date.now() - new Date(rem.due_date).getTime()) / 86400_000));
+    db.prepare(`
+      INSERT INTO notifications (recipient_user_id, category, priority, title, body, metadata)
+      VALUES (?,?,?,?,?,?)
+    `).run(
+      rem.owner_id,
+      'reminder_overdue',
+      'high',
+      `Zakasneli podsetnik: ${rem.title}`,
+      `Podsetnik "${rem.title}" za ${vName} je istekao pre ${daysLate} dan${daysLate === 1 ? 'a' : 'a'}.`,
+      JSON.stringify({ reminder_id: rem.id, vehicle_id: rem.vehicle_id })
+    );
+    count++;
+  }
+  if (count) console.log(`[drip] ${count} overdue reminder notif poslato`);
+  return count;
+}
+
 function cleanup() {
   try {
     const db = getDb();
@@ -69,8 +109,10 @@ function startDrip() {
   console.log('[drip] Scheduler pokrenut (interval 10 min)');
   runDrip().catch(console.error);
   setInterval(() => runDrip().catch(console.error), CHECK_INTERVAL_MS);
+  checkOverdueReminders();
+  setInterval(checkOverdueReminders, CHECK_INTERVAL_MS);
   cleanup();
   setInterval(cleanup, CLEANUP_INTERVAL_MS);
 }
 
-module.exports = { startDrip, runDrip };
+module.exports = { startDrip, runDrip, checkOverdueReminders };

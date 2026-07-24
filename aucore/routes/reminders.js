@@ -70,13 +70,19 @@ module.exports = function reminderRoutes(router) {
 
     const isOwner = vehicle.owner_id === user.id;
     const q = req.query || {};
-    const showDone = q.done === '1';
-    const since    = q.since || null;
+    const showDone     = q.done === '1';
+    const since        = q.since || null;
+    const upcomingDays = q.upcoming_days ? Math.min(Number(q.upcoming_days), 365) : null;
 
     const conds = ['r.vehicle_id=?'];
     const args  = [vehicleId];
-    if (!showDone)  { conds.push('r.done=0'); }
-    if (since)      { conds.push('r.created_at>datetime(?)'); args.push(since); }
+    if (!showDone)        { conds.push('r.done=0'); }
+    if (since)            { conds.push('r.created_at>datetime(?)'); args.push(since); }
+    if (upcomingDays !== null) {
+      const futureDate = new Date(Date.now() + upcomingDays * 86400_000).toISOString().slice(0, 10);
+      conds.push("r.due_date IS NOT NULL AND r.due_date >= date('now') AND r.due_date <= ?");
+      args.push(futureDate);
+    }
 
     const rows = db.prepare(`
       SELECT r.*, u.name AS author_name

@@ -146,4 +146,30 @@ module.exports = function adminRoutes(router) {
     const results = await runDrip(false);
     res.json(200, { ok: true, sent: results.length, results });
   });
+
+  // GET /admin/drip/overdue — pregled zakasnelih podsetnika (bez slanja)
+  router.get('/admin/drip/overdue', (req, res) => {
+    requireAdmin(req);
+    const db = getDb();
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = db.prepare(`
+      SELECT r.id, r.vehicle_id, r.title, r.due_date, r.done,
+             v.owner_id, v.make, v.model,
+             u.email AS owner_email
+      FROM reminders r
+      JOIN vehicles v ON r.vehicle_id = v.id
+      JOIN users u ON v.owner_id = u.id
+      WHERE r.done=0 AND r.due_date IS NOT NULL AND r.due_date < ?
+      ORDER BY r.due_date ASC
+    `).all(today);
+    res.json(200, { count: rows.length, reminders: rows });
+  });
+
+  // POST /admin/drip/check-reminders — okida overdue notifikacije odmah
+  router.post('/admin/drip/check-reminders', (req, res) => {
+    requireAdmin(req);
+    const { checkOverdueReminders } = require('../drip');
+    const count = checkOverdueReminders();
+    res.json(200, { ok: true, notified: count });
+  });
 };
