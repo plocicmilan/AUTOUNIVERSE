@@ -3,6 +3,41 @@ const { getDb, audit } = require('../db');
 const { hasAccess } = require('../permissions');
 
 module.exports = function reminderRoutes(router) {
+  // Batch sync podsetnika (offline-first app)
+  router.post('/vehicles/:vid/reminders/batch', (req, res, body, params) => {
+    const user = requireAuth(req);
+    const vehicleId = Number(params.vid);
+    if (!hasAccess(user.id, vehicleId, 'write')) return res.json(403, { error: 'Nemaš pristup' });
+
+    const items = Array.isArray(body) ? body : body.reminders;
+    if (!items || !items.length) return res.json(400, { error: 'reminders niz je obavezan' });
+    if (items.length > 200) return res.json(400, { error: 'Max 200 podsetnika po batch-u' });
+
+    const db = getDb();
+    const insert = db.prepare(`
+      INSERT INTO reminders (vehicle_id, author_id, title, due_date, due_mileage_km, done, done_at)
+      VALUES (?,?,?,?,?,?,?)
+    `);
+
+    const results = db.transaction(() => {
+      return items.map(r => {
+        if (!r.title || !String(r.title).trim()) return { error: 'title obavezan', local_id: r.local_id };
+        const row = insert.run(
+          vehicleId, user.id,
+          String(r.title).trim(),
+          r.due_date ?? null,
+          r.due_mileage_km ? Number(r.due_mileage_km) : null,
+          r.done ? 1 : 0,
+          r.done ? new Date().toISOString() : null
+        );
+        return { id: row.lastInsertRowid, local_id: r.local_id ?? null };
+      });
+    })();
+
+    audit('reminder.batch', { userId: user.id, entity: 'vehicle', entityId: vehicleId, detail: { count: items.length } });
+    res.json(200, { synced: results });
+  });
+
   // Kreiraj podsetnik
   router.post('/vehicles/:vid/reminders', (req, res, body, params) => {
     const user = requireAuth(req);

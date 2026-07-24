@@ -1562,18 +1562,23 @@
             (!summary.by_type || !summary.by_type.length ? '<p class="muted">Nema zapisa.</p>' : '') +
           '</div>';
 
+          var safeLabel = esc(label).replace(/'/g, '');
           var remHtml = '';
           if (remList.length) {
             var today = new Date().toISOString().slice(0,10);
             remHtml = '<h2 style="font-size:.95rem;margin:.6rem 0 .3rem">🔔 Podsetnici</h2>' +
               remList.map(function (r) {
                 var urgency = r.due_date && r.due_date < today ? 'color:#f87171' : 'color:#fbbf24';
-                return '<div class="card" style="padding:10px 12px;margin:.4rem 0;display:flex;justify-content:space-between;align-items:center">' +
-                  '<span style="font-size:.88rem">' + esc(r.title) + '</span>' +
-                  '<span style="font-size:.78rem;' + urgency + '">' +
-                    (r.due_date ? esc(r.due_date.slice(0,10)) : '') +
-                    (r.due_mileage_km ? (r.due_date ? ' / ' : '') + esc(String(r.due_mileage_km)) + ' km' : '') +
-                  '</span>' +
+                return '<div class="card" style="padding:10px 12px;margin:.4rem 0;display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+                  '<div style="flex:1;min-width:0">' +
+                    '<div style="font-size:.88rem">' + esc(r.title) + '</div>' +
+                    '<div style="font-size:.78rem;' + urgency + '">' +
+                      (r.due_date ? esc(r.due_date.slice(0,10)) : '') +
+                      (r.due_mileage_km ? (r.due_date ? ' / ' : '') + esc(String(r.due_mileage_km)) + ' km' : '') +
+                    '</div>' +
+                  '</div>' +
+                  '<button class="btn btn-secondary" style="padding:3px 8px;font-size:.75rem;flex-shrink:0" ' +
+                    'onclick="GT.cvMarkReminderDone(' + sid + ',' + r.id + ',\'' + safeLabel + '\')">✓ Završi</button>' +
                 '</div>';
               }).join('');
           }
@@ -3176,6 +3181,15 @@
       aucoreFetch("DELETE", "/vehicles/" + sid + "/notes/" + nid)
         .then(function (r) {
           if (r.ok) { GT.garLoadNotes(sid); toast("Beleška obrisana."); }
+          else toast("Greška: " + (r.error || "nepoznato"));
+        })
+        .catch(function (e) { toast((e && e.message) || "Greška."); });
+    },
+
+    cvMarkReminderDone: function (sid, rid, label) {
+      aucoreFetch("PUT", "/vehicles/" + sid + "/reminders/" + rid, { done: true })
+        .then(function (r) {
+          if (r.ok) { toast("Podsetnik završen."); GT.go("customer_vehicle", { sid: sid, label: label || "vozilo" }); }
           else toast("Greška: " + (r.error || "nepoznato"));
         })
         .catch(function (e) { toast((e && e.message) || "Greška."); });

@@ -2053,6 +2053,8 @@
               title: base.title,
               due_date: base.due_date || null,
               due_mileage_km: base.due_mileage_km || null
+            }).then(function (r) {
+              if (r && r.id) { base.hub_rid = r.id; Store.put("reminders", base); }
             }).catch(function () {});
           }
         }
@@ -2818,11 +2820,52 @@
         });
 
         return Promise.all(syncOps).then(function (counts) {
-          var total = counts.reduce(function (s, n) { return s + n; }, 0);
-          localStorage.setItem("aucore_last_sync", new Date().toISOString());
-          if (statusEl) statusEl.textContent = "";
-          toast("Sync završen: " + total + " događaja poslano.");
-          render("settings");
+          var evTotal = counts.reduce(function (s, n) { return s + n; }, 0);
+
+          // Korak 4 — sync podsetnici bez hub_rid
+          return Store.all("reminders").then(function (reminders) {
+            var unsynced = reminders.filter(function (r) { return !r.hub_rid && r.vehicle_id; });
+            if (!unsynced.length) {
+              localStorage.setItem("aucore_last_sync", new Date().toISOString());
+              if (statusEl) statusEl.textContent = "";
+              toast("Sync završen: " + evTotal + " događaja poslano.");
+              render("settings");
+              return;
+            }
+
+            var byServerR = {};
+            unsynced.forEach(function (r) {
+              var sid = vehicleMap[r.vehicle_id];
+              if (!sid) return;
+              if (!byServerR[sid]) byServerR[sid] = [];
+              byServerR[sid].push({
+                title: r.title, due_date: r.due_date || null,
+                due_mileage_km: r.due_mileage_km || null,
+                done: !!r.done, local_id: r.id
+              });
+            });
+
+            var remOps = Object.keys(byServerR).map(function (sid) {
+              return AUCore.apiCall("POST", "/vehicles/" + sid + "/reminders/batch", { reminders: byServerR[sid] })
+                .then(function (res) {
+                  var synced = res.synced || [];
+                  var ridMap = {};
+                  synced.forEach(function (s) { if (s.local_id && !s.error) ridMap[s.local_id] = s.id; });
+                  return Promise.all(unsynced
+                    .filter(function (r) { return ridMap[r.id]; })
+                    .map(function (r) { r.hub_rid = ridMap[r.id]; return Store.put("reminders", r); })
+                  ).then(function () { return synced.length; });
+                }).catch(function () { return 0; });
+            });
+
+            return Promise.all(remOps).then(function (remCounts) {
+              var remTotal = remCounts.reduce(function (s, n) { return s + n; }, 0);
+              localStorage.setItem("aucore_last_sync", new Date().toISOString());
+              if (statusEl) statusEl.textContent = "";
+              toast("Sync završen: " + evTotal + " događaja, " + remTotal + " podsetnika.");
+              render("settings");
+            });
+          });
         });
       })
       .catch(function (e) {
