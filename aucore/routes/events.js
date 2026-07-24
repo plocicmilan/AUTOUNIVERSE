@@ -75,6 +75,28 @@ module.exports = function eventRoutes(router) {
     res.json(200, { synced: results });
   });
 
+  // Poslednja poznata kilometraža (iz svih evenata koji imaju data.mileage_km)
+  router.get('/vehicles/:id/mileage', (req, res, _, params) => {
+    const user = requireAuth(req);
+    const vehicleId = Number(params.id);
+    if (!hasAccess(user.id, vehicleId, 'read')) return res.json(403, { error: 'Nemaš pristup' });
+
+    const db = getDb();
+    const row = db.prepare(`
+      SELECT id AS event_id, type AS event_type, event_date,
+             CAST(json_extract(data, '$.mileage_km') AS INTEGER) AS mileage_km
+      FROM events
+      WHERE vehicle_id=?
+        AND json_extract(data, '$.mileage_km') IS NOT NULL
+        AND CAST(json_extract(data, '$.mileage_km') AS INTEGER) > 0
+      ORDER BY event_date DESC, id DESC
+      LIMIT 1
+    `).get(vehicleId);
+
+    if (!row) return res.json(200, { mileage_km: null, event_date: null, event_id: null, event_type: null });
+    res.json(200, row);
+  });
+
   // Lista evenata vozila
   router.get('/vehicles/:id/events', (req, res, _, params) => {
     const user = requireAuth(req);

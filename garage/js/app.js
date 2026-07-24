@@ -1543,16 +1543,21 @@
         Promise.all([
           aucoreFetch("GET", "/vehicles/" + sid + "/events/summary"),
           aucoreFetch("GET", "/vehicles/" + sid + "/events?limit=20"),
-          aucoreFetch("GET", "/vehicles/" + sid + "/reminders")
+          aucoreFetch("GET", "/vehicles/" + sid + "/reminders"),
+          aucoreFetch("GET", "/vehicles/" + sid + "/mileage")
         ]).then(function (res) {
           var summary  = res[0];
           var evList   = (res[1] && res[1].events) || [];
           var remList  = (res[2] && res[2].reminders) || [];
+          var mileage  = res[3];
           var b = document.getElementById("cv_body");
           if (!b) return;
 
+          var mileageStr = (mileage && mileage.mileage_km)
+            ? '<span style="font-size:.82rem;color:#34d399;margin-left:8px">⏱ ' + mileage.mileage_km.toLocaleString() + ' km</span>'
+            : '';
           var summaryHtml = '<div class="card" style="padding:12px;margin-bottom:.8rem">' +
-            '<h2 style="margin:0 0 8px;font-size:.95rem">Sažetak</h2>' +
+            '<div style="display:flex;align-items:center;margin-bottom:8px"><h2 style="margin:0;font-size:.95rem">Sažetak</h2>' + mileageStr + '</div>' +
             (summary.by_type || []).map(function (t) {
               return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:.82rem">' +
                 '<span>' + esc(TYPE_LABELS[t.type] || t.type) + '</span>' +

@@ -2062,12 +2062,28 @@
       });
     },
     markReminderDone: function (id) {
-      Store.get("reminders", id).then(function (r) { r.done = true; return Store.put("reminders", r); })
-        .then(function () { render("reminders"); });
+      Store.get("reminders", id).then(function (r) {
+        r.done = true;
+        return Store.put("reminders", r).then(function () {
+          if (hubConnected() && r.hub_rid && r.vehicle_id) {
+            var _vmap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+            var sid = _vmap[r.vehicle_id];
+            if (sid) AUCore.apiCall("PUT", "/vehicles/" + sid + "/reminders/" + r.hub_rid, { done: true }).catch(function () {});
+          }
+        });
+      }).then(function () { render("reminders"); });
     },
     deleteReminder: function (id) {
       if (!confirm(t("common.confirm_delete"))) return;
-      Store.remove("reminders", id).then(function () { render("reminders"); });
+      Store.get("reminders", id).then(function (r) {
+        return Store.remove("reminders", id).then(function () {
+          if (hubConnected() && r && r.hub_rid && r.vehicle_id) {
+            var _vmap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+            var sid = _vmap[r.vehicle_id];
+            if (sid) AUCore.apiCall("DELETE", "/vehicles/" + sid + "/reminders/" + r.hub_rid).catch(function () {});
+          }
+        });
+      }).then(function () { render("reminders"); });
     },
 
     /* ----- AUCore ----- */

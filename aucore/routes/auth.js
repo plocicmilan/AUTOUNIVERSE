@@ -154,6 +154,24 @@ module.exports = function authRoutes(router) {
     res.json(200, { ok: true });
   });
 
+  // POST /auth/refresh — produžava TTL trenutne sesije za 72h
+  router.post('/auth/refresh', (req, res) => {
+    const token = (req.headers['authorization'] || '').replace('Bearer ', '') ||
+      ((req.headers['cookie'] || '').match(/session=([a-f0-9]+)/) || [])[1];
+    if (!token) { const e = new Error('Unauthorized'); e.status = 401; throw e; }
+
+    const { getDb } = require('../db');
+    const db = getDb();
+    const now = new Date().toISOString();
+    const session = db.prepare('SELECT * FROM sessions WHERE id=? AND expires_at > ?').get(token, now);
+    if (!session) { const e = new Error('Sesija ne postoji ili je istekla'); e.status = 401; throw e; }
+
+    const newExpiry = new Date(Date.now() + 72 * 3600 * 1000).toISOString();
+    db.prepare('UPDATE sessions SET expires_at=?, last_used_at=? WHERE id=?').run(newExpiry, now, token);
+    res.setHeader('Set-Cookie', `session=${token}; HttpOnly; Path=/; Max-Age=${72 * 3600}`);
+    res.json(200, { ok: true, expires_at: newExpiry });
+  });
+
   // POST /auth/change-password — promeni lozinku (korisnik je ulogovan)
   router.post('/auth/change-password', (req, res, body) => {
     const user = requireAuth(req);
