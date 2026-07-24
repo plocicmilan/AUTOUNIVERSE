@@ -260,9 +260,58 @@ function pruneExpiredMagicLinks() {
   return result.changes;
 }
 
+/**
+ * Samobrisanje naloga — hard delete sa kaskadama.
+ * Zahteva potvrdu trenutne lozinke (password).
+ * Vlasnik (role='owner') ne može se obrisati — zaštita od accidental lockout.
+ */
+function deleteAccount(userId, password) {
+  const db = getDb();
+  const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
+  if (!user) { const e = new Error('Korisnik ne postoji'); e.status = 404; throw e; }
+  if (user.role === 'owner') {
+    const e = new Error('Owner nalog ne može se obrisati putem self-delete. Kontaktiraj admina.');
+    e.status = 403; throw e;
+  }
+  if (!bcrypt.compareSync(password, user.password)) {
+    const e = new Error('Pogrešna lozinka'); e.status = 401; throw e;
+  }
+
+  db.transaction(() => {
+    // Vozila ovog korisnika — kaskadno brisanje
+    const vehicles = db.prepare('SELECT id FROM vehicles WHERE owner_id=?').all(userId);
+    for (const v of vehicles) {
+      db.prepare('DELETE FROM reminders   WHERE vehicle_id=?').run(v.id);
+      db.prepare('DELETE FROM owner_notes WHERE vehicle_id=?').run(v.id);
+      db.prepare('DELETE FROM events      WHERE vehicle_id=?').run(v.id);
+      db.prepare('DELETE FROM grants      WHERE vehicle_id=?').run(v.id);
+      db.prepare('DELETE FROM vehicles    WHERE id=?').run(v.id);
+    }
+    // Grantovi gde je ovaj user grantee (ili grantor na tuđim vozilima)
+    db.prepare('DELETE FROM grants WHERE grantee_id=? OR grantor_id=?').run(userId, userId);
+    // Notifikacije
+    db.prepare('DELETE FROM notifications WHERE recipient_user_id=?').run(userId);
+    // Sesije
+    db.prepare('DELETE FROM sessions WHERE user_id=?').run(userId);
+    // Magic links (keyed by email, not user_id)
+    db.prepare('DELETE FROM magic_links WHERE email=?').run(user.email);
+    // Audit_log: nullify FK ref pre brisanja (audit_log.user_id je nullable)
+    db.prepare('UPDATE audit_log SET user_id=NULL WHERE user_id=?').run(userId);
+    // Sami user
+    db.prepare('DELETE FROM users WHERE id=?').run(userId);
+  })();
+
+  // Audit se piše posle brisanja sa user_id=NULL (user više ne postoji)
+  db.prepare(`INSERT INTO audit_log (user_id, action, entity, entity_id, detail) VALUES (NULL,?,?,?,?)`)
+    .run('auth.account_delete', 'user', userId, JSON.stringify({ email: user.email }));
+
+  return true;
+}
+
 module.exports = {
   register, login, logout,
   getSession, requireAuth, requireAdmin,
-  requestMagicLink, verifyMagicLink, resetPassword, changePassword, pruneExpiredMagicLinks,
+  requestMagicLink, verifyMagicLink, resetPassword, changePassword,
+  deleteAccount, pruneExpiredMagicLinks,
   MAGIC_LINK_MINUTES
 };

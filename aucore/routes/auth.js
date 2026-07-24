@@ -1,4 +1,4 @@
-const { register, login, logout, requireAuth, requestMagicLink, verifyMagicLink, resetPassword, changePassword, MAGIC_LINK_MINUTES } = require('../auth');
+const { register, login, logout, requireAuth, requestMagicLink, verifyMagicLink, resetPassword, changePassword, deleteAccount, MAGIC_LINK_MINUTES } = require('../auth');
 const email = require('../email');
 const cfg = require('../config');
 
@@ -170,6 +170,20 @@ module.exports = function authRoutes(router) {
     db.prepare('UPDATE sessions SET expires_at=?, last_used_at=? WHERE id=?').run(newExpiry, now, token);
     res.setHeader('Set-Cookie', `session=${token}; HttpOnly; Path=/; Max-Age=${72 * 3600}`);
     res.json(200, { ok: true, expires_at: newExpiry });
+  });
+
+  // DELETE /auth/me — samobrisanje naloga (hard delete, zahteva lozinku)
+  router.delete('/auth/me', (req, res, body) => {
+    const user = requireAuth(req);
+    const { password } = body || {};
+    if (!password) return res.json(400, { error: 'password je obavezan za potvrdu brisanja' });
+    try {
+      deleteAccount(user.id, password);
+      res.setHeader('Set-Cookie', 'session=; Max-Age=0; Path=/');
+      res.json(200, { ok: true });
+    } catch (e) {
+      res.json(e.status || 500, { error: e.message });
+    }
   });
 
   // POST /auth/change-password — promeni lozinku (korisnik je ulogovan)

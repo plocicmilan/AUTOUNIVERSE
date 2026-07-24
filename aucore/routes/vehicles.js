@@ -112,6 +112,44 @@ module.exports = function vehicleRoutes(router) {
     res.json(200, { ok: true });
   });
 
+  router.get('/vehicles/:id/export', (req, res, _, params) => {
+    const user = requireAuth(req);
+    const id = Number(params.id);
+    if (!hasAccess(user.id, id, 'read')) return res.json(403, { error: 'Nemaš pristup' });
+
+    const db = getDb();
+    const vehicle = db.prepare('SELECT * FROM vehicles WHERE id=?').get(id);
+    if (!vehicle) return res.json(404, { error: 'Ne postoji' });
+
+    const events   = db.prepare('SELECT * FROM events WHERE vehicle_id=? ORDER BY event_date DESC').all(id);
+    const reminders = db.prepare('SELECT * FROM reminders WHERE vehicle_id=? ORDER BY due_date ASC').all(id);
+    const notes    = db.prepare(
+      vehicle.owner_id === user.id
+        ? 'SELECT * FROM owner_notes WHERE vehicle_id=? ORDER BY created_at DESC'
+        : 'SELECT * FROM owner_notes WHERE vehicle_id=? AND visibility=\'shared\' ORDER BY created_at DESC'
+    ).all(id);
+    const grants   = db.prepare(`
+      SELECT g.*, u.name AS grantee_name, u.email AS grantee_email
+      FROM grants g JOIN users u ON g.grantee_id = u.id
+      WHERE g.vehicle_id=? AND (g.expires_at IS NULL OR g.expires_at > ?)
+    `).all(id, new Date().toISOString());
+
+    res.json(200, {
+      exported_at:  new Date().toISOString(),
+      vehicle,
+      events,
+      reminders,
+      notes,
+      grants,
+      summary: {
+        event_count:    events.length,
+        reminder_count: reminders.length,
+        note_count:     notes.length,
+        grant_count:    grants.length,
+      }
+    });
+  });
+
   router.delete('/vehicles/:id', (req, res, _, params) => {
     const user = requireAuth(req);
     const id = Number(params.id);
