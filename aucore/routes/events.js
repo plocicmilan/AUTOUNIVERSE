@@ -75,6 +75,70 @@ module.exports = function eventRoutes(router) {
     res.json(200, { synced: results });
   });
 
+  // Unified timeline — eventi + podsetnici za vozilo, sortirani po datumu
+  router.get('/vehicles/:id/timeline', (req, res, _, params) => {
+    const user = requireAuth(req);
+    const vehicleId = Number(params.id);
+    if (!hasAccess(user.id, vehicleId, 'read')) return res.json(403, { error: 'Nemaš pristup' });
+
+    const db  = getDb();
+    const q   = req.query || {};
+    const limit   = Math.min(Number(q.limit || 50), 200);
+    const from    = q.from || null;
+    const to      = q.to   || null;
+    const noRem   = q.reminders === '0';
+
+    // Events
+    let evWhere = 'WHERE vehicle_id=?';
+    const evArgs = [vehicleId];
+    if (from) { evWhere += ' AND event_date >= ?'; evArgs.push(from); }
+    if (to)   { evWhere += ' AND event_date <= ?'; evArgs.push(to); }
+
+    const events = db.prepare(`
+      SELECT 'event' AS item_type, id, type, event_date AS item_date,
+             data, retroactive, source, author_id
+      FROM events ${evWhere}
+    `).all(...evArgs);
+
+    // Reminders (active only, sorted by due_date)
+    let items = events.map(e => ({
+      item_type:  'event',
+      id:         e.id,
+      type:       e.type,
+      item_date:  e.item_date,
+      data:       e.data,
+      retroactive: e.retroactive,
+      source:     e.source,
+    }));
+
+    if (!noRem) {
+      let remWhere = 'WHERE vehicle_id=? AND done=0';
+      const remArgs = [vehicleId];
+      if (from) { remWhere += ' AND due_date >= ?'; remArgs.push(from); }
+      if (to)   { remWhere += ' AND due_date <= ?'; remArgs.push(to); }
+
+      const reminders = db.prepare(`
+        SELECT 'reminder' AS item_type, id, title, due_date AS item_date, due_mileage_km
+        FROM reminders ${remWhere} AND due_date IS NOT NULL
+      `).all(...remArgs);
+
+      reminders.forEach(r => items.push({
+        item_type: 'reminder',
+        id: r.id,
+        type: 'reminder',
+        item_date: r.item_date,
+        title: r.title,
+        due_mileage_km: r.due_mileage_km,
+      }));
+    }
+
+    // Sort by date DESC, limit
+    items.sort((a, b) => (b.item_date || '').localeCompare(a.item_date || ''));
+    const sliced = items.slice(0, limit);
+
+    res.json(200, { timeline: sliced, total: items.length, limit });
+  });
+
   // Poslednja poznata kilometraža (iz svih evenata koji imaju data.mileage_km)
   router.get('/vehicles/:id/mileage', (req, res, _, params) => {
     const user = requireAuth(req);

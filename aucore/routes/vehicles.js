@@ -8,9 +8,17 @@ module.exports = function vehicleRoutes(router) {
     const db = getDb();
     const now = new Date().toISOString();
 
-    const owned = db.prepare('SELECT * FROM vehicles WHERE owner_id=?').all(user.id);
+    const owned = db.prepare(`
+      SELECT v.*,
+        (SELECT COUNT(*) FROM events WHERE vehicle_id=v.id) AS event_count,
+        (SELECT MAX(event_date) FROM events WHERE vehicle_id=v.id) AS last_event_date
+      FROM vehicles v WHERE owner_id=?
+    `).all(user.id);
+
     const shared = db.prepare(`
-      SELECT v.*, g.role AS my_role
+      SELECT v.*, g.role AS my_role,
+        (SELECT COUNT(*) FROM events WHERE vehicle_id=v.id) AS event_count,
+        (SELECT MAX(event_date) FROM events WHERE vehicle_id=v.id) AS last_event_date
       FROM vehicles v
       JOIN grants g ON g.vehicle_id = v.id
       WHERE g.grantee_id=? AND (g.expires_at IS NULL OR g.expires_at > ?)

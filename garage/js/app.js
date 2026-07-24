@@ -1544,12 +1544,14 @@
           aucoreFetch("GET", "/vehicles/" + sid + "/events/summary"),
           aucoreFetch("GET", "/vehicles/" + sid + "/events?limit=20"),
           aucoreFetch("GET", "/vehicles/" + sid + "/reminders"),
-          aucoreFetch("GET", "/vehicles/" + sid + "/mileage")
+          aucoreFetch("GET", "/vehicles/" + sid + "/mileage"),
+          aucoreFetch("GET", "/vehicles/" + sid + "/notes")
         ]).then(function (res) {
           var summary  = res[0];
           var evList   = (res[1] && res[1].events) || [];
           var remList  = (res[2] && res[2].reminders) || [];
           var mileage  = res[3];
+          var noteList = (res[4] && res[4].notes) || [];
           var b = document.getElementById("cv_body");
           if (!b) return;
 
@@ -1601,7 +1603,19 @@
             '</div>';
           }).join('');
 
-          b.innerHTML = summaryHtml + remHtml +
+          var notesHtml = '';
+          if (noteList.length) {
+            notesHtml = '<h2 style="font-size:.95rem;margin:.6rem 0 .3rem">📋 Beleške</h2>' +
+              noteList.map(function (n) {
+                var visTag = n.visibility === 'shared' ? ' <span class="muted" style="font-size:.72rem">(deljeno)</span>' : '';
+                return '<div class="card" style="padding:10px 12px;margin:.4rem 0">' +
+                  '<p style="margin:0 0 4px;font-size:.88rem">' + esc(n.content) + '</p>' +
+                  '<span class="muted" style="font-size:.74rem">' + esc(n.author_name || '') + ' · ' + esc(n.created_at ? n.created_at.slice(0,10) : '') + visTag + '</span>' +
+                '</div>';
+              }).join('');
+          }
+
+          b.innerHTML = summaryHtml + remHtml + notesHtml +
             '<h2 style="font-size:.95rem;margin:.6rem 0 .3rem">Poslednji događaji</h2>' +
             (evHtml || '<p class="muted" style="text-align:center;padding:20px">Nema zapisa.</p>');
         }).catch(function (e) {
