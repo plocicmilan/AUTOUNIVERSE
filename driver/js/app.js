@@ -1010,6 +1010,41 @@
         '</div>';
     },
 
+    /* ===== HUB PROFILE EDIT ===== */
+    hub_profile_edit: function () {
+      var u = hubUser || {};
+      return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+        '<h1>👤 Izmeni profil</h1>' +
+        '<div class="card">' +
+          '<label class="field"><span>Ime i prezime</span>' +
+            '<input id="pe_name" type="text" autocomplete="name" value="' + esc(u.name || '') + '"></label>' +
+          '<label class="field"><span>Telefon (opciono)</span>' +
+            '<input id="pe_phone" type="tel" autocomplete="tel" value="' + esc(u.phone || '') + '" placeholder="+381 60 ..."></label>' +
+          '<div id="pe_err" style="color:#f87171;font-size:.82rem;margin:.4rem 0"></div>' +
+          '<button class="btn btn-primary mt8" onclick="DR.hubSaveProfile()">Sačuvaj izmene</button>' +
+        '</div>';
+    },
+
+    /* ===== HUB VEHICLE EDIT ===== */
+    hub_vehicle_edit: function (params) {
+      var vid = (params && params.id) ? Number(params.id) : 0;
+      var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+        '<h1>🚗 Izmeni vozilo</h1>' +
+        '<div id="hve_loading" class="card"><p class="muted" style="text-align:center;padding:20px">Učitavam...</p></div>' +
+        '<div id="hve_form" class="card" style="display:none">' +
+          '<input type="hidden" id="hve_vid" value="' + vid + '">' +
+          '<label class="field"><span>Marka</span><input id="hve_make" type="text"></label>' +
+          '<label class="field"><span>Model</span><input id="hve_model" type="text"></label>' +
+          '<label class="field"><span>Godište</span><input id="hve_year" type="number" min="1970" max="2030"></label>' +
+          '<label class="field"><span>Registarska oznaka</span><input id="hve_plate" type="text"></label>' +
+          '<label class="field"><span>VIN (opciono)</span><input id="hve_vin" type="text" placeholder="17-znakovni VIN"></label>' +
+          '<div id="hve_err" style="color:#f87171;font-size:.82rem;margin:.4rem 0"></div>' +
+          '<button class="btn btn-primary mt8" onclick="DR.hubSaveVehicle()">Sačuvaj izmene</button>' +
+        '</div>';
+      setTimeout(function () { DR.loadVehicleForEdit(vid); }, 0);
+      return html;
+    },
+
     /* ===== BROWSE AUTOPIJACA — pretraga vozila na prodaju ===== */
     browse_autopijaca: function () {
       return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
@@ -1493,17 +1528,35 @@
       var lastSync = localStorage.getItem("aucore_last_sync");
       var hubUser  = JSON.parse(localStorage.getItem("aucore_user") || "null");
       var vehicleMap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
-      var syncedVehicles = Object.keys(vehicleMap).length;
+      var syncedEntries = Object.entries(vehicleMap);
+      var vehiclesHtml = '';
+      if (syncedEntries.length) {
+        Store.all("vehicles").then(function (vs) {
+          var vmap = {}; vs.forEach(function (v) { vmap[v.id] = v; });
+          var rows = syncedEntries.map(function (e) {
+            var localId = e[0], serverId = e[1];
+            var v = vmap[localId];
+            var label = v ? esc((v.make || '') + ' ' + (v.model || '') + (v.year ? ' ' + v.year : '')) : 'ID ' + localId;
+            return '<div class="hub-row" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+              '<span style="font-size:.9rem">🚗 ' + label + '</span>' +
+              '<button class="btn btn-secondary" style="padding:4px 10px;font-size:.78rem" onclick="DR.go(\'hub_vehicle_edit\',{id:' + serverId + '})">Izmeni</button>' +
+              '</div>';
+          }).join('');
+          var box = el('hub_vehicles_list');
+          if (box) box.innerHTML = rows;
+        });
+      }
       return '<h2>AU Core</h2>' +
         '<div class="hub-dashboard">' +
           '<div class="hub-row"><span class="hub-dot"></span><b>Sync aktivan</b></div>' +
           (hubUser ? '<div class="hub-row muted" style="font-size:.82rem">' + esc(hubUser.name || "") + ' · ' + esc(hubUser.email || "") + '</div>' : '') +
-          (syncedVehicles ? '<div class="hub-row muted" style="font-size:.82rem">🚗 ' + syncedVehicles + ' vozil' + (syncedVehicles === 1 ? 'o' : 'a') + ' sinhronizovano</div>' : '') +
           (lastSync ? '<div class="hub-row muted" style="font-size:.82rem">🕐 Poslednji sync: ' + esc(lastSync.slice(0, 16).replace("T", " ")) + '</div>' : '<div class="hub-row muted" style="font-size:.82rem">Još nisi sync-ovao/la podatke.</div>') +
         '</div>' +
+        (syncedEntries.length ? '<div id="hub_vehicles_list" style="margin:.6rem 0;border:1px solid var(--border);border-radius:8px;padding:8px 12px"></div>' : '') +
         '<div id="hubSyncStatus" style="font-size:.82rem;color:#6b7280;margin:.4rem 0"></div>' +
         '<button class="btn btn-primary mt8" onclick="DR.hubSync()">☁️ Sync sada</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'public_ids\')">📋 Javni dosije / QR</button>' +
+        '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_profile_edit\')">👤 Izmeni profil</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_sessions\')">🔐 Aktivne sesije</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_change_pass\')">🔑 Promeni lozinku</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.hubLogout()">Odjavi se (' + esc((hubUser && hubUser.email) || '') + ')</button>';
@@ -2026,6 +2079,70 @@
         .catch(function (e) {
           if (errEl) errEl.textContent = (e && e.message) || "Greška — proveri trenutnu lozinku.";
         });
+    },
+
+    hubSaveProfile: function () {
+      var name  = val("pe_name") ? val("pe_name").trim() : "";
+      var phone = val("pe_phone") ? val("pe_phone").trim() : "";
+      var errEl = el("pe_err");
+      if (!name) { if (errEl) errEl.textContent = "Ime ne može biti prazno."; return; }
+      if (!window.AUCore) return;
+      AUCore.apiCall('PUT', '/auth/me', { name: name, phone: phone || null })
+        .then(function () {
+          if (hubUser) hubUser.name = name;
+          toast("Profil sačuvan!");
+          render("settings");
+        })
+        .catch(function (e) {
+          if (errEl) errEl.textContent = (e && e.message) || "Greška pri čuvanju.";
+        });
+    },
+
+    hubSaveVehicle: function () {
+      var vid   = Number((el("hve_vid") || {}).value || 0);
+      var make  = val("hve_make") ? val("hve_make").trim() : "";
+      var model = val("hve_model") ? val("hve_model").trim() : "";
+      var year  = val("hve_year")  ? Number(val("hve_year"))  : null;
+      var plate = val("hve_plate") ? val("hve_plate").trim()  : "";
+      var vin   = val("hve_vin")   ? val("hve_vin").trim()    : "";
+      var errEl = el("hve_err");
+      if (!make || !model) { if (errEl) errEl.textContent = "Marka i model su obavezni."; return; }
+      if (!vid) { if (errEl) errEl.textContent = "Greška: ID vozila nije pronađen."; return; }
+      if (!window.AUCore) return;
+      var body = { make: make, model: model };
+      if (year) body.year = year;
+      if (plate) body.plate = plate;
+      if (vin)   body.vin   = vin;
+      AUCore.apiCall('PUT', '/vehicles/' + vid, body)
+        .then(function () {
+          toast("Vozilo ažurirano!");
+          render("vehicle");
+        })
+        .catch(function (e) {
+          if (errEl) errEl.textContent = (e && e.message) || "Greška pri čuvanju.";
+        });
+    },
+
+    loadVehicleForEdit: function (vid) {
+      if (!vid || !window.AUCore) {
+        var f = el('hve_form'); var l = el('hve_loading');
+        if (l) l.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Nisi prijavljen/a na AU Core.</p>';
+        return;
+      }
+      AUCore.apiCall('GET', '/vehicles/' + vid).then(function (data) {
+        var v = data.vehicle || data;
+        var setV = function (id, val) { var i = el(id); if (i) i.value = val || ''; };
+        setV('hve_make',  v.make);
+        setV('hve_model', v.model);
+        setV('hve_year',  v.year);
+        setV('hve_plate', v.plate);
+        setV('hve_vin',   v.vin);
+        var loading = el('hve_loading'); if (loading) loading.style.display = 'none';
+        var form = el('hve_form'); if (form) form.style.display = '';
+      }).catch(function () {
+        var l = el('hve_loading');
+        if (l) l.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Greška pri učitavanju vozila.</p>';
+      });
     },
 
     exportExpensesCSV: function () {

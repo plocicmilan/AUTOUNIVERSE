@@ -1,0 +1,17 @@
+{
+  "name": "aucore",
+  "version": "0.7.0",
+  "description": "AU Core — AutoUniverse platform server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node start.js",
+    "server": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node tests/autohub.integration.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.0.0",
+    "qrcode": "^1.5.4"
+  }
+}

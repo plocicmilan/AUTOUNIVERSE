@@ -45,6 +45,26 @@ module.exports = function authRoutes(router) {
     res.json(200, user);
   });
 
+  router.put('/auth/me', (req, res, body) => {
+    const user = requireAuth(req);
+    const { name, phone } = body || {};
+    if (!name && phone === undefined) return res.json(400, { error: 'name ili phone je obavezan' });
+
+    const { getDb, audit } = require('../db');
+    const db = getDb();
+    const sets = [];
+    const vals = [];
+    if (name !== undefined) {
+      if (typeof name !== 'string' || !name.trim()) return res.json(400, { error: 'name ne može biti prazan' });
+      sets.push('name = ?'); vals.push(name.trim());
+    }
+    if (phone !== undefined) { sets.push('phone = ?'); vals.push(phone || null); }
+    vals.push(user.id);
+    db.prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
+    audit('auth.profile_update', { userId: user.id, entity: 'user', entityId: user.id, detail: { fields: sets.map(s => s.split(' ')[0]) } });
+    res.json(200, { ok: true });
+  });
+
   /* ─── Magic-link auth (Todo #125) ─── */
 
   // Trazi magic-link — telo: { email, purpose?='login' }
