@@ -2043,7 +2043,21 @@
       base.due_mileage_km = val("r_km") ? parseInt(val("r_km"), 10) : null;
       if (!base.title) { toast(t("reminders.rtitle")); return; }
       if (!base.due_date && !base.due_mileage_km) { toast(t("reminders.due_date") + " / " + t("reminders.due_km")); return; }
-      Store.put("reminders", base).then(function () { toast(t("common.saved")); render("reminders"); });
+      Store.put("reminders", base).then(function () {
+        toast(t("common.saved"));
+        if (hubConnected() && base.vehicle_id) {
+          var _vmap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+          var sid = _vmap[base.vehicle_id];
+          if (sid) {
+            AUCore.apiCall("POST", "/vehicles/" + sid + "/reminders", {
+              title: base.title,
+              due_date: base.due_date || null,
+              due_mileage_km: base.due_mileage_km || null
+            }).catch(function () {});
+          }
+        }
+        render("reminders");
+      });
     },
     markReminderDone: function (id) {
       Store.get("reminders", id).then(function (r) { r.done = true; return Store.put("reminders", r); })

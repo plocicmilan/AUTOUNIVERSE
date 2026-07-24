@@ -1542,10 +1542,12 @@
         };
         Promise.all([
           aucoreFetch("GET", "/vehicles/" + sid + "/events/summary"),
-          aucoreFetch("GET", "/vehicles/" + sid + "/events?limit=20")
+          aucoreFetch("GET", "/vehicles/" + sid + "/events?limit=20"),
+          aucoreFetch("GET", "/vehicles/" + sid + "/reminders")
         ]).then(function (res) {
-          var summary = res[0];
-          var evList  = (res[1] && res[1].events) || [];
+          var summary  = res[0];
+          var evList   = (res[1] && res[1].events) || [];
+          var remList  = (res[2] && res[2].reminders) || [];
           var b = document.getElementById("cv_body");
           if (!b) return;
 
@@ -1560,6 +1562,22 @@
             (!summary.by_type || !summary.by_type.length ? '<p class="muted">Nema zapisa.</p>' : '') +
           '</div>';
 
+          var remHtml = '';
+          if (remList.length) {
+            var today = new Date().toISOString().slice(0,10);
+            remHtml = '<h2 style="font-size:.95rem;margin:.6rem 0 .3rem">🔔 Podsetnici</h2>' +
+              remList.map(function (r) {
+                var urgency = r.due_date && r.due_date < today ? 'color:#f87171' : 'color:#fbbf24';
+                return '<div class="card" style="padding:10px 12px;margin:.4rem 0;display:flex;justify-content:space-between;align-items:center">' +
+                  '<span style="font-size:.88rem">' + esc(r.title) + '</span>' +
+                  '<span style="font-size:.78rem;' + urgency + '">' +
+                    (r.due_date ? esc(r.due_date.slice(0,10)) : '') +
+                    (r.due_mileage_km ? (r.due_date ? ' / ' : '') + esc(String(r.due_mileage_km)) + ' km' : '') +
+                  '</span>' +
+                '</div>';
+              }).join('');
+          }
+
           var evHtml = evList.map(function (e) {
             var d;
             try { d = JSON.parse(e.data || "{}"); } catch(_) { d = {}; }
@@ -1573,7 +1591,7 @@
             '</div>';
           }).join('');
 
-          b.innerHTML = summaryHtml +
+          b.innerHTML = summaryHtml + remHtml +
             '<h2 style="font-size:.95rem;margin:.6rem 0 .3rem">Poslednji događaji</h2>' +
             (evHtml || '<p class="muted" style="text-align:center;padding:20px">Nema zapisa.</p>');
         }).catch(function (e) {

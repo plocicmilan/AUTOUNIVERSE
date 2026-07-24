@@ -77,6 +77,7 @@ require('./routes/share')(router);
 require('./routes/public')(router);
 require('./routes/admin')(router);
 require('./routes/notes')(router);
+require('./routes/reminders')(router);
 
 // Health check — bez auth, za monitoring/uptime alate
 router.get('/health', (req, res) => {
@@ -161,7 +162,7 @@ function isApiPath(p) {
   return p.startsWith('/auth') || p.startsWith('/vehicles') || p.startsWith('/grants') ||
          p.startsWith('/admin') || p.startsWith('/events') || p.startsWith('/share') ||
          p.startsWith('/public') || p.startsWith('/accounts') || p.startsWith('/notifications') ||
-         p.startsWith('/stats') || p.startsWith('/health');
+         p.startsWith('/stats') || p.startsWith('/health') || p.startsWith('/reminders');
 }
 
 if (require.main === module) {
