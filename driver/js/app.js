@@ -281,11 +281,23 @@
           var _vmap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
           var hubServerId = hubConnected() ? (_vmap[vid] || 0) : 0;
 
+          if (hubServerId) {
+            setTimeout(function () {
+              AUCore.apiCall("GET", "/vehicles/" + hubServerId + "/mileage").then(function (m) {
+                if (!m || !m.mileage_km) return;
+                var el = document.getElementById("hub_km_ext");
+                if (!el || m.mileage_km <= (curKm || 0)) return;
+                el.textContent = " • ☁ " + m.mileage_km.toLocaleString() + " km";
+              }).catch(function () {});
+            }, 0);
+          }
+
           return '' +
             switcher +
             '<h1>' + esc(v.make + " " + v.model) + (v.year ? ' <span class="muted">(' + v.year + ')</span>' : '') + '</h1>' +
             '<p class="sub">' + esc(v.plate || "—") +
-              (curKm != null ? ' • ⏱ ' + esc(curKm) + ' km' : '') +
+              (curKm != null ? ' • ⏱ ' + curKm + ' km' : '') +
+              (hubServerId ? '<span id="hub_km_ext" style="color:#34d399"></span>' : '') +
               (hubBadge ? ' ' + hubBadge : '') + '</p>' +
 
             // TRUST CARD (posle H1, pre onboarding-a — kupac ga prvi vidi)

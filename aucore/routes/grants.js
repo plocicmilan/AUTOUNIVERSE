@@ -21,6 +21,22 @@ module.exports = function grantRoutes(router) {
       : null;
 
     const id = grant(user.id, grantee.id, Number(vehicle_id), role, expiresAt);
+
+    // Notifikuj grantee-a
+    try {
+      const veh    = db.prepare('SELECT make, model FROM vehicles WHERE id=?').get(Number(vehicle_id));
+      const grantor = db.prepare('SELECT name FROM users WHERE id=?').get(user.id);
+      const vName  = veh ? `${veh.make} ${veh.model}` : 'vozilo';
+      const roleLabel = role === 'read' ? 'čitanje istorije' : role === 'write' ? 'unos zapisa' : role;
+      db.prepare(`
+        INSERT INTO notifications (recipient_user_id, category, priority, title, body)
+        VALUES (?,?,?,?,?)
+      `).run(grantee.id, 'access_granted', 'normal',
+        'Novi pristup vozilu',
+        `${grantor.name} ti je dodelio/la pristup (${roleLabel}) na vozilu ${vName}.`
+      );
+    } catch (_) {}
+
     res.json(201, { id });
   });
 
