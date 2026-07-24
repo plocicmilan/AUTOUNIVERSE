@@ -171,21 +171,28 @@ module.exports = function eventRoutes(router) {
     const q      = req.query || {};
     const limit  = Math.min(Number(q.limit  || 100), 500);
     const offset = Number(q.offset || 0);
-    const type   = q.type || null;
+    const type   = q.type  || null;
+    const since  = q.since || null;
+    const appFilter = q.app || null;
 
-    const where = type ? 'WHERE vehicle_id=? AND type=?' : 'WHERE vehicle_id=?';
-    const args  = type ? [vehicleId, type, limit, offset] : [vehicleId, limit, offset];
+    const conds = ['vehicle_id=?'];
+    const baseArgs = [vehicleId];
+    if (type)      { conds.push('type=?');                   baseArgs.push(type); }
+    if (since)     { conds.push('e.created_at>datetime(?)'); baseArgs.push(since); }
+    if (appFilter) { conds.push('e.app=?');                  baseArgs.push(appFilter); }
+
+    const whereClause = 'WHERE ' + conds.join(' AND ');
 
     const events = db.prepare(`
       SELECT e.*, u.name AS author_name
       FROM events e JOIN users u ON e.author_id = u.id
-      ${where}
+      ${whereClause}
       ORDER BY event_date DESC
       LIMIT ? OFFSET ?
-    `).all(...args);
+    `).all(...baseArgs, limit, offset);
 
-    const total = db.prepare(`SELECT COUNT(*) AS n FROM events ${where}`)
-      .get(...(type ? [vehicleId, type] : [vehicleId])).n;
+    const total = db.prepare(`SELECT COUNT(*) AS n FROM events e ${whereClause}`)
+      .get(...baseArgs).n;
 
     res.json(200, { events, total, limit, offset });
   });

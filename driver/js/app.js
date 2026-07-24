@@ -1302,6 +1302,19 @@
       return html;
     },
 
+    /* ===== HUB FEED — mehaničarevi zapisi ===== */
+    hub_feed: function () {
+      var lastPull = localStorage.getItem("aucore_last_pull");
+      var html = '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+        '<h1>📥 Mehaničarevi zapisi</h1>' +
+        '<p class="muted" style="font-size:.82rem;margin:.2rem 0 .8rem">Događaji koje je mehaničar dodao u hub.' +
+          (lastPull ? ' Poslednje preuzimanje: ' + esc(lastPull.slice(0, 16).replace('T', ' ')) + '.' : '') + '</p>' +
+        '<div id="feed_body"><p class="muted" style="text-align:center;padding:40px">Učitavam...</p></div>' +
+        '<button class="btn btn-secondary mt8" onclick="DR.loadHubFeed(true)">🔄 Prikaži sve</button>';
+      setTimeout(function () { DR.loadHubFeed(false); }, 0);
+      return html;
+    },
+
     /* ===== TIMELINE — vizuelni pregled događaja ===== */
     timeline: function (params) {
       var vid = (params && params.vehicle_id) ? params.vehicle_id : App.vehicleId;
@@ -1617,6 +1630,7 @@
         '<div id="hub_shared_list" style="margin:.4rem 0;border:1px solid var(--border);border-radius:8px;padding:6px 12px"></div>' +
         '<div id="hubSyncStatus" style="font-size:.82rem;color:#6b7280;margin:.4rem 0"></div>' +
         '<button class="btn btn-primary mt8" onclick="DR.hubSync()">☁️ Sync sada</button>' +
+        '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_feed\')">📥 Povuci zapise</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'public_ids\')">📋 Javni dosije / QR</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_profile_edit\')">👤 Izmeni profil</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_sessions\')">🔐 Aktivne sesije</button>' +
@@ -2255,6 +2269,73 @@
           }).join('');
         })
         .catch(function () { body.innerHTML = '<p style="color:#f87171;text-align:center;padding:20px">Greška pri učitavanju.</p>'; });
+    },
+
+    loadHubFeed: function (forceAll) {
+      if (!window.AUCore || !hubConnected()) {
+        var b = el("feed_body");
+        if (b) b.innerHTML = '<p class="empty">Nisi povezan sa AU Core-om.</p>';
+        return;
+      }
+      var vehicleMap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+      var sids = Object.values(vehicleMap).filter(Boolean);
+      if (!sids.length) {
+        var b = el("feed_body");
+        if (b) b.innerHTML = '<p class="empty">Nema sync-ovanih vozila.</p>';
+        return;
+      }
+      var lastPull = (!forceAll && localStorage.getItem("aucore_last_pull")) || null;
+      var b = el("feed_body");
+      if (b) b.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Učitavam...</p>';
+
+      Promise.all(sids.map(function (sid) {
+        var url = "/vehicles/" + sid + "/events?app=aucore&limit=50";
+        if (lastPull) url += "&since=" + encodeURIComponent(lastPull);
+        return AUCore.apiCall("GET", url)
+          .then(function (r) {
+            return (r && r.events || []).map(function (e) { e._sid = sid; return e; });
+          }).catch(function () { return []; });
+      })).then(function (results) {
+        var all = [].concat.apply([], results);
+        all.sort(function (a, b) { return (b.event_date || '').localeCompare(a.event_date || ''); });
+        localStorage.setItem("aucore_last_pull", new Date().toISOString());
+        var b = el("feed_body");
+        if (!b) return;
+        if (!all.length) {
+          b.innerHTML = '<p class="empty">' +
+            (lastPull ? 'Nema novih zapisa od poslednjeg preuzimanja.' : 'Nema mehaničarskih zapisa.') +
+          '</p>';
+          return;
+        }
+        var invMap = {};
+        var vmd = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+        Object.keys(vmd).forEach(function (lid) { invMap[vmd[lid]] = lid; });
+        Store.all("vehicles").then(function (vs) {
+          var vmap = {};
+          vs.forEach(function (v) { vmap[v.id] = v; });
+          b.innerHTML = all.map(function (e) {
+            var localId = invMap[e._sid];
+            var v = localId && vmap[localId];
+            var vLabel = v ? esc((v.make || '') + ' ' + (v.model || '')) : ('SID ' + e._sid);
+            var data = {};
+            try { data = typeof e.data === 'string' ? JSON.parse(e.data) : (e.data || {}); } catch (_) {}
+            var desc = data.description || data.title || '';
+            var km = data.mileage_km ? (' · ' + Number(data.mileage_km).toLocaleString() + ' km') : '';
+            return '<div class="card" style="margin-bottom:8px;padding:10px 12px">' +
+              '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+                '<div><span style="font-weight:600;font-size:.9rem">' + esc(e.type || '') + '</span>' +
+                  '<span class="muted" style="font-size:.78rem;margin-left:6px">· ' + esc(vLabel) + '</span></div>' +
+                '<span class="muted" style="font-size:.75rem">' + esc((e.event_date || '').slice(0, 10)) + '</span>' +
+              '</div>' +
+              (desc ? '<p style="margin:.3rem 0 0;font-size:.82rem;color:#cbd5e1">' + esc(desc) + '</p>' : '') +
+              (km ? '<p style="margin:.2rem 0 0;font-size:.78rem;color:#34d399">' + km + '</p>' : '') +
+            '</div>';
+          }).join('');
+        });
+      }).catch(function (e) {
+        var b = el("feed_body");
+        if (b) b.innerHTML = '<p class="empty">Greška: ' + esc((e && e.message) || 'nepoznata greška') + '</p>';
+      });
     },
 
     hubAddNote: function (sid) {

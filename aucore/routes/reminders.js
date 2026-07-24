@@ -71,13 +71,19 @@ module.exports = function reminderRoutes(router) {
     const isOwner = vehicle.owner_id === user.id;
     const q = req.query || {};
     const showDone = q.done === '1';
+    const since    = q.since || null;
+
+    const conds = ['r.vehicle_id=?'];
+    const args  = [vehicleId];
+    if (!showDone)  { conds.push('r.done=0'); }
+    if (since)      { conds.push('r.created_at>datetime(?)'); args.push(since); }
 
     const rows = db.prepare(`
       SELECT r.*, u.name AS author_name
       FROM reminders r JOIN users u ON r.author_id = u.id
-      WHERE r.vehicle_id=? ${showDone ? '' : 'AND r.done=0'}
+      WHERE ${conds.join(' AND ')}
       ORDER BY r.done ASC, r.due_date ASC NULLS LAST, r.due_mileage_km ASC NULLS LAST
-    `).all(vehicleId);
+    `).all(...args);
 
     res.json(200, { reminders: rows, total: rows.length });
   });
