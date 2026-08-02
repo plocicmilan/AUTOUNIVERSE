@@ -1,0 +1,13 @@
+{
+  "appId": "com.autouniverse.garage",
+  "appName": "Garage Toolbox",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}

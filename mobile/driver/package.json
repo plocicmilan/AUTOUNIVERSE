@@ -1,0 +1,19 @@
+{
+  "name": "autouniverse-driver-mobile",
+  "version": "1.19.0",
+  "private": true,
+  "description": "Capacitor wrapper za Driver Toolbox PWA (Google Play distribucija)",
+  "scripts": {
+    "build:www": "node ../build_www.js driver",
+    "sync": "npm run build:www && cap sync android",
+    "open:android": "cap open android",
+    "assemble:debug": "cd android && gradlew.bat assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

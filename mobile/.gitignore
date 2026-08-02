@@ -1,0 +1,25 @@
+# Capacitor generisani + npm — ne committuje se
+node_modules/
+www/
+
+# Android generisani artefakti
+*/android/.gradle/
+*/android/build/
+*/android/app/build/
+*/android/app/release/
+*/android/local.properties
+*/android/.idea/
+*/android/**/*.iml
+
+# Java/Gradle wrapper cache
+.gradle/
+
+# Kez i logovi
+*.log
+.env
+
+# Keystore i sve sa lozinkama — NIKAD u git
+*.keystore
+*.jks
+keystore.properties
+*/android/keystore.properties
