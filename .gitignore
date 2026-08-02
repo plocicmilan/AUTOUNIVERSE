@@ -3,6 +3,8 @@ auto-universe-both/
 aucore/
 node_modules/
 *.db
+*.db-shm
+*.db-wal
 *.log
 
 # Capacitor build outputs (regenerabilno)
@@ -18,6 +20,10 @@ platforms/*/android/app/debug/
 *.keystore
 package-lock.json
 inst_user_settings.tmp
+
+# Test output i temp fajlovi
+test-results/
+tmp_todos.py
 
 # Interna dokumentacija — ne ide na GitHub (public repo)
 BRIEFING.md

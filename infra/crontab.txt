@@ -1,0 +1,15 @@
+# AutoUniverse cron jobs (milan@vps)
+# Instaliraj: crontab -e  → nalepi ove linije
+
+# SQLite backup svaki dan u 03:00
+0 3 * * * node /var/www/autouniverse/aucore/scripts/backup.js >> /var/log/aucore-backup.log 2>&1
+
+# Backup autopijaca i autodelovi (isti pristup)
+5 3 * * * cp /var/www/autouniverse/autopijaca/data/autopijaca.db /var/backups/autopijaca/autopijaca-$(date +\%Y-\%m-\%d).db
+10 3 * * * cp /var/www/autouniverse/autodelovi/data/autodelovi.db /var/backups/autodelovi/autodelovi-$(date +\%Y-\%m-\%d).db
+
+# Čisti stare backupe (>7 dana)
+0 4 * * * find /var/backups -name "*.db" -mtime +7 -delete
+
+# Let's Encrypt renewal check (certbot ga doda sam, ali backup)
+0 5 * * * certbot renew --quiet >> /var/log/certbot-renew.log 2>&1
