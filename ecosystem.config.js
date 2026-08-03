@@ -49,5 +49,23 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       merge_logs: true,
     },
+    {
+      name:    'landing',
+      script:  'server.js',
+      cwd:     `${BASE}/landing`,
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '128M',
+      env_production: {
+        NODE_ENV: 'production',
+        PORT: 4000,
+        DB_PATH: `${BASE}/landing/data/autouniverse.db`,
+      },
+      error_file:      '/var/log/pm2/landing-error.log',
+      out_file:        '/var/log/pm2/landing-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+      merge_logs: true,
+    },
   ],
 };

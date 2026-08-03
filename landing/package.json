@@ -1,0 +1,12 @@
+{
+  "name": "autouniverse-landing",
+  "version": "1.0.0",
+  "description": "AutoUniverse landing sajt sa API za forme",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3"
+  }
+}
