@@ -66,4 +66,79 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://autouniverse.rs/blog</loc>
+    <lastmod>2026-08-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Blog članci — Kupovina -->
+  <url><loc>https://autouniverse.rs/blog/uvoz-automobila-iz-eu</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/cena-registracije-2026</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/sta-je-vin-broj</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/kako-smanjiti-potrosnju-goriva</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/kada-promeniti-gume</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/auto-kredit-srbija</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Blok A -->
+  <url><loc>https://autouniverse.rs/blog/kupovina-polovnog-auta-srbija</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/kako-proveriti-auto-pre-kupovine</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/uvoz-iz-sad-i-kanade</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/uvoz-iz-japana</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/elektricni-auto-srbija-2026</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/kako-pregovarati-cenu-auta</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/carvertical-kako-citati-izvestaj</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/garancija-polovni-auto</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/kupovina-auta-na-aukciji</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/leasing-vs-kredit</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Blok B -->
+  <url><loc>https://autouniverse.rs/blog/promena-vlasnika-automobila</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/registracija-uvezenog-automobila</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/sta-je-homologacija</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/odjava-vozila</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/duplikat-saobracajne-dozvole</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/registracija-auta-od-firme</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/zelena-karta</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/kasko-osiguranje</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/sta-uraditi-posle-nesrece</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/pauk-i-deponovanje</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Blok C -->
+  <url><loc>https://autouniverse.rs/blog/interval-promene-ulja</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/filter-vazduha</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/kocnice-habanje</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/amortizeri</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/checklist-pre-dugog-puta</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/servisna-knjizica</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/timing-remen-vs-lanac</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/klima-auto-servis</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/baterija-automobila</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/led-farovi-legalno</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Blok D -->
+  <url><loc>https://autouniverse.rs/blog/godisnji-troskovi-automobila</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/dizel-ili-benzin</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/ev-vs-hibrid-vs-benzinac</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/kako-smanjiti-kasko</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/greske-vozaci</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/prodaja-automobila-cena</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/auto-kao-trosak-u-firmi</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/prevoz-dece-auto</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/novcane-kazne-2026</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/kilometraza-i-cena</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Blok E -->
+  <url><loc>https://autouniverse.rs/blog/punjenje-elektricnog-auta</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/subvencije-ev-srbija</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/range-anxiety</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/hibridni-auto-servis</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/tesla-srbija</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/kia-hyundai-byd-elektricni</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/punjac-ev-kod-kuce</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/baterija-ev-vek-trajanja</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/vozacka-dozvola-i-ev</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://autouniverse.rs/blog/ev-bez-punjaca-mali-grad</loc><lastmod>2026-08-04</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
 </urlset>
