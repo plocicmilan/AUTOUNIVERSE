@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — Stranica nije pronađena | AutoUniverse</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0f1d35;
+      --orange: #ff6b35;
+      --text: #e8edf5;
+      --muted: #8899aa;
+    }
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--navy);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    .code {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(6rem, 20vw, 10rem);
+      font-weight: 900;
+      line-height: 1;
+      color: var(--orange);
+      opacity: 0.15;
+      user-select: none;
+    }
+    h1 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 700;
+      margin-top: -1rem;
+      margin-bottom: 1rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    p {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 36ch;
+      line-height: 1.6;
+      margin-bottom: 2.5rem;
+    }
+    .actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      border-radius: 6px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn--primary { background: var(--orange); color: #fff; }
+    .btn--ghost {
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--text);
+    }
+    .logo {
+      position: fixed;
+      top: 1.5rem;
+      left: 1.5rem;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 1.2rem;
+      text-decoration: none;
+      color: var(--text);
+      letter-spacing: 0.05em;
+    }
+    .logo span { color: var(--orange); }
+  </style>
+</head>
+<body>
+  <a href="/" class="logo"><span>AU</span> AutoUniverse</a>
+  <div class="code">404</div>
+  <h1>Stranica nije pronađena</h1>
+  <p>Tražena stranica ne postoji ili je premeštena. Vrati se na početnu ili nas kontaktiraj.</p>
+  <div class="actions">
+    <a href="/" class="btn btn--primary">Početna stranica</a>
+    <a href="/#kontakt" class="btn btn--ghost">Kontakt</a>
+  </div>
+</body>
+</html>

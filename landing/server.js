@@ -63,6 +63,8 @@ const MIME = {
   '.ico':  'image/x-icon',
   '.woff2':'font/woff2',
   '.json': 'application/json',
+  '.txt':  'text/plain',
+  '.xml':  'application/xml',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -87,12 +89,17 @@ function json(res, status, data) {
   res.end(body);
 }
 
+function serve404(res) {
+  const p404 = path.join(__dirname, '404.html');
+  fs.readFile(p404, (err, data) => {
+    res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(err ? '404 Not Found' : data);
+  });
+}
+
 function serveStatic(res, filePath) {
   fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404); res.end('404');
-      return;
-    }
+    if (err) { serve404(res); return; }
     const ext  = path.extname(filePath);
     const mime = MIME[ext] || 'application/octet-stream';
     const isImmutable = ['.css', '.js', '.png', '.svg', '.woff2'].includes(ext);
