@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garage Toolbox — Aplikacija za auto servise i mehaničare | AutoUniverse</title>
+<meta name="description" content="Garage Toolbox je besplatna PWA aplikacija za auto servise: radni nalozi, PDF računi, DVI inspekcija, evidencija klijenata. Radi offline. Napravljeno u Srbiji.">
+<meta name="keywords" content="aplikacija za auto servis, radni nalog servis, PDF racun auto servis, servisna aplikacija mehanicari Srbija, WO Snap aplikacija">
+<meta name="theme-color" content="#ef4444">
+<meta property="og:title" content="Garage Toolbox — Aplikacija za auto servise">
+<meta property="og:description" content="Radni nalozi, PDF računi, DVI inspekcija, evidencija klijenata. Offline, bez registracije.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://autouniverse.rs/garage">
+<meta property="og:image" content="https://autouniverse.rs/assets/og-image.png">
+<meta property="og:locale" content="sr_RS">
+<meta property="og:site_name" content="AutoUniverse">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Garage Toolbox — Aplikacija za auto servise">
+<meta name="twitter:description" content="Radni nalozi, PDF računi, DVI inspekcija, evidencija klijenata.">
+<meta name="twitter:image" content="https://autouniverse.rs/assets/og-image.png">
+<link rel="canonical" href="https://autouniverse.rs/garage">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Garage Toolbox",
+  "operatingSystem": "Android, iOS",
+  "applicationCategory": "BusinessApplication",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "RSD" },
+  "description": "Besplatna PWA aplikacija za auto servise — radni nalozi, PDF računi, DVI inspekcija.",
+  "url": "https://autouniverse.rs/garage"
+}
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#fff;color:#1C1F24;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+:root{
+  --red:#ef4444;--red-dark:#b91c1c;--red-light:#fee2e2;
+  --navy:#0f1d35;--orange:#ff6b35;
+  --dark:#1C1F24;--mid:#4A4E58;--muted:#6B7280;
+  --line:#E5E7EB;--bg:#F8F7F3;--radius:14px
+}
+
+.nav{background:#fff;border-bottom:1px solid var(--line);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem;color:var(--navy)}
+.nav-logo .dot{width:10px;height:10px;background:var(--red);border-radius:50%}
+.nav-cta{background:var(--red);color:#fff;padding:.55rem 1.4rem;border-radius:8px;font-weight:700;font-size:.9rem;transition:opacity .15s}
+.nav-cta:hover{opacity:.85}
+
+.hero{background:var(--navy);color:#fff;padding:80px 24px 72px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(239,68,68,.15),transparent);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.35rem 1rem;border-radius:20px;margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.2rem,6vw,3.5rem);font-weight:800;line-height:1.1;margin-bottom:1rem;letter-spacing:-.03em}
+.hero h1 span{color:#fca5a5}
+.hero-sub{font-size:1.1rem;color:#94a3b8;max-width:520px;margin:0 auto 2.5rem;line-height:1.7}
+.hero-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--red);color:#fff;padding:.85rem 2.2rem;border-radius:10px;font-weight:700;font-size:1rem;display:inline-flex;align-items:center;gap:.5rem;transition:opacity .15s}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{border:1px solid rgba(255,255,255,.2);color:#e2e8f0;padding:.85rem 2.2rem;border-radius:10px;font-weight:600;font-size:1rem;transition:border-color .15s,color .15s}
+.btn-ghost:hover{border-color:rgba(255,255,255,.5);color:#fff}
+.hero-stats{display:flex;gap:0;margin-top:3.5rem;justify-content:center;border-top:1px solid rgba(255,255,255,.08);padding-top:2.5rem}
+.hero-stat{flex:1;max-width:140px;text-align:center}
+.hero-stat-num{display:block;font-size:1.8rem;font-weight:800;color:#fca5a5;line-height:1}
+.hero-stat-lbl{display:block;font-size:.75rem;color:#64748b;margin-top:.3rem;text-transform:uppercase;letter-spacing:.05em}
+.hero-stat+.hero-stat{border-left:1px solid rgba(255,255,255,.08)}
+
+.section{padding:72px 24px}
+.section--alt{background:var(--bg)}
+.container{max-width:1100px;margin:0 auto}
+.sec-tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin-bottom:.8rem;background:var(--red-light);padding:.3rem .9rem;border-radius:20px}
+.sec-title{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;line-height:1.15;color:var(--navy);margin-bottom:.8rem;letter-spacing:-.02em}
+.sec-sub{font-size:1rem;color:var(--muted);max-width:560px;line-height:1.65}
+
+/* WO STEPS */
+.wo-steps{margin-top:3rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+.wo-step{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px;position:relative}
+.wo-step-num{font-size:2rem;font-weight:900;color:var(--red-light);line-height:1;margin-bottom:.5rem}
+.wo-step-title{font-size:.9rem;font-weight:700;color:var(--navy);margin-bottom:.3rem}
+.wo-step-text{font-size:.8rem;color:var(--muted);line-height:1.5}
+
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:3rem}
+.feat-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px;transition:box-shadow .2s,border-color .2s}
+.feat-card:hover{box-shadow:0 4px 20px rgba(239,68,68,.1);border-color:#fecaca}
+.feat-icon{font-size:1.8rem;margin-bottom:.8rem}
+.feat-title{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:.4rem}
+.feat-text{font-size:.88rem;color:var(--muted);line-height:1.55}
+
+.persona-box{background:var(--navy);color:#fff;border-radius:var(--radius);padding:40px;display:flex;gap:48px;align-items:center;margin-top:3rem}
+@media(max-width:640px){.persona-box{flex-direction:column;gap:24px;padding:28px}}
+.persona-icon{font-size:4rem;flex-shrink:0}
+.persona-title{font-size:1.4rem;font-weight:800;margin-bottom:.6rem}
+.persona-text{color:#94a3b8;line-height:1.65;margin-bottom:1rem}
+.persona-list{list-style:none;display:flex;flex-direction:column;gap:.5rem}
+.persona-list li{display:flex;align-items:flex-start;gap:.5rem;color:#e2e8f0;font-size:.9rem}
+.persona-list li::before{content:'✓';color:#fca5a5;font-weight:700;flex-shrink:0}
+
+.pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:3rem}
+.plan{border:1.5px solid var(--line);border-radius:var(--radius);padding:28px;position:relative}
+.plan--featured{border-color:var(--red);background:#fff5f5}
+.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.25rem .9rem;border-radius:20px;white-space:nowrap}
+.plan-name{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.5rem}
+.plan-price{font-size:2rem;font-weight:800;color:var(--navy);line-height:1;margin-bottom:.3rem}
+.plan-price span{font-size:.9rem;font-weight:400;color:var(--muted)}
+.plan-desc{font-size:.83rem;color:var(--muted);margin-bottom:1.2rem;line-height:1.5}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:.5rem}
+.plan-features li{font-size:.85rem;color:var(--mid);display:flex;gap:.5rem;align-items:flex-start}
+.plan-features li::before{content:'·';color:var(--red);font-weight:900;flex-shrink:0}
+
+.install{margin-top:3rem;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:600px){.install{grid-template-columns:1fr}}
+.install-card{border:1.5px solid var(--line);border-radius:var(--radius);padding:28px}
+.install-os{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.8rem}
+.install-title{font-size:1.05rem;font-weight:700;color:var(--navy);margin-bottom:1rem}
+.install-steps{list-style:none;counter-reset:steps;display:flex;flex-direction:column;gap:.6rem}
+.install-steps li{counter-increment:steps;display:flex;gap:.8rem;font-size:.88rem;color:var(--mid);align-items:flex-start}
+.install-steps li::before{content:counter(steps);background:var(--red-light);color:var(--red-dark);font-weight:700;font-size:.75rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+
+.faq{margin-top:3rem;display:flex;flex-direction:column;gap:12px}
+.faq-item{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.faq-q{width:100%;text-align:left;background:none;border:none;padding:18px 20px;font-size:.95rem;font-weight:600;color:var(--navy);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;font-family:inherit}
+.faq-q .arr{color:var(--red);font-size:1.1rem;transition:transform .2s;flex-shrink:0}
+.faq-item.open .arr{transform:rotate(45deg)}
+.faq-a{display:none;padding:0 20px 18px;font-size:.88rem;color:var(--muted);line-height:1.65}
+.faq-item.open .faq-a{display:block}
+
+.cta-bar{background:var(--navy);color:#fff;text-align:center;padding:72px 24px}
+.cta-bar h2{font-size:clamp(1.5rem,4vw,2.2rem);font-weight:800;margin-bottom:.8rem}
+.cta-bar p{color:#94a3b8;margin-bottom:2rem;font-size:1rem}
+footer{background:var(--bg);border-top:1px solid var(--line);text-align:center;padding:24px;font-size:.82rem;color:var(--muted)}
+footer a{color:var(--red)}
+@media(max-width:768px){.hero{padding:56px 20px 48px}.section{padding:52px 20px}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo"><span class="dot"></span>AutoUniverse</a>
+  <a href="https://plocicmilan.github.io/AUTOUNIVERSE/garage/" class="nav-cta" target="_blank">Instaliraj besplatno</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">🔧 PWA aplikacija · za auto servise</div>
+    <h1>Kraj papirne<br><span>radionice</span></h1>
+    <p class="hero-sub">Radni nalozi, predračuni, PDF računi i evidencija klijenata — sve bez papira, bez interneta, bez pretplate.</p>
+    <div class="hero-actions">
+      <a href="https://plocicmilan.github.io/AUTOUNIVERSE/garage/" class="btn-primary" target="_blank">
+        Instaliraj Garage besplatno
+        <svg viewBox="0 0 16 16" fill="none" width="16"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#funkcije" class="btn-ghost">Pogledaj funkcije</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><span class="hero-stat-num">100%</span><span class="hero-stat-lbl">Offline</span></div>
+      <div class="hero-stat"><span class="hero-stat-num">0</span><span class="hero-stat-lbl">Mesečna naknada</span></div>
+      <div class="hero-stat"><span class="hero-stat-num">PDF</span><span class="hero-stat-lbl">Računi odmah</span></div>
+      <div class="hero-stat"><span class="hero-stat-num">🇷🇸</span><span class="hero-stat-lbl">Za srpski servis</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- WO SNAP -->
+<section class="section">
+  <div class="container">
+    <div class="sec-tag">WO Snap</div>
+    <h2 class="sec-title">Radni nalog za 7 koraka</h2>
+    <p class="sec-sub">Najbrži put od "stiglo vozilo" do "PDFom šaljem račun klijentu".</p>
+    <div class="wo-steps">
+      <div class="wo-step"><div class="wo-step-num">01</div><div class="wo-step-title">Vozilo</div><div class="wo-step-text">Tablice ili VIN — sistem povlači podatke automatski</div></div>
+      <div class="wo-step"><div class="wo-step-num">02</div><div class="wo-step-title">Klijent</div><div class="wo-step-text">Ime, telefon — postojeći ili novi kontakt</div></div>
+      <div class="wo-step"><div class="wo-step-num">03</div><div class="wo-step-title">Kilometraža</div><div class="wo-step-text">Unesite pri primopredaji vozila</div></div>
+      <div class="wo-step"><div class="wo-step-num">04</div><div class="wo-step-title">Intervencije</div><div class="wo-step-text">Izaberite radove i stavite delove sa cenama</div></div>
+      <div class="wo-step"><div class="wo-step-num">05</div><div class="wo-step-title">DVI (opciono)</div><div class="wo-step-text">Vizuelna inspekcija — dokumentujte stanje vozila</div></div>
+      <div class="wo-step"><div class="wo-step-num">06</div><div class="wo-step-title">Predračun</div><div class="wo-step-text">Pošaljite klijentu pre rada — transparentnost</div></div>
+      <div class="wo-step"><div class="wo-step-num">07</div><div class="wo-step-title">PDF račun</div><div class="wo-step-text">Jedan klik — račun sa logom firme, spreman za slanje</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ZA KOGA -->
+<section class="section section--alt">
+  <div class="container">
+    <div class="persona-box">
+      <div class="persona-icon">🔧</div>
+      <div>
+        <p class="sec-tag">Korisnik</p>
+        <h2 class="persona-title">Za svaku radionicu</h2>
+        <p class="persona-text">Od solo mehaničara do manjeg servisnog centra — Garage zamenjuje svesku, Viber haos i Excel tabele.</p>
+        <ul class="persona-list">
+          <li>Pišem račune ručno — Garage generiše PDF za sekund</li>
+          <li>Zaboravljam šta sam radio na autu — WO Snap sve beleži</li>
+          <li>Klijent pita za istoriju — Garage ima kompletan pregled</li>
+          <li>Radim sa više mehaničara — svako otvori app na svom telefonu</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FUNKCIJE -->
+<section class="section" id="funkcije">
+  <div class="container">
+    <div class="sec-tag">Funkcije</div>
+    <h2 class="sec-title">Sve za modernu radionicu</h2>
+    <p class="sec-sub">7 modula koji pokrivaju ceo servisni proces — od primopredaje do računa.</p>
+    <div class="features">
+      <div class="feat-card">
+        <div class="feat-icon">📋</div>
+        <h3 class="feat-title">WO Snap — Radni nalozi</h3>
+        <p class="feat-text">7 koraka od vozila do zatvorenog naloga. Svaki nalog je automatski u arhivi klijenta i vozila.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📄</div>
+        <h3 class="feat-title">PDF Računi</h3>
+        <p class="feat-text">Logo firme, PIB, adresa, stavke, PDV — profesionalni račun koji možete odmah poslati Viberom ili emailom.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔍</div>
+        <h3 class="feat-title">DVI Inspekcija</h3>
+        <p class="feat-text">Digital Vehicle Inspection — fotografišite, označite, opišite stanje vozila pre i posle servisa.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">👥</div>
+        <h3 class="feat-title">Evidencija klijenata</h3>
+        <p class="feat-text">Kompletna istorija po klijentu i vozilu — kad je poslednji put bio, šta je rađeno, koliko je platio.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💰</div>
+        <h3 class="feat-title">Predračuni</h3>
+        <p class="feat-text">Napravite predračun pre rada — klijent potvrđuje, vi radite, oba ste zaštićeni.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <h3 class="feat-title">Statistike servisa</h3>
+        <p class="feat-text">Prihod po danu/mesecu, najpopularnije usluge, najprofitabilniji klijenti — upravljajte sa podacima.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔩</div>
+        <h3 class="feat-title">Katalog delova</h3>
+        <p class="feat-text">Sačuvajte česte delove sa cenama — brže dodajte na radni nalog, manje kucanja.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔒</div>
+        <h3 class="feat-title">Lokalni podaci</h3>
+        <p class="feat-text">Podaci vaše radionice ostaju na vašem telefonu — niko drugi nema pristup vašim klijentima i cenama.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section section--alt">
+  <div class="container">
+    <div class="sec-tag">Cenovnik</div>
+    <h2 class="sec-title">Počnite besplatno</h2>
+    <p class="sec-sub">Osnovna verzija je potpuno besplatna za jednog mehaničara i jednu radionicu.</p>
+    <div class="pricing">
+      <div class="plan">
+        <div class="plan-name">🟢 Basic</div>
+        <div class="plan-price">0 <span>RSD</span></div>
+        <div class="plan-desc">Za solo mehaničara ili manju radionicu.</div>
+        <ul class="plan-features">
+          <li>Neograničeni radni nalozi</li>
+          <li>PDF računi i predračuni</li>
+          <li>Evidencija klijenata i vozila</li>
+          <li>DVI inspekcija</li>
+          <li>Katalog usluga i delova</li>
+          <li>Offline, bez registracije</li>
+        </ul>
+      </div>
+      <div class="plan plan--featured">
+        <div class="plan-badge">Uskoro</div>
+        <div class="plan-name">🔑 Kod</div>
+        <div class="plan-price">~800 <span>RSD/mes</span></div>
+        <div class="plan-desc">Za veće servise i multi-mehaničar timove.</div>
+        <ul class="plan-features">
+          <li>Više mehaničara — svako ima pristup</li>
+          <li>Napredni PDF sa branding opcijama</li>
+          <li>QR razmena sa Driver appom</li>
+          <li>Backup i cloud sync</li>
+          <li>Napredne statistike i izveštaji</li>
+          <li>Email podrška</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <div class="plan-name">☁️ Platform</div>
+        <div class="plan-price">—</div>
+        <div class="plan-desc">Integracija sa AU Core za deljenje sa vlasnicima.</div>
+        <ul class="plan-features">
+          <li>Servis zapis šalje vlasniku</li>
+          <li>Klijent vidi istoriju u Driver-u</li>
+          <li>Grant sistem pristupa</li>
+          <li>Veza sa Autodelovi platformom</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALACIJA -->
+<section class="section" id="instalacija">
+  <div class="container">
+    <div class="sec-tag">Instalacija</div>
+    <h2 class="sec-title">Na telefonu za 30 sekundi</h2>
+    <p class="sec-sub">Garage je PWA — nema App Store-a, instalirate direktno iz browsera na bilo koji telefon.</p>
+    <div class="install">
+      <div class="install-card">
+        <div class="install-os">🤖 Android (Chrome)</div>
+        <div class="install-title">Instaliraj na Android</div>
+        <ol class="install-steps">
+          <li>Otvorite Chrome i idite na <strong>garage.autouniverse.rs</strong></li>
+          <li>Dodirnite <strong>tri tačkice</strong> (meni) gore desno</li>
+          <li>Izaberite <strong>"Dodaj na početni ekran"</strong></li>
+          <li>Potvrdite — ikonica se pojavljuje kao app</li>
+        </ol>
+      </div>
+      <div class="install-card">
+        <div class="install-os">🍎 iPhone / iPad (Safari)</div>
+        <div class="install-title">Instaliraj na iOS</div>
+        <ol class="install-steps">
+          <li>Otvorite <strong>Safari</strong> i idite na <strong>garage.autouniverse.rs</strong></li>
+          <li>Dodirnite ikonu <strong>Deli</strong> (kvadrat sa strelicom gore)</li>
+          <li>Izaberite <strong>"Dodaj na početni ekran"</strong></li>
+          <li>Potvrdite — ikonica se pojavljuje kao app</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section section--alt">
+  <div class="container">
+    <div class="sec-tag">Pitanja</div>
+    <h2 class="sec-title">Česta pitanja</h2>
+    <div class="faq">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Da li Garage radi bez interneta? <span class="arr">+</span></button>
+        <div class="faq-a">Da, 100% offline. Sve što uradite u radionici ostaje na telefonu. Internet vam treba samo da otvorite app prvi put.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Mogu li da pošaljem PDF račun odmah? <span class="arr">+</span></button>
+        <div class="faq-a">Da. Zatvorite radni nalog i pritisnite "Generiši PDF" — za sekund imate fajl koji možete podeliti Viberom, emailom ili WhatsApp-om. Logo firme se dodaje jednom u podešavanjima.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Mogu li da imam više mehaničara? <span class="arr">+</span></button>
+        <div class="faq-a">U Basic verziji svaki mehaničar ima svoju instalaciju na svom telefonu (podaci su odvojeni). Multi-korisnik sa zajedničkim bazom dolazi u Kod verziji.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Gde se čuvaju podaci klijenata? <span class="arr">+</span></button>
+        <div class="faq-a">Isključivo na vašem telefonu. Nijedna treća strana — ni AutoUniverse, ni Google — ne vidi vaše klijente, cene ni istoriju servisa.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Da li mogu da koristim Garage na tabletu? <span class="arr">+</span></button>
+        <div class="faq-a">Da. Garage se prilagođava svim ekranima — telefon, tablet i desktop kompjuter. Na tabletu je posebno praktičan za DVI inspekciju.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Kako će Garage biti povezan sa Driver aplikacijom? <span class="arr">+</span></button>
+        <div class="faq-a">Mehaničar zatvori nalog u Garage-u — QR kod ili link šalje vlasniku. Vlasnik ga skenira u Driver-u i servisni zapis automatski ulazi u njegovu istoriju vozila. Ovo dolazi sa AU Core platformom.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-bar">
+  <div class="container">
+    <h2>Modernizujte vašu radionicu</h2>
+    <p>Instalirajte Garage i otvorite prvi radni nalog za manje od 2 minute.</p>
+    <a href="https://plocicmilan.github.io/AUTOUNIVERSE/garage/" class="btn-primary" target="_blank">
+      Instaliraj Garage →
+    </a>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 <a href="/">AutoUniverse</a> · Belora Ventures Studio · Kruševac, Srbija ·
+  <a href="/driver">Za vlasnike vozila: Driver Toolbox</a></p>
+</footer>
+
+<script>
+function toggleFaq(btn) {
+  btn.closest('.faq-item').classList.toggle('open');
+}
+</script>
+</body>
+</html>

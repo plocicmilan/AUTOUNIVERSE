@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driver Toolbox — Digitalna servisna knjižica za vlasnike vozila | AutoUniverse</title>
+<meta name="description" content="Driver Toolbox je besplatna PWA aplikacija za praćenje servisa, troškova i istorije vašeg vozila. Radi offline. Bez registracije. Napravljeno u Srbiji.">
+<meta name="keywords" content="Driver Toolbox, servisna knjizica aplikacija, pracenje troskova vozila, auto aplikacija Srbija, PWA aplikacija automobil">
+<meta name="theme-color" content="#0ea5e9">
+<meta property="og:title" content="Driver Toolbox — Digitalna servisna knjižica">
+<meta property="og:description" content="Besplatna aplikacija za praćenje servisa, troškova i istorije vozila. Offline, bez registracije.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://autouniverse.rs/driver">
+<meta property="og:image" content="https://autouniverse.rs/assets/og-image.png">
+<meta property="og:locale" content="sr_RS">
+<meta property="og:site_name" content="AutoUniverse">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Driver Toolbox — Digitalna servisna knjižica">
+<meta name="twitter:description" content="Besplatna aplikacija za praćenje servisa, troškova i istorije vozila.">
+<meta name="twitter:image" content="https://autouniverse.rs/assets/og-image.png">
+<link rel="canonical" href="https://autouniverse.rs/driver">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Driver Toolbox",
+  "operatingSystem": "Android, iOS",
+  "applicationCategory": "UtilitiesApplication",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "RSD" },
+  "description": "Besplatna PWA aplikacija za praćenje servisa, troškova i istorije vozila.",
+  "url": "https://autouniverse.rs/driver"
+}
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#fff;color:#1C1F24;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+:root{
+  --blue:#0ea5e9;--blue-dark:#0369a1;--blue-light:#e0f2fe;
+  --navy:#0f1d35;--orange:#ff6b35;
+  --dark:#1C1F24;--mid:#4A4E58;--muted:#6B7280;
+  --line:#E5E7EB;--bg:#F8F7F3;--radius:14px
+}
+
+/* NAV */
+.nav{background:#fff;border-bottom:1px solid var(--line);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem;color:var(--navy)}
+.nav-logo .dot{width:10px;height:10px;background:var(--blue);border-radius:50%}
+.nav-cta{background:var(--blue);color:#fff;padding:.55rem 1.4rem;border-radius:8px;font-weight:700;font-size:.9rem;transition:opacity .15s}
+.nav-cta:hover{opacity:.85}
+
+/* HERO */
+.hero{background:var(--navy);color:#fff;padding:80px 24px 72px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(14,165,233,.18),transparent);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.3);color:#7dd3fc;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.35rem 1rem;border-radius:20px;margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.2rem,6vw,3.5rem);font-weight:800;line-height:1.1;margin-bottom:1rem;letter-spacing:-.03em}
+.hero h1 span{color:#7dd3fc}
+.hero-sub{font-size:1.1rem;color:#94a3b8;max-width:520px;margin:0 auto 2.5rem;line-height:1.7}
+.hero-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--blue);color:#fff;padding:.85rem 2.2rem;border-radius:10px;font-weight:700;font-size:1rem;display:inline-flex;align-items:center;gap:.5rem;transition:opacity .15s}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{border:1px solid rgba(255,255,255,.2);color:#e2e8f0;padding:.85rem 2.2rem;border-radius:10px;font-weight:600;font-size:1rem;transition:border-color .15s,color .15s}
+.btn-ghost:hover{border-color:rgba(255,255,255,.5);color:#fff}
+.hero-stats{display:flex;gap:0;margin-top:3.5rem;justify-content:center;border-top:1px solid rgba(255,255,255,.08);padding-top:2.5rem}
+.hero-stat{flex:1;max-width:140px;text-align:center}
+.hero-stat-num{display:block;font-size:1.8rem;font-weight:800;color:#7dd3fc;line-height:1}
+.hero-stat-lbl{display:block;font-size:.75rem;color:#64748b;margin-top:.3rem;text-transform:uppercase;letter-spacing:.05em}
+.hero-stat+.hero-stat{border-left:1px solid rgba(255,255,255,.08)}
+
+/* SEKCIJE */
+.section{padding:72px 24px}
+.section--alt{background:var(--bg)}
+.container{max-width:1100px;margin:0 auto}
+.sec-tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:.8rem;background:var(--blue-light);padding:.3rem .9rem;border-radius:20px}
+.sec-title{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;line-height:1.15;color:var(--navy);margin-bottom:.8rem;letter-spacing:-.02em}
+.sec-sub{font-size:1rem;color:var(--muted);max-width:560px;line-height:1.65}
+
+/* FEATURES GRID */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:3rem}
+.feat-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px;transition:box-shadow .2s,border-color .2s}
+.feat-card:hover{box-shadow:0 4px 20px rgba(14,165,233,.1);border-color:#bae6fd}
+.feat-icon{font-size:1.8rem;margin-bottom:.8rem}
+.feat-title{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:.4rem}
+.feat-text{font-size:.88rem;color:var(--muted);line-height:1.55}
+
+/* PERSONA */
+.persona-box{background:var(--navy);color:#fff;border-radius:var(--radius);padding:40px;display:flex;gap:48px;align-items:center;margin-top:3rem}
+@media(max-width:640px){.persona-box{flex-direction:column;gap:24px;padding:28px}}
+.persona-icon{font-size:4rem;flex-shrink:0}
+.persona-title{font-size:1.4rem;font-weight:800;margin-bottom:.6rem}
+.persona-text{color:#94a3b8;line-height:1.65;margin-bottom:1rem}
+.persona-list{list-style:none;display:flex;flex-direction:column;gap:.5rem}
+.persona-list li{display:flex;align-items:flex-start;gap:.5rem;color:#e2e8f0;font-size:.9rem}
+.persona-list li::before{content:'✓';color:#7dd3fc;font-weight:700;flex-shrink:0}
+
+/* PRICING */
+.pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:3rem}
+.plan{border:1.5px solid var(--line);border-radius:var(--radius);padding:28px;position:relative}
+.plan--featured{border-color:var(--blue);background:#f0f9ff}
+.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.25rem .9rem;border-radius:20px;white-space:nowrap}
+.plan-name{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.5rem}
+.plan-price{font-size:2rem;font-weight:800;color:var(--navy);line-height:1;margin-bottom:.3rem}
+.plan-price span{font-size:.9rem;font-weight:400;color:var(--muted)}
+.plan-desc{font-size:.83rem;color:var(--muted);margin-bottom:1.2rem;line-height:1.5}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:.5rem}
+.plan-features li{font-size:.85rem;color:var(--mid);display:flex;gap:.5rem;align-items:flex-start}
+.plan-features li::before{content:'·';color:var(--blue);font-weight:900;flex-shrink:0}
+
+/* INSTALL */
+.install{margin-top:3rem;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:600px){.install{grid-template-columns:1fr}}
+.install-card{border:1.5px solid var(--line);border-radius:var(--radius);padding:28px}
+.install-os{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.8rem}
+.install-title{font-size:1.05rem;font-weight:700;color:var(--navy);margin-bottom:1rem}
+.install-steps{list-style:none;counter-reset:steps;display:flex;flex-direction:column;gap:.6rem}
+.install-steps li{counter-increment:steps;display:flex;gap:.8rem;font-size:.88rem;color:var(--mid);align-items:flex-start}
+.install-steps li::before{content:counter(steps);background:var(--blue-light);color:var(--blue-dark);font-weight:700;font-size:.75rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+
+/* FAQ */
+.faq{margin-top:3rem;display:flex;flex-direction:column;gap:12px}
+.faq-item{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.faq-q{width:100%;text-align:left;background:none;border:none;padding:18px 20px;font-size:.95rem;font-weight:600;color:var(--navy);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;font-family:inherit}
+.faq-q .arr{color:var(--blue);font-size:1.1rem;transition:transform .2s;flex-shrink:0}
+.faq-item.open .arr{transform:rotate(45deg)}
+.faq-a{display:none;padding:0 20px 18px;font-size:.88rem;color:var(--muted);line-height:1.65}
+.faq-item.open .faq-a{display:block}
+
+/* CTA BAR */
+.cta-bar{background:var(--navy);color:#fff;text-align:center;padding:72px 24px}
+.cta-bar h2{font-size:clamp(1.5rem,4vw,2.2rem);font-weight:800;margin-bottom:.8rem}
+.cta-bar p{color:#94a3b8;margin-bottom:2rem;font-size:1rem}
+
+/* FOOTER */
+footer{background:var(--bg);border-top:1px solid var(--line);text-align:center;padding:24px;font-size:.82rem;color:var(--muted)}
+footer a{color:var(--blue)}
+
+@media(max-width:768px){
+  .hero{padding:56px 20px 48px}
+  .section{padding:52px 20px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo"><span class="dot"></span>AutoUniverse</a>
+  <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="nav-cta" target="_blank">Instaliraj besplatno</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">📱 PWA aplikacija · radi offline</div>
+    <h1>Digitalna servisna<br><span>knjižica u džepu</span></h1>
+    <p class="hero-sub">Pratite servis, troškove, podsetnike i kompletnu istoriju svakog vozila — bez papira, bez interneta, bez registracije.</p>
+    <div class="hero-actions">
+      <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="btn-primary" target="_blank">
+        Instaliraj Driver besplatno
+        <svg viewBox="0 0 16 16" fill="none" width="16"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#funkcije" class="btn-ghost">Pogledaj funkcije</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><span class="hero-stat-num">100%</span><span class="hero-stat-lbl">Offline</span></div>
+      <div class="hero-stat"><span class="hero-stat-num">0</span><span class="hero-stat-lbl">Tracking</span></div>
+      <div class="hero-stat"><span class="hero-stat-num">Free</span><span class="hero-stat-lbl">Osnovna verzija</span></div>
+      <div class="hero-stat"><span class="hero-stat-num">🇷🇸</span><span class="hero-stat-lbl">Napravljeno lokalno</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ZA KOGA -->
+<section class="section">
+  <div class="container">
+    <div class="persona-box">
+      <div class="persona-icon">🚗</div>
+      <div>
+        <p class="sec-tag">Korisnik</p>
+        <h2 class="persona-title">Za svakog vlasnika vozila</h2>
+        <p class="persona-text">Bilo da imate jedan auto ili celu porodičnu flotu — Driver beleži sve što treba da znate o svakom vozilu, uvek pri ruci.</p>
+        <ul class="persona-list">
+          <li>Ne znam kad je bio poslednji servis — Driver pamti</li>
+          <li>Prodajem auto i nemam papire — Driver je vaša servisna knjižica</li>
+          <li>Zaboravljam na registraciju — Driver vas podseća</li>
+          <li>Ne znam koliko me auto košta godišnje — Driver računa</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FUNKCIJE -->
+<section class="section section--alt" id="funkcije">
+  <div class="container">
+    <div class="sec-tag">Funkcije</div>
+    <h2 class="sec-title">Sve što vam treba za vozilo</h2>
+    <p class="sec-sub">8 ključnih modula — od praćenja servisa do kalkulatora troškova.</p>
+    <div class="features">
+      <div class="feat-card">
+        <div class="feat-icon">📋</div>
+        <h3 class="feat-title">Istorija servisa</h3>
+        <p class="feat-text">Svaka zamena ulja, filter, kočione obloge — sve na jednom mestu sa datumom i kilometražom.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔔</div>
+        <h3 class="feat-title">Pametni podsetnici</h3>
+        <p class="feat-text">Registracija, tehnički pregled, servis po km — Driver vas upozorava pre roka, ne posle.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⛽</div>
+        <h3 class="feat-title">Praćenje goriva</h3>
+        <p class="feat-text">Beležite svako punjenje — aplikacija računa stvarnu potrošnju i trend tokom vremena.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💰</div>
+        <h3 class="feat-title">Kalkulator troškova</h3>
+        <p class="feat-text">Koliko ste potrošili ovog meseca, ove godine, od kupovine — pravi trošak, ne procena.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📄</div>
+        <h3 class="feat-title">Dokumenta vozila</h3>
+        <p class="feat-text">Datum registracije, polica osiguranja, tehnički pregled — sve u jednom pregledu.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔍</div>
+        <h3 class="feat-title">VIN dekoder</h3>
+        <p class="feat-text">Unesite VIN i saznajte podatke iz fabrike: marka, model, godina, motor, zemlja porekla.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <h3 class="feat-title">Statistike i grafici</h3>
+        <p class="feat-text">Mesečni i godišnji pregled troškova po kategorijama — vizuelno, jasno, odmah.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔒</div>
+        <h3 class="feat-title">Privatnost po dizajnu</h3>
+        <p class="feat-text">Podaci ostaju na vašem telefonu. Nema cloud-a, nema tracking-a, nema Google Analytics-a.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NIVOI -->
+<section class="section">
+  <div class="container">
+    <div class="sec-tag">Cenovnik</div>
+    <h2 class="sec-title">Besplatan za start</h2>
+    <p class="sec-sub">Core funkcije su besplatne zauvek. Premium nivo za one kojima treba više.</p>
+    <div class="pricing">
+      <div class="plan">
+        <div class="plan-name">🟢 Basic</div>
+        <div class="plan-price">0 <span>RSD</span></div>
+        <div class="plan-desc">Sve što vam treba za jedno vozilo.</div>
+        <ul class="plan-features">
+          <li>1 vozilo</li>
+          <li>Istorija servisa i troškova</li>
+          <li>Podsetnici (registracija, servis)</li>
+          <li>Praćenje goriva</li>
+          <li>VIN dekoder</li>
+          <li>Offline, bez registracije</li>
+        </ul>
+      </div>
+      <div class="plan plan--featured">
+        <div class="plan-badge">Uskoro</div>
+        <div class="plan-name">🔑 Kod</div>
+        <div class="plan-price">~500 <span>RSD/mes</span></div>
+        <div class="plan-desc">Za ozbiljne entuzijaste i multi-vozila.</div>
+        <ul class="plan-features">
+          <li>Neograničen broj vozila</li>
+          <li>PDF izvoz istorije</li>
+          <li>QR razmena sa Garage-om</li>
+          <li>Napredne statistike</li>
+          <li>Backup i sinhronizacija</li>
+          <li>Prioritetna podrška</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <div class="plan-name">☁️ Platform</div>
+        <div class="plan-price">—</div>
+        <div class="plan-desc">Deljenje istorije pri prodaji vozila. Čeka AU Core.</div>
+        <ul class="plan-features">
+          <li>Verifikovana istorija za kupce</li>
+          <li>Grant sistem (ko šta vidi)</li>
+          <li>Deljenje sa Autopijaca</li>
+          <li>Multi-device sync</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALACIJA -->
+<section class="section section--alt" id="instalacija">
+  <div class="container">
+    <div class="sec-tag">Instalacija</div>
+    <h2 class="sec-title">Instalirajte za 30 sekundi</h2>
+    <p class="sec-sub">Driver je PWA (Progressive Web App) — nema App Store-a, nema čekanja, direktno na telefon.</p>
+    <div class="install">
+      <div class="install-card">
+        <div class="install-os">🤖 Android (Chrome)</div>
+        <div class="install-title">Instaliraj na Android</div>
+        <ol class="install-steps">
+          <li>Otvorite Chrome i idite na <strong>driver.autouniverse.rs</strong></li>
+          <li>Dodirnite <strong>tri tačkice</strong> (meni) gore desno</li>
+          <li>Izaberite <strong>"Dodaj na početni ekran"</strong></li>
+          <li>Potvrdite — ikonica se pojavljuje kao app</li>
+        </ol>
+      </div>
+      <div class="install-card">
+        <div class="install-os">🍎 iPhone / iPad (Safari)</div>
+        <div class="install-title">Instaliraj na iOS</div>
+        <ol class="install-steps">
+          <li>Otvorite <strong>Safari</strong> (ne Chrome) i idite na <strong>driver.autouniverse.rs</strong></li>
+          <li>Dodirnite ikonu <strong>Deli</strong> (kvadrat sa strelicom gore)</li>
+          <li>Izaberite <strong>"Dodaj na početni ekran"</strong></li>
+          <li>Potvrdite — ikonica se pojavljuje kao app</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section">
+  <div class="container">
+    <div class="sec-tag">Pitanja</div>
+    <h2 class="sec-title">Česta pitanja</h2>
+    <div class="faq">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Da li Driver radi bez interneta? <span class="arr">+</span></button>
+        <div class="faq-a">Da, 100% offline. Podaci se čuvaju lokalno na vašem telefonu. Internet vam treba samo pri prvom otvaranju da bi se app učitala — posle toga sve funkcioniše bez konekcije.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Gde se čuvaju moji podaci? <span class="arr">+</span></button>
+        <div class="faq-a">Isključivo na vašem telefonu. Nema cloud-a, nema servera, nema treće strane. Ako izgubite telefon ili obrišete app — podaci su izgubljeni (backup dolazi u Kod nivou).</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Da li moram da se registrujem? <span class="arr">+</span></button>
+        <div class="faq-a">Ne. Otvorite app, dodajte vozilo i krenite. Nema emaila, nema lozinke, nema Google/Facebook prijave.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Koliko vozila mogu da dodam? <span class="arr">+</span></button>
+        <div class="faq-a">U Basic verziji — jedno vozilo. U Kod verziji (uskoro) — neograničeno. Porodični auto, motocikl, kombi — sve na jednom mestu.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Mogu li da prikažem istoriju pri prodaji auta? <span class="arr">+</span></button>
+        <div class="faq-a">Da — u Platform nivou (čeka AU Core) možete podeliti verifikovanu istoriju sa kupcem jednim klikom. Kupac skenira QR ili dobija link sa kompletnim pregledom servisa.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Radi li na iPhonu? <span class="arr">+</span></button>
+        <div class="faq-a">Da. Driver je PWA i radi na svim modernim telefonima. Na iPhonu instalirajte iz Safari-ja (ne iz Chrome-a) da biste dobili full offline iskustvo.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Kako se Driver razlikuje od Excel tablice? <span class="arr">+</span></button>
+        <div class="faq-a">Driver ima pametne podsetnike po datumu i kilometraži, vizuelni prikaz istorije, kalkulator potrošnje koji se sam ažurira i integraciju sa Garage aplikacijom vašeg mehaničara — Excel to ne može.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-bar">
+  <div class="container">
+    <h2>Počnite danas — besplatno</h2>
+    <p>Instalirajte Driver i dodajte prvo vozilo za manje od minute.</p>
+    <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="btn-primary" target="_blank">
+      Instaliraj Driver →
+    </a>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 <a href="/">AutoUniverse</a> · Belora Ventures Studio · Kruševac, Srbija ·
+  <a href="/garage">Za auto servise: Garage Toolbox</a></p>
+</footer>
+
+<script>
+function toggleFaq(btn) {
+  var item = btn.closest('.faq-item');
+  var open = item.classList.toggle('open');
+}
+</script>
+</body>
+</html>
