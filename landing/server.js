@@ -156,11 +156,11 @@ const server = http.createServer(async (req, res) => {
   // Security: prevent path traversal
   if (!filePath.startsWith(__dirname)) { res.writeHead(403); res.end(); return; }
 
-  // If path has no extension, try as .html or fallback to index.html
+  // If path has no extension, try as .html or 404
   if (!path.extname(filePath)) {
     const htmlPath = filePath + '.html';
     if (fs.existsSync(htmlPath)) { filePath = htmlPath; }
-    else { filePath = path.join(__dirname, 'index.html'); }
+    else { serve404(res); return; }
   }
 
   serveStatic(res, filePath);
