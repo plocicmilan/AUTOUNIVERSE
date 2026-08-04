@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VIN dekoder — Proverite istoriju vozila po VIN broju | AutoUniverse</title>
+<meta name="description" content="Dekodujte VIN broj vozila: marka, model, godina, zemlja porekla, tip motora. Besplatni VIN dekoder za sva vozila.">
+<meta name="keywords" content="VIN dekoder, VIN broj vozila, provera VIN broja, vin check besplatno, dekodovanje VIN broja auto">
+<meta name="theme-color" content="#7C3AED">
+<meta property="og:title" content="VIN dekoder — AutoUniverse">
+<meta property="og:description" content="Unesite VIN broj i saznajte sve o vozilu: marka, model, godina, motor, zemlja porekla.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://autouniverse.rs/kalkulatori/vin">
+<meta property="og:image" content="https://autouniverse.rs/assets/og-image.png">
+<meta property="og:locale" content="sr_RS">
+<meta property="og:site_name" content="AutoUniverse">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VIN dekoder — AutoUniverse">
+<meta name="twitter:description" content="Unesite VIN broj i saznajte sve o vozilu.">
+<meta name="twitter:image" content="https://autouniverse.rs/assets/og-image.png">
+<link rel="canonical" href="https://autouniverse.rs/kalkulatori/vin">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#F8F7F3;color:#1C1F24;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+a{color:inherit;text-decoration:none}
+:root{--ac:#7C3AED;--dark:#1C1F24;--mid:#4A4E58;--muted:#6B7280;--line:#E5E7EB;--bg:#ffffff;--radius:14px}
+.nav{background:#fff;border-bottom:1px solid var(--line);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem}
+.nav-logo .dot{width:10px;height:10px;background:var(--ac);border-radius:50%}
+.nav-back{font-size:.85rem;color:var(--muted)}
+.nav-back:hover{color:var(--ac)}
+.hero{background:var(--dark);color:#fff;padding:48px 20px 40px;text-align:center}
+.hero-label{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#c4b5fd;margin-bottom:.8rem;background:rgba(196,181,253,.12);padding:.3rem .8rem;border-radius:20px}
+.hero h1{font-size:clamp(1.7rem,5vw,2.5rem);font-weight:800;line-height:1.15;margin-bottom:.8rem;letter-spacing:-.02em}
+.hero h1 span{color:#c4b5fd}
+.hero p{font-size:1rem;color:#9ca3af;max-width:480px;margin:0 auto;line-height:1.65}
+.main{max-width:640px;margin:0 auto;padding:32px 20px 60px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.vin-input-wrap{display:flex;gap:10px}
+.vin-input{flex:1;padding:13px 16px;border:1.5px solid var(--line);border-radius:9px;font-size:1rem;font-family:'Courier New',monospace;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dark);background:#fafafa;outline:none;transition:border-color .15s}
+.vin-input:focus{border-color:var(--ac);background:#fff}
+.vin-btn{padding:13px 22px;background:var(--ac);color:#fff;border:none;border-radius:9px;font-size:.95rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s;font-family:inherit}
+.vin-btn:hover{opacity:.85}
+.vin-btn:disabled{opacity:.5;cursor:not-allowed}
+.hint{font-size:.75rem;color:var(--muted);margin-top:6px}
+.result{background:var(--dark);color:#fff;border-radius:var(--radius);padding:24px;margin-bottom:16px;display:none}
+.result.show{display:block}
+.result-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:16px}
+.result-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.9rem}
+.result-row:last-of-type{border-bottom:none}
+.result-row .rl{color:#d1d5db;flex:1}
+.result-row .rv{font-weight:600;text-align:right;flex:1;color:#fff}
+.result-vin{margin-top:14px;padding:10px 14px;background:rgba(255,255,255,.05);border-radius:8px;font-family:'Courier New',monospace;font-size:.85rem;color:#a5b4fc;word-break:break-all;letter-spacing:.05em}
+.error-box{background:#7f1d1d;color:#fecaca;border-radius:var(--radius);padding:20px;margin-bottom:16px;display:none;text-align:center;font-size:.9rem}
+.error-box.show{display:block}
+.loading{text-align:center;padding:20px;color:var(--muted);display:none}
+.loading.show{display:block}
+.note{font-size:.78rem;color:var(--muted);line-height:1.55;padding:14px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:16px}
+.note a{color:var(--ac);text-decoration:underline}
+.cta-box{background:var(--ac);color:#fff;border-radius:var(--radius);padding:24px;text-align:center}
+.cta-box h3{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.cta-box p{font-size:.88rem;opacity:.85;margin-bottom:18px;line-height:1.5}
+.cta-btn{display:inline-block;background:#fff;color:var(--ac);font-weight:700;font-size:.95rem;padding:12px 28px;border-radius:9px;transition:opacity .15s}
+.cta-btn:hover{opacity:.9}
+footer{text-align:center;padding:20px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line)}
+footer a{color:var(--ac)}
+.vin-visual{display:flex;gap:2px;margin-top:12px;flex-wrap:wrap}
+.vin-char{width:28px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:.9rem;font-weight:700;border-radius:5px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;transition:background .2s}
+.vin-char.filled{background:#ede9fe;color:#5b21b6;border-color:#c4b5fd}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo"><span class="dot"></span>AutoUniverse</a>
+  <a href="/" class="nav-back">← Nazad na sajt</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-label">Besplatni alat</div>
+  <h1>VIN <span>dekoder</span></h1>
+  <p>Unesite 17-cifreni VIN broj i saznajte kompletne podatke o vozilu — marka, model, godina, motor, zemlja porekla.</p>
+</div>
+
+<div class="main">
+
+  <div class="card">
+    <div class="card-title">VIN broj vozila</div>
+    <div class="vin-input-wrap">
+      <input type="text" id="vin_input" class="vin-input" placeholder="npr. WBA3A5C55FK123456" maxlength="17" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" oninput="onVinInput(this)">
+      <button class="vin-btn" id="vin_btn" onclick="decodeVin()">Dekodiraj</button>
+    </div>
+    <p class="hint">17 karaktera · samo slova i cifre · bez I, O i Q</p>
+    <div class="vin-visual" id="vin_visual"></div>
+  </div>
+
+  <div class="loading" id="loading">Proveravam VIN bazu...</div>
+  <div class="error-box" id="error_box"></div>
+
+  <div class="result" id="result">
+    <div class="result-title" id="result_title">Podaci o vozilu</div>
+    <div id="result_rows"></div>
+    <div class="result-vin" id="result_vin"></div>
+  </div>
+
+  <div class="note">
+    Podaci se preuzimaju iz <strong>NHTSA vPIC baze</strong> (US National Highway Traffic Safety Administration).
+    Baza pokriva većinu svetskih proizvođača (VW, BMW, Toyota, Ford, Audi, Mercedes, Peugeot...).
+    VIN dekoduje strukturu vozila iz fabrike — ne prikazuje istoriju, vlasništvo ni servisne zapise.
+    Za punu istoriju vozila koristite Driver aplikaciju.
+  </div>
+
+  <div class="cta-box">
+    <h3>Sačuvajte vozilo u Driver-u</h3>
+    <p>Dodajte VIN u Driver Toolbox i gradite kompletnu digitalnu servisnu knjižicu od prvog dana.</p>
+    <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="cta-btn">Otvori Driver →</a>
+  </div>
+
+</div>
+
+<footer>
+  <p>© 2026 <a href="/">AutoUniverse</a> · Belora Ventures Studio · Kruševac, Srbija</p>
+</footer>
+
+<script>
+var FIELDS = [
+  'Make','Model','ModelYear','PlantCountry','BodyClass','EngineConfiguration',
+  'DisplacementL','FuelTypePrimary','DriveType','TransmissionStyle','GVWR',
+  'Manufacturer','PlantCity'
+];
+var LABELS = {
+  Make:'Marka', Model:'Model', ModelYear:'Godina', PlantCountry:'Zemlja porekla',
+  BodyClass:'Tip karoserije', EngineConfiguration:'Konfiguracija motora',
+  DisplacementL:'Zapremina motora', FuelTypePrimary:'Gorivo', DriveType:'Pogon',
+  TransmissionStyle:'Menjač', GVWR:'Max masa', Manufacturer:'Proizvođač', PlantCity:'Grad fabrike'
+};
+
+function onVinInput(el) {
+  el.value = el.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g,'');
+  var v = el.value;
+  var vis = document.getElementById('vin_visual');
+  vis.innerHTML = Array.from({length:17}, function(_,i) {
+    return '<div class="vin-char' + (i < v.length ? ' filled' : '') + '">' + (v[i] || '') + '</div>';
+  }).join('');
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('error_box').classList.remove('show');
+}
+
+function decodeVin() {
+  var vin = document.getElementById('vin_input').value.trim();
+  if (vin.length !== 17) {
+    showError('VIN mora imati tačno 17 karaktera. Imate ' + vin.length + '.');
+    return;
+  }
+
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('error_box').classList.remove('show');
+  document.getElementById('vin_btn').disabled = true;
+
+  var url = 'https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/' + encodeURIComponent(vin) + '?format=json';
+
+  fetch(url)
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      document.getElementById('loading').classList.remove('show');
+      document.getElementById('vin_btn').disabled = false;
+
+      var results = data.Results || [];
+      var map = {};
+      results.forEach(function(r) { map[r.Variable] = r.Value; });
+
+      var make = map['Make'] || '';
+      var model = map['Model'] || '';
+      var year = map['Model Year'] || map['ModelYear'] || '';
+
+      if (!make && !model) {
+        showError('VIN nije prepoznat u bazi. Proverite broj i pokušajte ponovo.');
+        return;
+      }
+
+      var rows = [];
+      var fieldMap = {
+        'Make': 'Make', 'Model': 'Model', 'Model Year': 'Godina',
+        'Plant Country': 'Zemlja porekla', 'Body Class': 'Tip karoserije',
+        'Engine Configuration': 'Konfiguracija motora',
+        'Displacement (L)': 'Zapremina motora (L)',
+        'Fuel Type - Primary': 'Gorivo',
+        'Drive Type': 'Pogon',
+        'Transmission Style': 'Menjač',
+        'Manufacturer Name': 'Proizvođač',
+        'Plant City': 'Grad fabrike'
+      };
+
+      Object.keys(fieldMap).forEach(function(key) {
+        var val = map[key];
+        if (val && val !== 'Not Applicable' && val !== 'Not Provided' && val.trim()) {
+          rows.push({ l: fieldMap[key], v: val });
+        }
+      });
+
+      if (!rows.length) {
+        showError('VIN dekodiran ali podaci nisu dostupni za ovo vozilo.');
+        return;
+      }
+
+      document.getElementById('result_title').textContent = (make + ' ' + model + (year ? ' (' + year + ')' : '')).trim();
+      document.getElementById('result_rows').innerHTML = rows.map(function(r) {
+        return '<div class="result-row"><span class="rl">'+r.l+'</span><span class="rv">'+r.v+'</span></div>';
+      }).join('');
+      document.getElementById('result_vin').textContent = vin;
+      document.getElementById('result').classList.add('show');
+    })
+    .catch(function(err) {
+      document.getElementById('loading').classList.remove('show');
+      document.getElementById('vin_btn').disabled = false;
+      showError('Greška pri povezivanju sa VIN bazom. Proverite internet konekciju i pokušajte ponovo.');
+    });
+}
+
+function showError(msg) {
+  var el = document.getElementById('error_box');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+document.getElementById('vin_input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') decodeVin();
+});
+
+onVinInput(document.getElementById('vin_input'));
+</script>
+</body>
+</html>

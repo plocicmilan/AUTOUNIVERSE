@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator AO osiguranja — Procena cene obaveznog osiguranja | AutoUniverse</title>
+<meta name="description" content="Procenite cenu AO obaveznog osiguranja automobila u Srbiji. Unesite kubikazzu, godiste i region — dobijte okvirnu premiju. Besplatni kalkulator.">
+<meta name="keywords" content="kalkulator AO osiguranje, cena obaveznog osiguranja auto Srbija, premija osiguranja automobil, AO osiguranje procena cene">
+<meta name="theme-color" content="#0891B2">
+<meta property="og:title" content="Kalkulator AO osiguranja — AutoUniverse">
+<meta property="og:description" content="Okvirna procena premije AO obaveznog osiguranja po kubikaži, godištu i regionu.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://autouniverse.rs/kalkulatori/osiguranje">
+<meta property="og:image" content="https://autouniverse.rs/assets/og-image.png">
+<meta property="og:locale" content="sr_RS">
+<meta property="og:site_name" content="AutoUniverse">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kalkulator AO osiguranja — AutoUniverse">
+<meta name="twitter:description" content="Okvirna procena premije AO obaveznog osiguranja.">
+<meta name="twitter:image" content="https://autouniverse.rs/assets/og-image.png">
+<link rel="canonical" href="https://autouniverse.rs/kalkulatori/osiguranje">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#F8F7F3;color:#1C1F24;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+a{color:inherit;text-decoration:none}
+:root{--ac:#0891B2;--dark:#1C1F24;--mid:#4A4E58;--muted:#6B7280;--line:#E5E7EB;--bg:#ffffff;--radius:14px}
+.nav{background:#fff;border-bottom:1px solid var(--line);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem}
+.nav-logo .dot{width:10px;height:10px;background:var(--ac);border-radius:50%}
+.nav-back{font-size:.85rem;color:var(--muted)}
+.nav-back:hover{color:var(--ac)}
+.hero{background:var(--dark);color:#fff;padding:48px 20px 40px;text-align:center}
+.hero-label{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#67e8f9;margin-bottom:.8rem;background:rgba(103,232,249,.12);padding:.3rem .8rem;border-radius:20px}
+.hero h1{font-size:clamp(1.7rem,5vw,2.5rem);font-weight:800;line-height:1.15;margin-bottom:.8rem;letter-spacing:-.02em}
+.hero h1 span{color:#67e8f9}
+.hero p{font-size:1rem;color:#9ca3af;max-width:480px;margin:0 auto;line-height:1.65}
+.main{max-width:640px;margin:0 auto;padding:32px 20px 60px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{font-size:.82rem;font-weight:600;color:var(--mid)}
+.field input,.field select{padding:11px 14px;border:1.5px solid var(--line);border-radius:9px;font-size:.95rem;color:var(--dark);background:#fafafa;font-family:inherit;outline:none;transition:border-color .15s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--ac);background:#fff}
+.field .hint{font-size:.75rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:440px){.grid2{grid-template-columns:1fr}}
+.result{background:var(--dark);color:#fff;border-radius:var(--radius);padding:24px;margin-bottom:16px;display:none}
+.result.show{display:block}
+.result-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:16px}
+.result-row{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.9rem}
+.result-row:last-of-type{border-bottom:none}
+.result-row .rl{color:#d1d5db}
+.result-row .rv{font-weight:600;white-space:nowrap}
+.result-row .rsub{font-size:.75rem;color:#6b7280;display:block}
+.result-total{margin-top:14px;padding-top:14px;border-top:2px solid rgba(255,255,255,.15);display:flex;justify-content:space-between;align-items:center}
+.result-total .tl{font-size:.95rem;font-weight:700;color:#fff}
+.result-total .tv{font-size:1.6rem;font-weight:800;color:#67e8f9}
+.note{font-size:.78rem;color:var(--muted);line-height:1.55;padding:14px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:16px}
+.note a{color:var(--ac);text-decoration:underline}
+.cta-box{background:var(--ac);color:#fff;border-radius:var(--radius);padding:24px;text-align:center}
+.cta-box h3{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.cta-box p{font-size:.88rem;opacity:.85;margin-bottom:18px;line-height:1.5}
+.cta-btn{display:inline-block;background:#fff;color:var(--ac);font-weight:700;font-size:.95rem;padding:12px 28px;border-radius:9px;transition:opacity .15s}
+.cta-btn:hover{opacity:.9}
+footer{text-align:center;padding:20px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line)}
+footer a{color:var(--ac)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo"><span class="dot"></span>AutoUniverse</a>
+  <a href="/" class="nav-back">← Nazad na sajt</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-label">Besplatni alat</div>
+  <h1>Procena <span>AO osiguranja</span></h1>
+  <p>Okvirna procena godišnje premije obaveznog osiguranja po kubikaži, godištu i regionu vozila.</p>
+</div>
+
+<div class="main">
+
+  <div class="card">
+    <div class="card-title">Podaci o vozilu</div>
+    <div class="grid2">
+      <div class="field">
+        <label for="kubikaza">Zapremina motora (ccm)</label>
+        <input type="number" id="kubikaza" placeholder="npr. 1600" min="50" max="9999" oninput="calc()">
+      </div>
+      <div class="field">
+        <label for="god_vozila">Godina vozila</label>
+        <input type="number" id="god_vozila" placeholder="npr. 2015" min="1970" max="2026" oninput="calc()">
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="gorivo_tip">Vrsta goriva</label>
+        <select id="gorivo_tip" onchange="calc()">
+          <option value="benzin">Benzin / hibrid</option>
+          <option value="dizel">Dizel</option>
+          <option value="gas">LPG / CNG</option>
+          <option value="struja">Električno</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="region">Region registracije</label>
+        <select id="region" onchange="calc()">
+          <option value="beograd">Beograd</option>
+          <option value="novi_sad">Novi Sad / Vojvodina</option>
+          <option value="nis">Niš / Južna i Istočna Srbija</option>
+          <option value="kragujevac">Kragujevac / Šumadija</option>
+          <option value="ostalo" selected>Ostali gradovi</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="bonus">Bonus/malus</label>
+        <select id="bonus" onchange="calc()">
+          <option value="0">B0 — bez istorije</option>
+          <option value="5">B1 — 5% popusta</option>
+          <option value="10">B2 — 10% popusta</option>
+          <option value="15">B3 — 15% popusta</option>
+          <option value="20">B4 — 20% popusta</option>
+          <option value="25">B5 — 25% popusta</option>
+          <option value="30">B6 — 30% popusta</option>
+          <option value="-10">M1 — 10% skuplje</option>
+          <option value="-20">M2 — 20% skuplje</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="kat">Kategorija vozila</label>
+        <select id="kat" onchange="calc()">
+          <option value="M1">M1 — putničko vozilo</option>
+          <option value="N1">N1 — lako teretno</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-title">Procena godišnje premije AO</div>
+    <div id="result_rows"></div>
+    <div class="result-total">
+      <span class="tl">PROCENA godišnje</span>
+      <span class="tv" id="result_total">—</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Napomena:</strong> Ovo je okvirna procena — stvarna premija zavisi od osiguravajuće kuće, tačne tablice premija i aktuelnih popusta. Cene AO reguliše NBS.
+    Preporučujemo upoređivanje ponuda na <a href="https://www.nbs.rs/sr_Cyrl/insurance" target="_blank" rel="noopener">NBS portalu</a>.
+    Za pun trošak registracije koristite <a href="/kalkulator-registracije">kalkulator registracije</a>.
+  </div>
+
+  <div class="cta-box">
+    <h3>Pratite troškove osiguranja u Driver-u</h3>
+    <p>Zabeležite datum isteka osiguranja i Driver će vas podsetiti na vreme — nikad više zakasnela polisa.</p>
+    <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="cta-btn">Otvori Driver →</a>
+  </div>
+
+</div>
+
+<footer>
+  <p>© 2026 <a href="/">AutoUniverse</a> · Belora Ventures Studio · Kruševac, Srbija</p>
+</footer>
+
+<script>
+// Osnovna premija po kubikazi (RSD) — aproksimacija NBS tablice 2026
+function bazaPoCcm(ccm) {
+  if (ccm <= 1100)  return 18500;
+  if (ccm <= 1300)  return 22000;
+  if (ccm <= 1600)  return 27500;
+  if (ccm <= 2000)  return 34000;
+  if (ccm <= 2500)  return 43000;
+  if (ccm <= 3000)  return 55000;
+  return 70000;
+}
+
+// Regionalni koeficijent
+var REGION_K = { beograd: 1.30, novi_sad: 1.12, nis: 0.98, kragujevac: 1.00, ostalo: 0.92 };
+
+// Starosni koeficijent
+function starKoef(god) {
+  var age = 2026 - god;
+  if (age <= 3)  return 1.00;
+  if (age <= 7)  return 0.95;
+  if (age <= 12) return 0.90;
+  return 0.85;
+}
+
+function calc() {
+  var ccm    = parseFloat(document.getElementById('kubikaza').value)    || 0;
+  var god    = parseInt(document.getElementById('god_vozila').value, 10) || 0;
+  var gorivo = document.getElementById('gorivo_tip').value;
+  var region = document.getElementById('region').value;
+  var bonus  = parseFloat(document.getElementById('bonus').value)       || 0;
+  var kat    = document.getElementById('kat').value;
+  var res = document.getElementById('result');
+
+  if (!ccm || !god) { res.classList.remove('show'); return; }
+
+  var baza   = bazaPoCcm(ccm);
+  var gK     = gorivo === 'dizel' ? 1.10 : gorivo === 'struja' ? 0.65 : gorivo === 'gas' ? 0.93 : 1.00;
+  var rK     = REGION_K[region] || 1.00;
+  var sK     = starKoef(god);
+  var katK   = kat === 'N1' ? 1.18 : 1.00;
+  var bonusK = 1 - (bonus / 100);
+
+  var premija = Math.round(baza * gK * rK * sK * katK * bonusK);
+  var mesec   = Math.round(premija / 12);
+  var fmt = function(n) { return Math.round(n).toLocaleString('sr-RS'); };
+
+  var regionName = {beograd:'Beograd',novi_sad:'Vojvodina',nis:'Južna Srbija',kragujevac:'Šumadija',ostalo:'Ostali gradovi'}[region];
+  var rows = [
+    { l: 'Osnovna premija (kubikaza)',  v: fmt(Math.round(baza * katK)) + ' RSD', s: ccm + ' ccm' + (kat==='N1' ? ' · N1 kategorija' : '') },
+    { l: 'Region registracije',        v: (rK >= 1 ? '+' : '') + Math.round((rK-1)*100) + '%', s: regionName },
+    { l: 'Starost vozila',             v: Math.round((sK-1)*100) + '%',         s: (2026-god) + ' god.' },
+    { l: 'Gorivo korekcija',           v: (gK >= 1 ? '+' : '') + Math.round((gK-1)*100) + '%', s: gorivo },
+  ];
+  if (bonus !== 0) rows.push({ l: 'Bonus/malus', v: (bonus > 0 ? '-' : '+') + Math.abs(bonus) + '%' });
+  rows.push({ l: 'Mesečna rata (12×)', v: fmt(mesec) + ' RSD' });
+
+  document.getElementById('result_rows').innerHTML = rows.map(function(r) {
+    return '<div class="result-row"><span class="rl">' + r.l + (r.s ? '<span class="rsub">'+r.s+'</span>' : '') + '</span><span class="rv">' + r.v + '</span></div>';
+  }).join('');
+
+  document.getElementById('result_total').textContent = fmt(premija) + ' RSD';
+  res.classList.add('show');
+}
+</script>
+</body>
+</html>

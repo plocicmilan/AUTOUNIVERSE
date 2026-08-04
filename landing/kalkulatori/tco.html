@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator ukupnog troška posedovanja auta (TCO) — AutoUniverse</title>
+<meta name="description" content="Izračunaj ukupni godišnji trošak posedovanja automobila: gorivo, registracija, servis, osiguranje, amortizacija. TCO kalkulator za Srbiju.">
+<meta name="keywords" content="TCO automobil, ukupni trošak posedovanja auta, koliko košta auto godišnje, trošak auta Srbija, kalkulator troška vozila">
+<meta name="theme-color" content="#ff6b35">
+<meta property="og:title" content="TCO kalkulator — Ukupni trošak posedovanja auta">
+<meta property="og:description" content="Gorivo + registracija + servis + osiguranje + amortizacija. Pravi trošak vašeg auta.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://autouniverse.rs/kalkulatori/tco">
+<meta property="og:image" content="https://autouniverse.rs/assets/og-image.png">
+<meta property="og:locale" content="sr_RS">
+<meta property="og:site_name" content="AutoUniverse">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TCO kalkulator — Ukupni trošak posedovanja auta">
+<meta name="twitter:description" content="Gorivo + registracija + servis + osiguranje + amortizacija.">
+<meta name="twitter:image" content="https://autouniverse.rs/assets/og-image.png">
+<link rel="canonical" href="https://autouniverse.rs/kalkulatori/tco">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#F8F7F3;color:#1C1F24;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+a{color:inherit;text-decoration:none}
+:root{--ac:#ff6b35;--dark:#1C1F24;--mid:#4A4E58;--muted:#6B7280;--line:#E5E7EB;--bg:#ffffff;--radius:14px}
+.nav{background:#fff;border-bottom:1px solid var(--line);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem}
+.nav-logo .dot{width:10px;height:10px;background:var(--ac);border-radius:50%}
+.nav-back{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:5px}
+.nav-back:hover{color:var(--ac)}
+.hero{background:var(--dark);color:#fff;padding:48px 20px 40px;text-align:center}
+.hero-label{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fdba74;margin-bottom:.8rem;background:rgba(253,186,116,.12);padding:.3rem .8rem;border-radius:20px}
+.hero h1{font-size:clamp(1.7rem,5vw,2.5rem);font-weight:800;line-height:1.15;margin-bottom:.8rem;letter-spacing:-.02em}
+.hero h1 span{color:#fdba74}
+.hero p{font-size:1rem;color:#9ca3af;max-width:480px;margin:0 auto;line-height:1.65}
+.main{max-width:640px;margin:0 auto;padding:32px 20px 60px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{font-size:.82rem;font-weight:600;color:var(--mid)}
+.field input,.field select{padding:11px 14px;border:1.5px solid var(--line);border-radius:9px;font-size:.95rem;color:var(--dark);background:#fafafa;font-family:inherit;outline:none;transition:border-color .15s;width:100%}
+.field input:focus{border-color:var(--ac);background:#fff}
+.field .hint{font-size:.75rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:440px){.grid2{grid-template-columns:1fr}}
+.result{background:var(--dark);color:#fff;border-radius:var(--radius);padding:24px;margin-bottom:16px;display:none}
+.result.show{display:block}
+.result-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:16px}
+.result-row{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.9rem}
+.result-row:last-of-type{border-bottom:none}
+.result-row .rl{color:#d1d5db}
+.result-row .rv{font-weight:600;white-space:nowrap}
+.result-row .rsub{font-size:.75rem;color:#6b7280;display:block}
+.result-total{margin-top:14px;padding-top:14px;border-top:2px solid rgba(255,255,255,.15);display:flex;justify-content:space-between;align-items:center}
+.result-total .tl{font-size:.95rem;font-weight:700;color:#fff}
+.result-total .tv{font-size:1.6rem;font-weight:800;color:#fdba74}
+.note{font-size:.78rem;color:var(--muted);line-height:1.55;padding:14px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:16px}
+.cta-box{background:var(--ac);color:#fff;border-radius:var(--radius);padding:24px;text-align:center}
+.cta-box h3{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.cta-box p{font-size:.88rem;opacity:.85;margin-bottom:18px;line-height:1.5}
+.cta-btn{display:inline-block;background:#fff;color:var(--ac);font-weight:700;font-size:.95rem;padding:12px 28px;border-radius:9px;transition:opacity .15s}
+.cta-btn:hover{opacity:.9}
+footer{text-align:center;padding:20px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line)}
+footer a{color:var(--ac)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo"><span class="dot"></span>AutoUniverse</a>
+  <a href="/" class="nav-back">← Nazad na sajt</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-label">Besplatni alat</div>
+  <h1>Ukupni trošak <span>posedovanja auta</span></h1>
+  <p>Saznajte koliko vas auto zaista košta godišnje — uključujući gorivo, registraciju, servis i amortizaciju.</p>
+</div>
+
+<div class="main">
+
+  <div class="card">
+    <div class="card-title">Podaci o vozilu i vožnji</div>
+    <div class="grid2">
+      <div class="field">
+        <label for="kupovna">Kupovna cena (RSD)</label>
+        <input type="number" id="kupovna" placeholder="npr. 2000000" min="1" oninput="calc()">
+      </div>
+      <div class="field">
+        <label for="godisnji_km">Godišnji kilometri</label>
+        <input type="number" id="godisnji_km" placeholder="npr. 18000" min="1" oninput="calc()">
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="potrosnja">Potrošnja (L/100km)</label>
+        <input type="number" id="potrosnja" placeholder="npr. 7.5" min="1" step="0.1" oninput="calc()">
+      </div>
+      <div class="field">
+        <label for="cena_goriva">Cena goriva (RSD/L)</label>
+        <input type="number" id="cena_goriva" placeholder="npr. 195" min="1" oninput="calc()">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Godišnji fiksni troškovi (opciono)</div>
+    <div class="grid2">
+      <div class="field">
+        <label for="registracija">Registracija (RSD/god)</label>
+        <input type="number" id="registracija" placeholder="npr. 35000" min="0" oninput="calc()">
+        <span class="hint">Koristite kalkulator registracije</span>
+      </div>
+      <div class="field">
+        <label for="osiguranje">Osiguranje (RSD/god)</label>
+        <input type="number" id="osiguranje" placeholder="npr. 45000" min="0" oninput="calc()">
+        <span class="hint">AO + eventualno kasko</span>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="servis">Servis i delovi (RSD/god)</label>
+        <input type="number" id="servis" placeholder="npr. 30000" min="0" oninput="calc()">
+      </div>
+      <div class="field">
+        <label for="amort_god">Period posedovanja (god)</label>
+        <input type="number" id="amort_god" placeholder="npr. 5" min="1" max="20" value="5" oninput="calc()">
+        <span class="hint">Za amortizaciju 15%/god</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-title">Godišnji trošak posedovanja</div>
+    <div id="result_rows"></div>
+    <div class="result-total">
+      <span class="tl">UKUPNO godišnje</span>
+      <span class="tv" id="result_total">—</span>
+    </div>
+  </div>
+
+  <div class="note">
+    Amortizacija je procenjena na ~15% godišnje od kupovne cene (srpsko tržište polovnjaka). Stvarna vrednost zavisi od marke, stanja i tržišta.
+    Za tačnu procenu registracije koristite <a href="/kalkulator-registracije">kalkulator registracije</a>.
+  </div>
+
+  <div class="cta-box">
+    <h3>Pratite stvarne troškove</h3>
+    <p>Driver Toolbox beleži svaki trošak i pokazuje pravo stanje — ne procenu, nego vaše stvarne brojeve.</p>
+    <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="cta-btn">Otvori Driver →</a>
+  </div>
+
+</div>
+
+<footer>
+  <p>© 2026 <a href="/">AutoUniverse</a> · Belora Ventures Studio · Kruševac, Srbija</p>
+</footer>
+
+<script>
+function calc() {
+  var kupovna   = parseFloat(document.getElementById('kupovna').value)     || 0;
+  var godKm     = parseFloat(document.getElementById('godisnji_km').value) || 0;
+  var potrosnja = parseFloat(document.getElementById('potrosnja').value)   || 0;
+  var cenaGor   = parseFloat(document.getElementById('cena_goriva').value) || 0;
+  var regist    = parseFloat(document.getElementById('registracija').value)|| 0;
+  var osig      = parseFloat(document.getElementById('osiguranje').value)  || 0;
+  var servis    = parseFloat(document.getElementById('servis').value)      || 0;
+  var amortGod  = parseInt(document.getElementById('amort_god').value,10) || 5;
+  var res = document.getElementById('result');
+
+  if (!kupovna || !godKm || !potrosnja || !cenaGor) { res.classList.remove('show'); return; }
+
+  var gorivo    = (potrosnja / 100) * godKm * cenaGor;
+  var amort     = kupovna * 0.15;
+  var ukupno    = gorivo + regist + osig + servis + amort;
+  var mesecno   = ukupno / 12;
+  var cKm       = ukupno / godKm;
+
+  var fmt = function(n,d) { return Math.round(n).toLocaleString('sr-RS'); };
+
+  var rows = [
+    { l: 'Gorivo',          v: fmt(gorivo) + ' RSD',  s: fmt(godKm) + ' km · ' + potrosnja + ' L/100km · ' + cenaGor + ' RSD/L' },
+    { l: 'Amortizacija',    v: fmt(amort)  + ' RSD',  s: '15% od kupovne cene · ~' + amortGod + ' god. posedovanja' },
+  ];
+  if (regist)  rows.push({ l: 'Registracija',   v: fmt(regist)  + ' RSD' });
+  if (osig)    rows.push({ l: 'Osiguranje',     v: fmt(osig)    + ' RSD' });
+  if (servis)  rows.push({ l: 'Servis i delovi',v: fmt(servis)  + ' RSD' });
+  rows.push({ l: 'Mesečni trošak',  v: fmt(mesecno) + ' RSD' });
+  rows.push({ l: 'Cena po km',      v: fmt(cKm * 100) / 100 + ' RSD/km' });
+
+  document.getElementById('result_rows').innerHTML = rows.map(function(r) {
+    return '<div class="result-row"><span class="rl">' + r.l + (r.s ? '<span class="rsub">'+r.s+'</span>' : '') + '</span><span class="rv">' + r.v + '</span></div>';
+  }).join('');
+
+  document.getElementById('result_total').textContent = fmt(ukupno) + ' RSD';
+  res.classList.add('show');
+}
+</script>
+</body>
+</html>
