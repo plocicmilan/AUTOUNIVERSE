@@ -697,6 +697,42 @@ body {
   .footer__bottom .container { flex-direction: column; gap: 8px; text-align: center; }
 }
 
+/* APK Download sekcija */
+.apk-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.apk-card {
+  background: var(--navy-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.apk-card--driver { border-color: rgba(14,165,233,.3); }
+.apk-card--garage { border-color: rgba(239,68,68,.3); }
+.apk-card__icon { font-size: 2rem; }
+.apk-card__title { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--text); }
+.apk-card__desc { font-size: .95rem; color: var(--text-2); line-height: 1.6; }
+.apk-card__meta { font-size: .78rem; color: var(--text-2); background: rgba(255,255,255,.06); padding: 4px 10px; border-radius: 20px; }
+.apk-card__btn { margin-top: auto; width: 100%; justify-content: center; }
+.apk-notice {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--orange);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 16px 20px;
+  font-size: .88rem;
+  color: var(--text-2);
+  line-height: 1.7;
+}
+.apk-notice strong { color: var(--text); }
+
 @media (max-width: 480px) {
   .calcs { grid-template-columns: 1fr; }
   .personas { grid-template-columns: 1fr; }
@@ -705,4 +741,5 @@ body {
   .hero__stats { flex-wrap: wrap; gap: 16px; }
   .hero__cta { flex-direction: column; }
   .hero__cta .btn { width: 100%; justify-content: center; }
+  .apk-cards { grid-template-columns: 1fr; }
 }

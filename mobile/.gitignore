@@ -14,6 +14,9 @@ www/
 # Java/Gradle wrapper cache
 .gradle/
 
+# Build outputi (APK-i su preveliki za git)
+apks/
+
 # Kez i logovi
 *.log
 .env
