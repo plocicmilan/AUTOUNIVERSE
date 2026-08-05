@@ -27,7 +27,7 @@ for SRV in aucore autopijaca autodelovi; do
     SRC="$REPO/$SRV"
     DST="$WEB/$SRV"
     rsync -a --delete --exclude=node_modules --exclude=data "$SRC/" "$DST/"
-    cd "$DST" && npm ci --omit=dev
+    cd "$DST" && npm install --omit=dev --no-audit --no-fund
 done
 # landing nema eksternih zavisnosti (node:sqlite stdlib) — npm ci nije potreban
 
