@@ -32,7 +32,7 @@ done
 # landing nema eksternih zavisnosti (node:sqlite stdlib) — npm ci nije potreban
 
 echo "=== Restartujem PM2 procese ==="
-pm2 restart all || pm2 start "$REPO/ecosystem.config.js" --env production
+su - milan -c "pm2 restart all || pm2 start '$REPO/ecosystem.config.js' --env production"
 
 echo ""
 echo "=== Deploy završen. Status: ==="
