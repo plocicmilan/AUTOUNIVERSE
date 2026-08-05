@@ -622,20 +622,20 @@
     showShareModal: function (url) {
       var existing = document.getElementById("wo-share-modal");
       if (existing) existing.remove();
-      var qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(url);
       var modal = document.createElement("div");
       modal.id = "wo-share-modal";
       modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;";
+      var safeUrl = url.replace(/'/g, "\\'");
       modal.innerHTML = [
         '<div style="background:#1a1a2e;border-radius:16px;padding:24px;max-width:320px;width:90%;text-align:center;color:#e0e0ff;">',
           '<p style="margin:0 0 6px;font-size:13px;opacity:.7;">Servisni pasoš auta</p>',
           '<p style="margin:0 0 16px;font-size:15px;font-weight:600;">Podeli sa vlasnikom vozila</p>',
-          '<img src="' + qrSrc + '" alt="QR" style="width:250px;height:250px;border-radius:8px;background:#fff;padding:8px;" />',
+          '<canvas id="wo-qr-canvas" style="width:250px;height:250px;border-radius:8px;background:#fff;padding:8px;display:block;margin:0 auto;"></canvas>',
           '<p style="margin:12px 0 4px;font-size:11px;opacity:.6;">Vlasnik skenira QR ili otvori link:</p>',
           '<p style="margin:0 0 16px;font-size:11px;word-break:break-all;opacity:.8;">' + url + '</p>',
           '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">',
-            '<button onclick="WOgo.shareNative(\'' + url.replace(/'/g, "\\'") + '\')" style="background:#5c6bc0;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;">📨 Podeli</button>',
-            '<button onclick="WOgo.copyShareLink(\'' + url.replace(/'/g, "\\'") + '\')" style="background:#37474f;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;">📋 Kopiraj</button>',
+            '<button onclick="WOgo.shareNative(\'' + safeUrl + '\')" style="background:#5c6bc0;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;">📨 Podeli</button>',
+            '<button onclick="WOgo.copyShareLink(\'' + safeUrl + '\')" style="background:#37474f;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;">📋 Kopiraj</button>',
             '<button onclick="document.getElementById(\'wo-share-modal\').remove()" style="background:#263238;color:#aaa;border:none;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;">Zatvori</button>',
           '</div>',
         '</div>'
@@ -644,6 +644,18 @@
         if (e.target === modal) modal.remove();
       });
       document.body.appendChild(modal);
+      var canvas = document.getElementById("wo-qr-canvas");
+      if (window.QRCode && canvas) {
+        window.QRCode.toCanvas(canvas, url, { width: 250, margin: 1 }, function (err) {
+          if (err) canvas.style.cssText += ";display:none;";
+        });
+      } else {
+        var img = document.createElement("img");
+        img.src = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(url);
+        img.alt = "QR";
+        img.style.cssText = "width:250px;height:250px;border-radius:8px;background:#fff;padding:8px;";
+        canvas.parentNode.replaceChild(img, canvas);
+      }
     },
 
     shareNative: function (url) {
