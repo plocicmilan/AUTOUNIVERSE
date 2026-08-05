@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kontakt — AutoUniverse</title>
+  <meta name="description" content="Kontaktirajte AutoUniverse tim. Feedback, prijava greške, partnerstvo ili opšta pitanja — sve je dobrodošlo.">
+  <link rel="canonical" href="https://autouniverse.rs/kontakt">
+
+  <meta property="og:title" content="Kontakt — AutoUniverse">
+  <meta property="og:description" content="Pišite nam — feedback, saradnja, pitanja. Odgovaramo u roku od 24h.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://autouniverse.rs/kontakt">
+  <meta property="og:image" content="https://autouniverse.rs/assets/og-image.png">
+  <meta property="og:locale" content="sr_RS">
+  <meta property="og:site_name" content="AutoUniverse">
+
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css?v=2">
+
+  <style>
+    .page-hero {
+      padding: 140px 0 72px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-hero__bg {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,107,53,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,107,53,.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, black, transparent);
+    }
+    .page-hero .badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--orange);
+      border: 1px solid rgba(255,107,53,.3);
+      background: rgba(255,107,53,.08);
+      padding: 5px 14px; border-radius: 100px;
+      margin-bottom: 24px;
+    }
+    .page-hero h1 {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(42px, 6vw, 72px);
+      line-height: 1; letter-spacing: -1px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .page-hero h1 span { color: var(--orange); }
+    .page-hero p {
+      font-size: 18px; color: var(--text-2);
+      max-width: 480px; margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── KONTAKT LAYOUT ── */
+    .kontakt-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 64px;
+      align-items: start;
+      padding: 80px 0 96px;
+    }
+
+    /* ── FORM ── */
+    .kontakt-form { display: flex; flex-direction: column; gap: 20px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group label {
+      font-family: var(--font-display);
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--text-2);
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background: rgba(255,255,255,.04);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      transition: border-color .2s;
+      outline: none;
+      width: 100%;
+    }
+    .form-group input::placeholder,
+    .form-group textarea::placeholder { color: rgba(148,163,184,.5); }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--orange); }
+    .form-group select option { background: var(--navy-2); }
+    .form-group textarea { resize: vertical; min-height: 140px; }
+    .honeypot { display: none !important; }
+
+    .btn-submit {
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-display);
+      font-weight: 700; font-size: 16px;
+      letter-spacing: .5px; text-transform: uppercase;
+      padding: 14px 32px; border-radius: 8px;
+      transition: opacity .15s;
+      align-self: flex-start;
+    }
+    .btn-submit:hover { opacity: .85; }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+    .form-msg {
+      font-size: 14px; padding: 12px 16px;
+      border-radius: 8px; display: none;
+    }
+    .form-msg.success {
+      display: block;
+      background: rgba(34,197,94,.1);
+      border: 1px solid rgba(34,197,94,.25);
+      color: #22c55e;
+    }
+    .form-msg.error {
+      display: block;
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.25);
+      color: #ef4444;
+    }
+
+    /* ── SIDEBAR ── */
+    .kontakt-sidebar { display: flex; flex-direction: column; gap: 16px; }
+    .info-card {
+      background: rgba(255,255,255,.04);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .info-card__icon { font-size: 28px; margin-bottom: 12px; }
+    .info-card__label {
+      font-family: var(--font-display);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--orange); margin-bottom: 6px;
+    }
+    .info-card__value {
+      font-size: 15px; color: var(--text);
+      font-weight: 500; margin-bottom: 4px;
+    }
+    .info-card__value a {
+      color: var(--text); text-decoration: none;
+      transition: color .15s;
+    }
+    .info-card__value a:hover { color: var(--orange); }
+    .info-card__sub { font-size: 13px; color: var(--text-2); }
+
+    .topics { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .topic {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 14px; color: var(--text-2);
+    }
+    .topic__dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--orange); flex-shrink: 0;
+    }
+
+    @media (max-width: 860px) {
+      .kontakt-grid { grid-template-columns: 1fr; gap: 48px; }
+      .kontakt-sidebar { order: -1; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <a href="/" class="logo">
+        <span class="logo__au">AU</span>
+        <span class="logo__text">AutoUniverse</span>
+      </a>
+      <nav class="nav" id="nav">
+        <a href="/ekosistem" class="nav__link">Ekosistem</a>
+        <a href="/driver" class="nav__link">Driver</a>
+        <a href="/garage" class="nav__link">Garage</a>
+        <a href="/#kalkulatori" class="nav__link">Kalkulatori</a>
+        <a href="/blog" class="nav__link">Blog</a>
+        <a href="/o-nama" class="nav__link">O nama</a>
+        <a href="/kontakt" class="nav__link nav__link--active">Kontakt</a>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Meni">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="page-hero">
+    <div class="page-hero__bg" aria-hidden="true"></div>
+    <div class="container" style="position:relative;z-index:1">
+      <div class="badge">📬 Dostupni smo</div>
+      <h1>Pišite <span>nam</span></h1>
+      <p>Feedback, prijava greške, partnerstvo ili opšte pitanje — odgovaramo u roku od 24h.</p>
+    </div>
+  </section>
+
+  <!-- FORMA + SIDEBAR -->
+  <div class="container">
+    <div class="kontakt-grid">
+
+      <!-- FORMA -->
+      <div>
+        <form class="kontakt-form" id="contact-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cf-name">Ime</label>
+              <input type="text" id="cf-name" name="name" placeholder="Vaše ime" required autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label for="cf-email">Email</label>
+              <input type="email" id="cf-email" name="email" placeholder="vas@email.com" required autocomplete="email">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="cf-type">Tip poruke</label>
+            <select id="cf-type" name="type">
+              <option value="feedback">Feedback o aplikaciji</option>
+              <option value="bug">Prijava greške</option>
+              <option value="partnership">Partnerstvo / saradnja</option>
+              <option value="general">Opšte pitanje</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="cf-message">Poruka</label>
+            <textarea id="cf-message" name="message" rows="6" placeholder="Vaša poruka..." required></textarea>
+          </div>
+          <input type="text" name="website" class="honeypot" tabindex="-1" autocomplete="off">
+          <button type="submit" class="btn-submit" id="cf-submit">Pošalji poruku</button>
+          <div class="form-msg" id="contact-msg"></div>
+        </form>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="kontakt-sidebar">
+        <div class="info-card">
+          <div class="info-card__icon">✉️</div>
+          <div class="info-card__label">Email</div>
+          <div class="info-card__value">
+            <a href="mailto:hello@autouniverse.rs">hello@autouniverse.rs</a>
+          </div>
+          <div class="info-card__sub">Odgovaramo u roku od 24h</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card__icon">🗺️</div>
+          <div class="info-card__label">Lokacija</div>
+          <div class="info-card__value">Kruševac, Srbija</div>
+          <div class="info-card__sub">Rasinski okrug</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card__icon">💬</div>
+          <div class="info-card__label">O čemu možete pisati</div>
+          <div class="topics">
+            <div class="topic"><div class="topic__dot"></div>Feedback o Driver ili Garage aplikaciji</div>
+            <div class="topic"><div class="topic__dot"></div>Prijava baga ili greške u radu</div>
+            <div class="topic"><div class="topic__dot"></div>Predlog nove funkcije</div>
+            <div class="topic"><div class="topic__dot"></div>Partnerstvo sa auto servisom ili brendom</div>
+            <div class="topic"><div class="topic__dot"></div>Pitanja o ekosistemu i roadmapu</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <a href="/" class="logo" style="margin-bottom:16px;display:inline-flex">
+            <span class="logo__au">AU</span>
+            <span class="logo__text">AutoUniverse</span>
+          </a>
+          <p class="footer__tagline">Ekosistem za vaše vozilo.<br>Napravljeno u Srbiji.</p>
+        </div>
+        <div class="footer__col">
+          <h4>Aplikacije</h4>
+          <a href="/driver">Driver Toolbox</a>
+          <a href="/garage">Garage Toolbox</a>
+          <a href="/ekosistem">Ekosistem</a>
+        </div>
+        <div class="footer__col">
+          <h4>Resursi</h4>
+          <a href="/kalkulatori">Svi kalkulatori</a>
+          <a href="/kalkulator-registracije">Kalkulator registracije</a>
+          <a href="/blog">Blog</a>
+          <a href="/o-nama">O nama</a>
+        </div>
+        <div class="footer__col">
+          <h4>Pravno</h4>
+          <a href="/privatnost">Politika privatnosti</a>
+          <a href="/uslovi">Uslovi korišćenja</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <span>&copy; 2026 AutoUniverse &middot; Rasinski okrug, Srbija</span>
+        <span>Napravljeno sa &hearts; bez VC novca</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    const form = document.getElementById('contact-form');
+    const msg  = document.getElementById('contact-msg');
+    const btn  = document.getElementById('cf-submit');
+
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          name:    form.querySelector('[name=name]').value.trim(),
+          email:   form.querySelector('[name=email]').value.trim(),
+          type:    form.querySelector('[name=type]').value,
+          message: form.querySelector('[name=message]').value.trim(),
+          website: form.querySelector('[name=website]').value,
+        };
+        btn.disabled = true;
+        btn.textContent = 'Šaljem...';
+        msg.className = 'form-msg';
+        try {
+          const res  = await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            msg.textContent  = '✓ Poruka poslata! Javićemo se uskoro.';
+            msg.className    = 'form-msg success';
+            form.reset();
+          } else {
+            msg.textContent = data.error || 'Došlo je do greške.';
+            msg.className   = 'form-msg error';
+          }
+        } catch {
+          msg.textContent = 'Nema konekcije. Pokušaj ponovo.';
+          msg.className   = 'form-msg error';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Pošalji poruku';
+        }
+      });
+    }
+  </script>
+  <script data-goatcounter="https://analytics.autouniverse.rs/count" async src="//analytics.autouniverse.rs/count.js"></script>
+</body>
+</html>
