@@ -81,6 +81,7 @@ body {
   transition: color .2s, background .2s;
 }
 .nav__link:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.nav__link--active { color: var(--orange) !important; }
 
 .hamburger {
   display: none;
