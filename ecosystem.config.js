@@ -66,6 +66,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 4000,
         DB_PATH: `${BASE}/landing/data/autouniverse.db`,
+        // BREVO_API_KEY: set in landing/.env on server (not committed)
       },
       error_file:   '/var/log/pm2/landing-error.log',
       out_file:     '/var/log/pm2/landing-out.log',

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pretplata potvrđena — AutoUniverse</title>
+<meta name="robots" content="noindex">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #0f1d35;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: rgba(255,255,255,.04);
+    border: 1.5px solid rgba(255,255,255,.08);
+    border-radius: 20px;
+    padding: 56px 48px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+  }
+  .icon { font-size: 56px; margin-bottom: 24px; }
+  .logo { margin-bottom: 32px; }
+  .logo-badge {
+    font-weight: 900;
+    font-size: 22px;
+    color: #ff6b35;
+    background: rgba(255,107,53,.1);
+    border: 2px solid #ff6b35;
+    padding: 3px 10px;
+    border-radius: 5px;
+    letter-spacing: -1px;
+    vertical-align: middle;
+  }
+  .logo-name {
+    font-weight: 700;
+    font-size: 20px;
+    color: #e2e8f0;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #e2e8f0;
+    margin-bottom: 14px;
+  }
+  p {
+    color: #94a3b8;
+    line-height: 1.6;
+    font-size: 15px;
+    margin-bottom: 32px;
+  }
+  .btn {
+    display: inline-block;
+    background: #ff6b35;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px 32px;
+    border-radius: 8px;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,.08);
+    margin: 32px 0;
+  }
+  .apps {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .app-link {
+    font-size: 13px;
+    color: #94a3b8;
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px;
+    transition: border-color .15s;
+  }
+  .app-link:hover { border-color: rgba(255,255,255,.25); color: #e2e8f0; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <span class="logo-badge">AU</span>
+      <span class="logo-name">AutoUniverse</span>
+    </div>
+    <div class="icon">✅</div>
+    <h1>Pretplata potvrđena!</h1>
+    <p>Sada si deo AutoUniverse zajednice. Obaveštavaćemo te o novostima, ažuriranjima aplikacija i korisnim savjetima za vozače i auto servise.</p>
+    <a href="/" class="btn">Idi na početnu →</a>
+    <hr class="divider">
+    <p style="margin-bottom:16px;font-size:13px">Ili pogledaj naše aplikacije:</p>
+    <div class="apps">
+      <a href="/driver" class="app-link">🧑‍💼 Driver Toolbox</a>
+      <a href="/garage" class="app-link">🔧 Garage Toolbox</a>
+    </div>
+  </div>
+</body>
+</html>
