@@ -19,6 +19,11 @@ rsync -a --delete "$REPO/core/"    "$WEB/driver/core/"
 rsync -a --delete --exclude=data "$REPO/landing/" "$WEB/landing/"
 mkdir -p "$WEB/landing/data"
 
+echo "=== Kreiram data/ foldere (ako ne postoje) ==="
+for SRV in aucore autopijaca autodelovi; do
+    mkdir -p "$WEB/$SRV/data"
+done
+
 # core/ — aucore server importuje iz ../core/ relativno
 rsync -a --delete "$REPO/core/" "$WEB/core/"
 
