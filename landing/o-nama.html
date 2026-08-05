@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O nama — AutoUniverse</title>
+  <meta name="description" content="AutoUniverse je ekosistem za vaše vozilo, napravljen u Srbiji. Saznaj ko stoji iza projekta, zašto smo ga napravili i kuda idemo.">
+  <link rel="canonical" href="https://autouniverse.rs/o-nama">
+
+  <meta property="og:title" content="O nama — AutoUniverse">
+  <meta property="og:description" content="Napravili smo AutoUniverse jer srpski vozači i auto servisi zaslužuju bolje alate. Bez kompromisa.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://autouniverse.rs/o-nama">
+  <meta property="og:image" content="https://autouniverse.rs/assets/og-image.png">
+  <meta property="og:locale" content="sr_RS">
+  <meta property="og:site_name" content="AutoUniverse">
+
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css?v=2">
+
+  <style>
+    /* ── PAGE HERO ── */
+    .page-hero {
+      padding: 140px 0 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-hero__bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,107,53,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,107,53,.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, black, transparent);
+    }
+    .page-hero .badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--orange);
+      border: 1px solid rgba(255,107,53,.3);
+      background: rgba(255,107,53,.08);
+      padding: 5px 14px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+    }
+    .page-hero h1 {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(42px, 6vw, 72px);
+      line-height: 1;
+      letter-spacing: -1px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .page-hero h1 span { color: var(--orange); }
+    .page-hero p {
+      font-size: 18px;
+      color: var(--text-2);
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── SECTION BASE ── */
+    .section { padding: 96px 0; }
+    .section--alt { background: var(--navy-2); }
+
+    /* ── STORY ── */
+    .story {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .story__label {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 20px;
+    }
+    .story__title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(32px, 4vw, 52px);
+      line-height: 1.05;
+      text-transform: uppercase;
+      letter-spacing: -1px;
+      margin-bottom: 24px;
+    }
+    .story__title span { color: var(--orange); }
+    .story__text {
+      color: var(--text-2);
+      line-height: 1.8;
+      font-size: 15px;
+    }
+    .story__text + .story__text { margin-top: 16px; }
+    .story__visual {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .story__stat {
+      background: rgba(255,255,255,.04);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 28px;
+    }
+    .story__stat-num {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 40px;
+      color: var(--orange);
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .story__stat-label {
+      font-size: 14px;
+      color: var(--text-2);
+      margin-top: 4px;
+    }
+    .story__stat--blue .story__stat-num { color: var(--blue); }
+    .story__stat--blue { border-color: rgba(14,165,233,.2); background: rgba(14,165,233,.04); }
+
+    /* ── PHILOSOPHY ── */
+    .section-title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(28px, 4vw, 44px);
+      text-transform: uppercase;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+    }
+    .section-title span { color: var(--orange); }
+    .section-sub {
+      color: var(--text-2);
+      font-size: 16px;
+      max-width: 520px;
+      line-height: 1.7;
+      margin-bottom: 56px;
+    }
+    .pillars {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .pillar {
+      background: rgba(255,255,255,.04);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color .2s;
+    }
+    .pillar:hover { border-color: rgba(255,107,53,.3); }
+    .pillar__icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+    .pillar__name {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .pillar__desc {
+      font-size: 14px;
+      color: var(--text-2);
+      line-height: 1.7;
+    }
+
+    /* ── ROADMAP ── */
+    .roadmap {
+      position: relative;
+      padding-left: 32px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .roadmap::before {
+      content: '';
+      position: absolute;
+      left: 7px; top: 8px; bottom: 8px;
+      width: 2px;
+      background: linear-gradient(180deg, var(--orange) 0%, rgba(255,107,53,.1) 100%);
+    }
+    .roadmap__item {
+      position: relative;
+      margin-bottom: 48px;
+    }
+    .roadmap__item:last-child { margin-bottom: 0; }
+    .roadmap__dot {
+      position: absolute;
+      left: -32px;
+      top: 6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--navy);
+      border: 2px solid var(--orange);
+    }
+    .roadmap__item--done .roadmap__dot {
+      background: var(--orange);
+    }
+    .roadmap__item--future .roadmap__dot {
+      border-color: rgba(255,255,255,.2);
+    }
+    .roadmap__period {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 6px;
+    }
+    .roadmap__item--done .roadmap__period { color: var(--orange); }
+    .roadmap__item--future .roadmap__period { color: var(--text-2); }
+    .roadmap__title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 22px;
+      text-transform: uppercase;
+      letter-spacing: -.5px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .roadmap__item--future .roadmap__title { color: rgba(226,232,240,.5); }
+    .roadmap__desc {
+      font-size: 14px;
+      color: var(--text-2);
+      line-height: 1.7;
+    }
+    .roadmap__item--future .roadmap__desc { color: rgba(148,163,184,.5); }
+    .roadmap__badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+      margin-bottom: 8px;
+    }
+    .badge--live { background: rgba(34,197,94,.12); color: #22c55e; border: 1px solid rgba(34,197,94,.25); }
+    .badge--dev  { background: rgba(255,107,53,.12); color: var(--orange); border: 1px solid rgba(255,107,53,.25); }
+    .badge--plan { background: rgba(255,255,255,.06); color: var(--text-2); border: 1px solid rgba(255,255,255,.1); }
+
+    /* ── FOUNDER ── */
+    .founder {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 48px;
+      align-items: start;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+    .founder__avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255,107,53,.3), rgba(14,165,233,.2));
+      border: 2px solid rgba(255,107,53,.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 52px;
+      flex-shrink: 0;
+    }
+    .founder__name {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 28px;
+      text-transform: uppercase;
+      letter-spacing: -.5px;
+      margin-bottom: 4px;
+    }
+    .founder__role {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 20px;
+    }
+    .founder__bio {
+      font-size: 15px;
+      color: var(--text-2);
+      line-height: 1.8;
+    }
+    .founder__bio + .founder__bio { margin-top: 14px; }
+    .founder__quote {
+      margin-top: 24px;
+      padding: 20px 24px;
+      border-left: 3px solid var(--orange);
+      background: rgba(255,107,53,.05);
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* ── CTA ── */
+    .cta-band {
+      text-align: center;
+      padding: 96px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-band__bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(255,107,53,.08), transparent);
+    }
+    .cta-band h2 {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(32px, 5vw, 56px);
+      text-transform: uppercase;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .cta-band h2 span { color: var(--orange); }
+    .cta-band p {
+      color: var(--text-2);
+      font-size: 16px;
+      max-width: 480px;
+      margin: 0 auto 36px;
+      line-height: 1.7;
+      position: relative;
+    }
+    .cta-band__btns {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+    }
+    .btn-primary {
+      display: inline-block;
+      background: var(--orange);
+      color: #fff;
+      text-decoration: none;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      border-radius: 8px;
+      transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .85; }
+    .btn-ghost {
+      display: inline-block;
+      background: transparent;
+      color: var(--text);
+      text-decoration: none;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      transition: border-color .15s, color .15s;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,.25); color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .story { grid-template-columns: 1fr; gap: 48px; }
+      .story__visual { flex-direction: row; flex-wrap: wrap; }
+      .story__stat { flex: 1; min-width: 140px; }
+      .founder { grid-template-columns: 1fr; gap: 24px; }
+      .founder__avatar { margin: 0 auto; }
+      .roadmap { padding-left: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <a href="/" class="logo">
+        <span class="logo__au">AU</span>
+        <span class="logo__text">AutoUniverse</span>
+      </a>
+      <nav class="nav" id="nav">
+        <a href="/ekosistem" class="nav__link">Ekosistem</a>
+        <a href="/driver" class="nav__link">Driver</a>
+        <a href="/garage" class="nav__link">Garage</a>
+        <a href="/#kalkulatori" class="nav__link">Kalkulatori</a>
+        <a href="/blog" class="nav__link">Blog</a>
+        <a href="/o-nama" class="nav__link nav__link--active">O nama</a>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Meni">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="page-hero">
+    <div class="page-hero__bg" aria-hidden="true"></div>
+    <div class="container" style="position:relative;z-index:1">
+      <div class="badge">🇷🇸 Napravljeno u Srbiji</div>
+      <h1>Ko smo<br><span>mi</span></h1>
+      <p>Nismo Silicon Valley startup. Nismo korporacija. Jedni smo od vas — vozači, majstori i softveri od kuće koji žele da reše pravi problem.</p>
+    </div>
+  </section>
+
+  <!-- PRIČA -->
+  <section class="section">
+    <div class="container">
+      <div class="story">
+        <div>
+          <div class="story__label">Poreklo projekta</div>
+          <h2 class="story__title">Zašto smo<br>napravili<br><span>AutoUniverse</span></h2>
+          <p class="story__text">
+            Svaki srpski vozač zna kako izgleda: papirić u kaseti, servisna knjižica negde u fioci, registracija za mesec dana a ni ne znaš koji dan tačno. Zoveš majstora, on ne pamti kada si menjao kočione pločice. Gubiš vreme, gubiš novac, gubiš živce.
+          </p>
+          <p class="story__text">
+            Sa druge strane, mehaničar koji voli posao vodi beleške u svesci, šalje ponude WhatsApp-om i čeka da ga neko preporuči. Nema ni CRM, ni istoriju vozila, ni kalkulatore. Radi vredan posao bez ijednog pravog digitalnog alata.
+          </p>
+          <p class="story__text">
+            AutoUniverse je odgovor na oba problema. Jedan ekosistem koji radi offline, bez registracije, bez pretplate — i koji čuva sve podatke o vozilu na jednom mestu. Trajno.
+          </p>
+        </div>
+        <div class="story__visual">
+          <div class="story__stat">
+            <div class="story__stat-num">2</div>
+            <div class="story__stat-label">aplikacije u ekosistemu — Driver i Garage</div>
+          </div>
+          <div class="story__stat story__stat--blue">
+            <div class="story__stat-num">100%</div>
+            <div class="story__stat-label">offline — radi i bez interneta</div>
+          </div>
+          <div class="story__stat">
+            <div class="story__stat-num">0 €</div>
+            <div class="story__stat-label">bez pretplate, bez skrivenih troškova</div>
+          </div>
+          <div class="story__stat story__stat--blue">
+            <div class="story__stat-num">6+</div>
+            <div class="story__stat-label">kalkulatora za kupovinu i vlasništvo vozila</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILOZOFIJA -->
+  <section class="section section--alt">
+    <div class="container">
+      <h2 class="section-title">Naša <span>filozofija</span></h2>
+      <p class="section-sub">Svaka odluka u AutoUniverse-u prolazi kroz jedno pitanje: da li ovo pomaže vozaču ili mehaničaru, ili samo nama?</p>
+      <div class="pillars">
+        <div class="pillar">
+          <div class="pillar__icon">📵</div>
+          <div class="pillar__name">Offline prvo</div>
+          <p class="pillar__desc">Aplikacija radi potpuno bez interneta. Tvoji podaci žive na tvojem telefonu — ne na nekom cloud serveru koji može biti ugašen sutra.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar__icon">🚫</div>
+          <div class="pillar__name">Bez registracije</div>
+          <p class="pillar__desc">Preuzmeš aplikaciju, otvoriš, koristiš. Nikakav email, nikakav SMS kod, nikakva lozinka. Odmah u ruke.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar__icon">🔒</div>
+          <div class="pillar__name">Tvoji podaci su tvoji</div>
+          <p class="pillar__desc">Ne prodajemo podatke, ne analiziramo saobraćaj vozila, ne šaljemo reklame. Podaci ostaju na uređaju — period.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar__icon">💸</div>
+          <div class="pillar__name">Besplatno za osnove</div>
+          <p class="pillar__desc">Svaka ključna funkcija je besplatna zauvek. Nema freemium zamki, nema "premium" blokova na stvarima koje ti trebaju.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar__icon">🏗️</div>
+          <div class="pillar__name">Gradimo polako</div>
+          <p class="pillar__desc">Ne jurime metriku, ne pišemo press release za svaku verziju. Dodajemo funkcije kad vidimo da je neko zaista treba.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar__icon">🇷🇸</div>
+          <div class="pillar__name">Lokalno, za lokalne</div>
+          <p class="pillar__desc">Sve je prilagođeno srpskim zakonima, tarifama, oblastima rada. Nismo prevedena strana aplikacija — gradimo od nule za naše tržište.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section class="section">
+    <div class="container" style="text-align:center;margin-bottom:56px">
+      <h2 class="section-title">Roadmap <span>2026–2030</span></h2>
+      <p class="section-sub" style="margin:0 auto">Kuda idemo i zašto. Svaki korak zavisi od signala iz terena — ne od investitora.</p>
+    </div>
+    <div class="roadmap">
+
+      <div class="roadmap__item roadmap__item--done">
+        <div class="roadmap__dot"></div>
+        <span class="roadmap__badge badge--live">✓ Live</span>
+        <div class="roadmap__period">2026 Q1–Q2</div>
+        <div class="roadmap__title">Faza 1 — Osnova ekosistema</div>
+        <p class="roadmap__desc">Driver Toolbox i Garage Toolbox — dve PWA aplikacije koje čine jezgro ekosistema. Offline, bez registracije, besplatno. Šest kalkulatora, blog, landing.</p>
+      </div>
+
+      <div class="roadmap__item roadmap__item--done">
+        <div class="roadmap__dot"></div>
+        <span class="roadmap__badge badge--dev">U razvoju</span>
+        <div class="roadmap__period">2026 Q3</div>
+        <div class="roadmap__title">Faza 2 — AutoHub</div>
+        <p class="roadmap__desc">Zajednička platforma koja povezuje Driver i Garage. Digitalni pasoš vozila — jedan QR kod koji servis skenira i vidi celu istoriju (samo ono što vlasnik podeli).</p>
+      </div>
+
+      <div class="roadmap__item roadmap__item--future">
+        <div class="roadmap__dot"></div>
+        <span class="roadmap__badge badge--plan">Planirano</span>
+        <div class="roadmap__period">2026 Q4</div>
+        <div class="roadmap__title">Faza 3 — Autopijaca MVP</div>
+        <p class="roadmap__desc">P2P marketplace vozila sa verifikovanom istorijom direktno iz Driver aplikacije. Kupac vidi pravu sliku, prodavac dobija kredibilitet.</p>
+      </div>
+
+      <div class="roadmap__item roadmap__item--future">
+        <div class="roadmap__dot"></div>
+        <span class="roadmap__badge badge--plan">Planirano</span>
+        <div class="roadmap__period">2027</div>
+        <div class="roadmap__title">Faza 4 — Autodelovi</div>
+        <p class="roadmap__desc">Marketplace auto delova za mehaničare. Bez komisije, direktno između prodavaca i servisa. Aktivira se kad 2+ mehaničara nezavisno javi da treba parts sourcing.</p>
+      </div>
+
+      <div class="roadmap__item roadmap__item--future">
+        <div class="roadmap__dot"></div>
+        <span class="roadmap__badge badge--plan">Vizija</span>
+        <div class="roadmap__period">2028–2030</div>
+        <div class="roadmap__title">Faza 5 — Regionalna ekspanzija</div>
+        <p class="roadmap__desc">BiH, Crna Gora, Severna Makedonija. Isti ekosistem, lokalne prilagodbe. Jedan digitalni pasoš koji prati vozilo bez obzira na granicu.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- OSNIVAČ -->
+  <section class="section section--alt">
+    <div class="container">
+      <div style="text-align:center;margin-bottom:56px">
+        <h2 class="section-title">Ko stoji <span>iza svega</span></h2>
+      </div>
+      <div class="founder">
+        <div class="founder__avatar">👨‍💻</div>
+        <div>
+          <div class="founder__name">Milan Pločić</div>
+          <div class="founder__role">Osnivač · Kruševac, Srbija</div>
+          <p class="founder__bio">
+            Softverski inženjer iz Kruševca koji gradi digitalne proizvode koji rešavaju realne probleme. AutoUniverse nije startup koji traži investiciju — to je projekat koji raste organički, korak po korak, u ritmu koji dozvoljava pravljenje stvari kako treba.
+          </p>
+          <p class="founder__bio">
+            Sve što vidite ovde — od Driver i Garage aplikacije, do ekosistema i ove stranice — napravljeno je lokalno, bez eksternih zavisnosti, bez cloud lockin-a. Alati su open source ili komercijalno slobodni. Infrastruktura je minimalna i kontrolisana.
+          </p>
+          <blockquote class="founder__quote">
+            "Hteo sam aplikaciju koju bih i sam koristio svaki put kada odvedem auto na servis. I koja bi mom mehaničaru olakšala posao, a ne komplikovala ga. To je jedini kriterijum koji važi."
+          </blockquote>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-band">
+    <div class="cta-band__bg" aria-hidden="true"></div>
+    <div class="container">
+      <h2>Isprobaj <span>sam</span></h2>
+      <p>Besplatno. Offline. Bez registracije. Preuzmi Driver ili Garage i vidi za sebe.</p>
+      <div class="cta-band__btns">
+        <a href="/driver" class="btn-primary">🧑‍💼 Driver Toolbox</a>
+        <a href="/garage" class="btn-ghost">🔧 Garage Toolbox</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <a href="/" class="logo" style="margin-bottom:16px;display:inline-flex">
+            <span class="logo__au">AU</span>
+            <span class="logo__text">AutoUniverse</span>
+          </a>
+          <p class="footer__tagline">Ekosistem za vaše vozilo.<br>Napravljeno u Srbiji.</p>
+        </div>
+        <div class="footer__col">
+          <h4>Aplikacije</h4>
+          <a href="/driver">Driver Toolbox</a>
+          <a href="/garage">Garage Toolbox</a>
+          <a href="/ekosistem">Ekosistem</a>
+        </div>
+        <div class="footer__col">
+          <h4>Resursi</h4>
+          <a href="/kalkulatori">Svi kalkulatori</a>
+          <a href="/kalkulator-registracije">Kalkulator registracije</a>
+          <a href="/kalkulator-uvoza">Kalkulator uvoza</a>
+          <a href="/blog">Blog</a>
+          <a href="/#kontakt">Kontakt</a>
+        </div>
+        <div class="footer__col">
+          <h4>Kompanija</h4>
+          <a href="/o-nama">O nama</a>
+          <a href="/privatnost">Politika privatnosti</a>
+          <a href="/uslovi">Uslovi korišćenja</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <span>&copy; 2026 AutoUniverse &middot; Rasinski okrug, Srbija</span>
+        <span>Napravljeno sa &hearts; bez VC novca</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script data-goatcounter="https://analytics.autouniverse.rs/count" async src="//analytics.autouniverse.rs/count.js"></script>
+</body>
+</html>
