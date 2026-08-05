@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ekosistem — AutoUniverse</title>
+  <meta name="description" content="AutoUniverse ekosistem: Driver za vlasnike vozila, Garage za auto servise. Jedan digitalni pasoš za sve što se dešava sa vašim vozilom.">
+  <link rel="canonical" href="https://autouniverse.rs/ekosistem">
+
+  <meta property="og:title" content="Ekosistem — AutoUniverse">
+  <meta property="og:description" content="Driver za vlasnike. Garage za servise. Jedan ekosistem, nula kompromisa.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://autouniverse.rs/ekosistem">
+  <meta property="og:image" content="https://autouniverse.rs/assets/og-image.png">
+  <meta property="og:locale" content="sr_RS">
+  <meta property="og:site_name" content="AutoUniverse">
+
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css?v=2">
+
+  <style>
+    /* ── PAGE HERO ── */
+    .page-hero {
+      padding: 140px 0 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-hero__bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,107,53,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,107,53,.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, black, transparent);
+    }
+    .page-hero .badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--orange);
+      border: 1px solid rgba(255,107,53,.3);
+      background: rgba(255,107,53,.08);
+      padding: 5px 14px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+    }
+    .page-hero h1 {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(42px, 6vw, 72px);
+      line-height: 1;
+      letter-spacing: -1px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .page-hero h1 span { color: var(--orange); }
+    .page-hero p {
+      font-size: 18px;
+      color: var(--text-2);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+    .page-hero__cta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── SECTION BASE ── */
+    .section {
+      padding: 96px 0;
+    }
+    .section--alt { background: var(--navy-2); }
+    .section-label {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(32px, 4vw, 48px);
+      line-height: 1.05;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 17px;
+      color: var(--text-2);
+      line-height: 1.7;
+      max-width: 560px;
+    }
+    .section-header { margin-bottom: 64px; }
+    .section-header--center { text-align: center; }
+    .section-header--center .section-sub { margin: 0 auto; }
+
+    /* ── MAP SECTION ── */
+    .map-section {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 64px;
+      align-items: start;
+    }
+    .map-canvas {
+      position: relative;
+    }
+    .map-svg-wrap {
+      background: var(--navy-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      overflow: visible;
+    }
+    .map-svg-wrap svg {
+      display: block;
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* SVG node interactivity */
+    .map-node {
+      cursor: pointer;
+      transition: filter .2s;
+    }
+    .map-node:hover { filter: brightness(1.15); }
+    .map-node.active .node-ring {
+      animation: ring-pulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes ring-pulse {
+      0%, 100% { opacity: .6; r: 44; }
+      50%       { opacity: 1;  r: 48; }
+    }
+
+    /* Connection line animation */
+    .conn-line {
+      stroke-dasharray: 6 4;
+      animation: dash-flow 1.2s linear infinite;
+    }
+    @keyframes dash-flow {
+      to { stroke-dashoffset: -20; }
+    }
+
+    /* ── DETAIL PANEL ── */
+    .detail-panel {
+      position: sticky;
+      top: 90px;
+    }
+    .detail-card {
+      background: var(--navy-2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      display: none;
+    }
+    .detail-card.visible { display: block; }
+    .detail-card__icon {
+      font-size: 40px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .detail-card__title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 28px;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .detail-card__sub {
+      font-size: 14px;
+      color: var(--text-2);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .detail-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .detail-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .detail-features li::before {
+      content: '✓';
+      color: var(--orange);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* default panel */
+    .default-panel {
+      background: linear-gradient(135deg, rgba(255,107,53,.06), rgba(14,165,233,.06));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px 32px;
+      text-align: center;
+    }
+    .default-panel__icon { font-size: 48px; margin-bottom: 16px; display: block; }
+    .default-panel__title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 22px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .default-panel__text { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+
+    /* ── PASSPORT SECTION ── */
+    .passport-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .passport-card {
+      background: linear-gradient(145deg, var(--navy-2), var(--navy-3));
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    .passport-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--orange), var(--blue));
+    }
+    .passport-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .passport-badge {
+      width: 44px; height: 44px;
+      background: rgba(255,107,53,.15);
+      border: 1.5px solid rgba(255,107,53,.3);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .passport-title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 20px;
+      text-transform: uppercase;
+    }
+    .passport-subtitle { font-size: 13px; color: var(--text-2); }
+    .passport-rows { display: flex; flex-direction: column; gap: 14px; }
+    .passport-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,.03);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+    .passport-row__icon { font-size: 18px; flex-shrink: 0; }
+    .passport-row__label { font-size: 12px; color: var(--text-2); text-transform: uppercase; letter-spacing: .5px; }
+    .passport-row__val { font-size: 14px; font-weight: 600; }
+    .passport-row__badge {
+      margin-left: auto;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 100px;
+    }
+    .badge--green { background: rgba(34,197,94,.15); color: #22c55e; }
+    .badge--orange { background: rgba(255,107,53,.15); color: var(--orange); }
+    .badge--blue { background: rgba(14,165,233,.15); color: var(--blue); }
+
+    .passport-content h3 {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 32px;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+    }
+    .passport-content p {
+      font-size: 16px;
+      color: var(--text-2);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+    .passport-content p:last-child { margin-bottom: 0; }
+
+    /* ── FLOW SECTION ── */
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      position: relative;
+    }
+    .flow-grid::after {
+      content: '';
+      position: absolute;
+      top: 40px;
+      left: calc(12.5% + 40px);
+      right: calc(12.5% + 40px);
+      height: 2px;
+      background: linear-gradient(90deg, var(--orange), var(--blue));
+      z-index: 0;
+    }
+    .flow-step {
+      text-align: center;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+    .flow-step__icon {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 20px;
+      border: 2px solid var(--border);
+      background: var(--navy);
+      position: relative;
+    }
+    .flow-step:nth-child(1) .flow-step__icon { border-color: var(--orange); background: rgba(255,107,53,.1); }
+    .flow-step:nth-child(2) .flow-step__icon { border-color: var(--blue); background: rgba(14,165,233,.1); }
+    .flow-step:nth-child(3) .flow-step__icon { border-color: #22c55e; background: rgba(34,197,94,.1); }
+    .flow-step:nth-child(4) .flow-step__icon { border-color: var(--orange); background: rgba(255,107,53,.1); }
+
+    .flow-step__num {
+      position: absolute;
+      top: -6px; right: -6px;
+      width: 22px; height: 22px;
+      background: var(--orange);
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 11px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .flow-step__title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 17px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .flow-step__text { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+    .flow-step__app {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 100px;
+      background: rgba(255,107,53,.1);
+      color: var(--orange);
+      border: 1px solid rgba(255,107,53,.2);
+    }
+    .flow-step__app--blue {
+      background: rgba(14,165,233,.1);
+      color: var(--blue);
+      border-color: rgba(14,165,233,.2);
+    }
+    .flow-step__app--green {
+      background: rgba(34,197,94,.1);
+      color: #22c55e;
+      border-color: rgba(34,197,94,.2);
+    }
+
+    /* ── CTA BANNER ── */
+    .cta-banner {
+      text-align: center;
+      padding: 96px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(255,107,53,.08), transparent);
+    }
+    .cta-banner h2 {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(36px, 5vw, 60px);
+      text-transform: uppercase;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .cta-banner h2 span { color: var(--orange); }
+    .cta-banner p {
+      font-size: 18px;
+      color: var(--text-2);
+      margin-bottom: 40px;
+      position: relative;
+    }
+    .cta-banner__btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; position: relative; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .map-section { grid-template-columns: 1fr; }
+      .detail-panel { position: static; margin-top: 32px; }
+      .passport-grid { grid-template-columns: 1fr; }
+      .flow-grid { grid-template-columns: 1fr 1fr; gap: 40px 24px; }
+      .flow-grid::after { display: none; }
+    }
+    @media (max-width: 600px) {
+      .flow-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <a href="/" class="logo">
+        <span class="logo__au">AU</span>
+        <span class="logo__text">AutoUniverse</span>
+      </a>
+      <nav class="nav" id="nav">
+        <a href="/ekosistem" class="nav__link" style="color:var(--orange)">Ekosistem</a>
+        <a href="/driver" class="nav__link">Driver</a>
+        <a href="/garage" class="nav__link">Garage</a>
+        <a href="/kalkulatori" class="nav__link">Kalkulatori</a>
+        <a href="/blog" class="nav__link">Blog</a>
+        <a href="/#kontakt" class="nav__link">Kontakt</a>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Meni">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- PAGE HERO -->
+  <section class="page-hero">
+    <div class="page-hero__bg" aria-hidden="true"></div>
+    <div class="container" style="position:relative">
+      <div class="badge">Kako funkcioniše</div>
+      <h1>Jedan ekosistem.<br><span>Sve veze.</span></h1>
+      <p>Driver i Garage nisu dve odvojene aplikacije — oni su dve strane iste priče. Vaše vozilo je u centru svega.</p>
+      <div class="page-hero__cta">
+        <a href="/driver" class="btn btn--primary">Preuzmi Driver</a>
+        <a href="/garage" class="btn btn--outline">Za servise</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTERACTIVE MAP -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Interaktivna mapa</div>
+        <h2 class="section-title">Klikni na čvor da vidiš detalje</h2>
+        <p class="section-sub">Svaki čvor je posebna aplikacija — zajedno grade kompletnu istoriju vašeg vozila.</p>
+      </div>
+
+      <div class="map-section">
+        <!-- SVG MAP -->
+        <div class="map-canvas">
+          <div class="map-svg-wrap">
+            <svg viewBox="0 0 560 420" xmlns="http://www.w3.org/2000/svg" aria-label="AutoUniverse ekosistem mapa">
+
+              <!-- Connection lines (animated dashes) -->
+              <!-- Driver ← Vehicle -->
+              <line x1="150" y1="210" x2="240" y2="210" class="conn-line" stroke="var(--blue)" stroke-width="2" opacity=".5"/>
+              <!-- Garage ← Vehicle -->
+              <line x1="320" y1="210" x2="410" y2="210" class="conn-line" stroke="var(--orange)" stroke-width="2" opacity=".5"/>
+              <!-- Vehicle → Autopijaca (coming soon) -->
+              <line x1="280" y1="152" x2="280" y2="88" class="conn-line" stroke="#22c55e" stroke-width="1.5" opacity=".35" stroke-dasharray="4 6"/>
+              <!-- Vehicle → Autodelovi (coming soon) -->
+              <line x1="280" y1="268" x2="280" y2="332" class="conn-line" stroke="#a855f7" stroke-width="1.5" opacity=".35" stroke-dasharray="4 6"/>
+
+              <!-- VEHICLE CENTER NODE -->
+              <g transform="translate(280,210)" role="img" aria-label="Vozilo">
+                <circle r="56" fill="rgba(255,107,53,.08)" stroke="rgba(255,107,53,.2)" stroke-width="1"/>
+                <circle r="44" fill="rgba(255,107,53,.12)" stroke="var(--orange)" stroke-width="2"/>
+                <text text-anchor="middle" dominant-baseline="central" font-size="32">🚗</text>
+                <text y="62" text-anchor="middle" font-family="'Barlow Condensed',sans-serif" font-weight="900" font-size="13" fill="#e2e8f0" letter-spacing="1" text-transform="uppercase">VAŠE VOZILO</text>
+              </g>
+
+              <!-- DRIVER NODE -->
+              <g class="map-node" id="node-driver" transform="translate(105,210)" onclick="selectNode('driver')" role="button" aria-label="Driver Toolbox">
+                <circle class="node-ring" r="44" fill="rgba(14,165,233,.08)" stroke="rgba(14,165,233,.3)" stroke-width="1.5"/>
+                <circle r="36" fill="rgba(14,165,233,.14)" stroke="#0ea5e9" stroke-width="2"/>
+                <text text-anchor="middle" dominant-baseline="central" font-size="24">🧑‍💼</text>
+                <text y="52" text-anchor="middle" font-family="'Barlow Condensed',sans-serif" font-weight="900" font-size="13" fill="#e2e8f0" letter-spacing=".5">DRIVER</text>
+                <text y="67" text-anchor="middle" font-family="'Barlow',sans-serif" font-size="11" fill="#94a3b8">Za vlasnike</text>
+              </g>
+
+              <!-- GARAGE NODE -->
+              <g class="map-node" id="node-garage" transform="translate(455,210)" onclick="selectNode('garage')" role="button" aria-label="Garage Toolbox">
+                <circle class="node-ring" r="44" fill="rgba(255,107,53,.08)" stroke="rgba(255,107,53,.3)" stroke-width="1.5"/>
+                <circle r="36" fill="rgba(255,107,53,.14)" stroke="var(--orange)" stroke-width="2"/>
+                <text text-anchor="middle" dominant-baseline="central" font-size="24">🔧</text>
+                <text y="52" text-anchor="middle" font-family="'Barlow Condensed',sans-serif" font-weight="900" font-size="13" fill="#e2e8f0" letter-spacing=".5">GARAGE</text>
+                <text y="67" text-anchor="middle" font-family="'Barlow',sans-serif" font-size="11" fill="#94a3b8">Za servise</text>
+              </g>
+
+              <!-- AUTOPIJACA (coming soon, top) -->
+              <g class="map-node" id="node-autopijaca" transform="translate(280,62)" onclick="selectNode('autopijaca')" role="button" aria-label="Autopijaca">
+                <circle r="28" fill="rgba(34,197,94,.06)" stroke="rgba(34,197,94,.25)" stroke-width="1.5" stroke-dasharray="4 3"/>
+                <text text-anchor="middle" dominant-baseline="central" font-size="18">🏪</text>
+                <text y="38" text-anchor="middle" font-family="'Barlow Condensed',sans-serif" font-weight="700" font-size="10" fill="#22c55e" letter-spacing=".5">AUTOPIJACA</text>
+                <text y="50" text-anchor="middle" font-family="'Barlow',sans-serif" font-size="9" fill="#94a3b8">uskoro</text>
+              </g>
+
+              <!-- AUTODELOVI (coming soon, bottom) -->
+              <g class="map-node" id="node-autodelovi" transform="translate(280,358)" onclick="selectNode('autodelovi')" role="button" aria-label="Autodelovi">
+                <circle r="28" fill="rgba(168,85,247,.06)" stroke="rgba(168,85,247,.25)" stroke-width="1.5" stroke-dasharray="4 3"/>
+                <text text-anchor="middle" dominant-baseline="central" font-size="18">🔩</text>
+                <text y="38" text-anchor="middle" font-family="'Barlow Condensed',sans-serif" font-weight="700" font-size="10" fill="#a855f7" letter-spacing=".5">AUTODELOVI</text>
+                <text y="50" text-anchor="middle" font-family="'Barlow',sans-serif" font-size="9" fill="#94a3b8">uskoro</text>
+              </g>
+
+            </svg>
+          </div>
+        </div>
+
+        <!-- DETAIL PANEL -->
+        <div class="detail-panel">
+
+          <!-- default -->
+          <div class="default-panel" id="panel-default">
+            <span class="default-panel__icon">👆</span>
+            <div class="default-panel__title">Klikni na čvor</div>
+            <p class="default-panel__text">Svaki čvor na mapi je posebna aplikacija. Klikni da vidiš šta radi i kako se uklapa u ekosistem.</p>
+          </div>
+
+          <!-- DRIVER -->
+          <div class="detail-card" id="panel-driver">
+            <span class="detail-card__icon">🧑‍💼</span>
+            <div class="detail-card__title" style="color:var(--blue)">Driver Toolbox</div>
+            <div class="detail-card__sub">PWA aplikacija za vlasnike vozila. Sve o vašem autu na jednom mestu — offline, bez registracije, bez cloud-a.</div>
+            <ul class="detail-features">
+              <li>Digitalna servisna knjižica (servisi, troškovi, dokumenta)</li>
+              <li>Podsetnici za registraciju, tehnički, osiguranje</li>
+              <li>Galerija fotografija vozila (lokalno)</li>
+              <li>QR vizitka — podelio, servis skenirao</li>
+              <li>TCO analiza — koliko vas auto zaista košta</li>
+              <li>Radi offline, instalira se kao app</li>
+            </ul>
+            <a href="/driver" class="btn btn--outline" style="width:100%;justify-content:center;border-color:var(--blue);color:var(--blue)">Preuzmi Driver</a>
+          </div>
+
+          <!-- GARAGE -->
+          <div class="detail-card" id="panel-garage">
+            <span class="detail-card__icon">🔧</span>
+            <div class="detail-card__title" style="color:var(--orange)">Garage Toolbox</div>
+            <div class="detail-card__sub">PWA aplikacija za auto servise. Profesionalno upravljanje radnim nalozima, klijentima i voznim parkom — offline, bez pretplate.</div>
+            <ul class="detail-features">
+              <li>Radni nalozi sa PDF izvozom</li>
+              <li>Baza klijenata i vozila</li>
+              <li>QR skeniranje Driver kartice</li>
+              <li>Istorija servisa po vozilu</li>
+              <li>Statistike servisa i prihoda</li>
+              <li>Višejezičan (srpski, engleski)</li>
+            </ul>
+            <a href="/garage" class="btn btn--primary" style="width:100%;justify-content:center">Preuzmi Garage</a>
+          </div>
+
+          <!-- AUTOPIJACA -->
+          <div class="detail-card" id="panel-autopijaca">
+            <span class="detail-card__icon">🏪</span>
+            <div class="detail-card__title" style="color:#22c55e">Autopijaca</div>
+            <div class="detail-card__sub">P2P marketplace vozila. Ključna prednost: verifikovana istorija direktno iz Driver aplikacije — bez falsifikata, bez gubljenja vremena.</div>
+            <ul class="detail-features">
+              <li>Prodaj auto sa dokazanom istorijom</li>
+              <li>Kupac vidi pravo stanje, ne marketing</li>
+              <li>Direktna P2P komunikacija, bez komisije</li>
+              <li>Integracija sa Driver voznom karticom</li>
+            </ul>
+            <div style="font-size:13px;color:var(--text-2);margin-top:16px;padding:12px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:8px;">
+              ⏳ Aktivira se kad Driver dostigne 20+ aktivnih vozača
+            </div>
+          </div>
+
+          <!-- AUTODELOVI -->
+          <div class="detail-card" id="panel-autodelovi">
+            <span class="detail-card__icon">🔩</span>
+            <div class="detail-card__title" style="color:#a855f7">Autodelovi</div>
+            <div class="detail-card__sub">P2P marketplace auto delova. Mehaničari i vlasnici razmenjuju delove direktno — bez posrednika, bez komisije.</div>
+            <ul class="detail-features">
+              <li>Besplatan P2P listing delova</li>
+              <li>Pretraga po marki i modelu</li>
+              <li>Integracija sa Garage bazom vozila</li>
+              <li>Direktan kontakt između prodavca i kupca</li>
+            </ul>
+            <div style="font-size:13px;color:var(--text-2);margin-top:16px;padding:12px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:8px;">
+              ⏳ Aktivira se kad 2+ mehaničara nezavisno traže parts sourcing
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIGITAL PASSPORT -->
+  <section class="section section--alt">
+    <div class="container">
+      <div class="passport-grid">
+        <!-- Card mockup -->
+        <div>
+          <div class="passport-card">
+            <div class="passport-header">
+              <div class="passport-badge">🚗</div>
+              <div>
+                <div class="passport-title">Digitalni pasoš vozila</div>
+                <div class="passport-subtitle">AutoUniverse Driver</div>
+              </div>
+            </div>
+            <div class="passport-rows">
+              <div class="passport-row">
+                <span class="passport-row__icon">📋</span>
+                <div>
+                  <div class="passport-row__label">Registracija</div>
+                  <div class="passport-row__val">Golf 6 1.6 TDI · 2011</div>
+                </div>
+                <span class="passport-row__badge badge--green">OK</span>
+              </div>
+              <div class="passport-row">
+                <span class="passport-row__icon">🔧</span>
+                <div>
+                  <div class="passport-row__label">Poslednji servis</div>
+                  <div class="passport-row__val">Zamena ulja + filtera</div>
+                </div>
+                <span class="passport-row__badge badge--blue">15.000 km</span>
+              </div>
+              <div class="passport-row">
+                <span class="passport-row__icon">🛡️</span>
+                <div>
+                  <div class="passport-row__label">Osiguranje</div>
+                  <div class="passport-row__val">Generali AO</div>
+                </div>
+                <span class="passport-row__badge badge--orange">31 dan</span>
+              </div>
+              <div class="passport-row">
+                <span class="passport-row__icon">📍</span>
+                <div>
+                  <div class="passport-row__label">Kilometraža</div>
+                  <div class="passport-row__val">187.430 km (verifikovano)</div>
+                </div>
+                <span class="passport-row__badge badge--green">✓</span>
+              </div>
+              <div class="passport-row">
+                <span class="passport-row__icon">💰</span>
+                <div>
+                  <div class="passport-row__label">TCO ove godine</div>
+                  <div class="passport-row__val">Gorivo, servis, registracija</div>
+                </div>
+                <span class="passport-row__badge badge--blue">1.840 €</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Text content -->
+        <div class="passport-content">
+          <div class="section-label">Digital Passport</div>
+          <h3>Istorija koja putuje<br>sa vozilom</h3>
+          <p>Driver gradi digitalnu servisnu knjižicu na vašem uređaju. Svaki servis, svaki trošak, svaki dokument — sve na jednom mestu, offline, u vašim rukama.</p>
+          <p>Kad odnesete auto na servis, mehaničar skenira QR vizitku i odmah vidi kompletnu istoriju. Nema papira, nema pitanja, nema gubitka informacija pri prodaji.</p>
+          <p>Kad prodajete auto, kupac ne kupuje priču — kupuje verifikovanu istoriju direktno iz aplikacije. Veće poverenje, bolja cena.</p>
+          <a href="/driver" class="btn btn--primary" style="margin-top:8px">Kreiraj pasoš za vaš auto</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FLOW: JEDAN PODATAK, VIŠE KORISTI -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header section-header--center">
+        <div class="section-label">Jedan podatak, više koristi</div>
+        <h2 class="section-title">Zamena ulja — od unosa do arhive</h2>
+        <p class="section-sub">Jedan zapis u Driver-u aktivira ceo ekosistem. Pogledajte kako putuje jedna informacija.</p>
+      </div>
+
+      <div class="flow-grid">
+        <div class="flow-step">
+          <div class="flow-step__icon">
+            <span class="flow-step__num">1</span>
+            🔧
+          </div>
+          <div class="flow-step__title">Servis završen</div>
+          <p class="flow-step__text">Mehaničar zatvara radni nalog u Garage-u — unosi "zamena ulja, filter, 187.430 km".</p>
+          <span class="flow-step__app">Garage</span>
+        </div>
+
+        <div class="flow-step">
+          <div class="flow-step__icon">
+            <span class="flow-step__num">2</span>
+            📲
+          </div>
+          <div class="flow-step__title">Vlasnik sinhronizuje</div>
+          <p class="flow-step__text">Driver skenira QR radnog naloga i dodaje zapis u svoju servisnu knjižicu u sekundi.</p>
+          <span class="flow-step__app flow-step__app--blue">Driver</span>
+        </div>
+
+        <div class="flow-step">
+          <div class="flow-step__icon">
+            <span class="flow-step__num">3</span>
+            🔔
+          </div>
+          <div class="flow-step__title">Podsetnik se pali</div>
+          <p class="flow-step__text">Driver automatski setuje podsetnik za sledeću zamenu — 15.000 km ili 1 godina, što pre dođe.</p>
+          <span class="flow-step__app flow-step__app--blue">Driver</span>
+        </div>
+
+        <div class="flow-step">
+          <div class="flow-step__icon">
+            <span class="flow-step__num">4</span>
+            📊
+          </div>
+          <div class="flow-step__title">TCO se ažurira</div>
+          <p class="flow-step__text">Trošak servisa se automatski dodaje u godišnji TCO — vlasnik vidi koliko ga auto zaista košta.</p>
+          <span class="flow-step__app flow-step__app--green">Driver TCO</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-banner">
+    <div class="container">
+      <h2>Spremi da počneš<br><span>graditi istoriju?</span></h2>
+      <p>Driver je besplatan, radi offline i nema registracije. Instalirate za 30 sekundi.</p>
+      <div class="cta-banner__btns">
+        <a href="/driver" class="btn btn--primary">Preuzmi Driver — besplatno</a>
+        <a href="/garage" class="btn btn--outline">Za auto servise →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER (same as index.html) -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <a href="/" class="logo" style="margin-bottom:16px;display:inline-flex">
+            <span class="logo__au">AU</span>
+            <span class="logo__text">AutoUniverse</span>
+          </a>
+          <p class="footer__tagline">Ekosistem za vaše vozilo.<br>Napravljeno u Srbiji.</p>
+        </div>
+        <div class="footer__col">
+          <h4>Aplikacije</h4>
+          <a href="/driver">Driver Toolbox</a>
+          <a href="/garage">Garage Toolbox</a>
+          <a href="/ekosistem">Ekosistem</a>
+        </div>
+        <div class="footer__col">
+          <h4>Resursi</h4>
+          <a href="/kalkulatori">Svi kalkulatori</a>
+          <a href="/kalkulator-registracije">Kalkulator registracije</a>
+          <a href="/kalkulator-uvoza">Kalkulator uvoza</a>
+          <a href="/blog">Blog</a>
+          <a href="/#kontakt">Kontakt</a>
+        </div>
+        <div class="footer__col">
+          <h4>Pravno</h4>
+          <a href="/privatnost">Politika privatnosti</a>
+          <a href="/uslovi">Uslovi korišćenja</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <span>&copy; 2026 AutoUniverse &middot; Rasinski okrug, Srbija</span>
+        <span>Napravljeno sa &hearts; bez VC novca</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Node selection
+    var activeNode = null;
+    var panels = ['driver', 'garage', 'autopijaca', 'autodelovi'];
+
+    function selectNode(id) {
+      // hide all panels
+      document.getElementById('panel-default').style.display = 'none';
+      panels.forEach(function(p) {
+        var el = document.getElementById('panel-' + p);
+        if (el) el.classList.remove('visible');
+        var node = document.getElementById('node-' + p);
+        if (node) node.classList.remove('active');
+      });
+
+      if (activeNode === id) {
+        // deselect — show default
+        activeNode = null;
+        document.getElementById('panel-default').style.display = '';
+        return;
+      }
+
+      activeNode = id;
+      var panel = document.getElementById('panel-' + id);
+      if (panel) panel.classList.add('visible');
+      var node = document.getElementById('node-' + id);
+      if (node) node.classList.add('active');
+
+      // scroll panel into view on mobile
+      if (window.innerWidth < 900) {
+        var detail = document.querySelector('.detail-panel');
+        if (detail) detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  </script>
+  <script data-goatcounter="https://analytics.autouniverse.rs/count" async src="//analytics.autouniverse.rs/count.js"></script>
+</body>
+</html>
