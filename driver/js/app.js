@@ -1258,26 +1258,33 @@
       }
       return Store.all("vehicles").then(function (vehicles) {
         return AUCore.getPlatformUrl().then(function (hubUrl) {
-          var cards = syncedLocalIds.map(function (lid) {
+          var cardPromises = syncedLocalIds.map(function (lid) {
             var serverId = vehicleMap[lid];
             var v = vehicles.find(function (x) { return x.id === lid; });
-            if (!v) return '';
+            if (!v) return Promise.resolve('');
             var publicUrl = hubUrl ? hubUrl.replace(/\/$/, '') + '/public/v/' + serverId : '';
-            var qrSrc = publicUrl ? publicUrl + '/qr' : '';
-            return '<div class="card mt16">' +
-              '<b>' + esc(v.make + ' ' + v.model) + (v.year ? ' ' + v.year : '') + '</b>' +
-              (v.plate ? '<p class="muted" style="font-size:.82rem">' + esc(v.plate) + '</p>' : '') +
-              (qrSrc ? '<div style="text-align:center;margin:12px 0">' +
-                '<img src="' + esc(qrSrc) + '" alt="QR" style="width:160px;height:160px;border-radius:8px;background:#fff;padding:8px">' +
-                '</div>' : '') +
-              (publicUrl ? '<p style="font-size:.72rem;color:#64748b;word-break:break-all;margin-bottom:8px">' + esc(publicUrl) + '</p>' +
-                '<button class="btn btn-secondary" onclick="DR.copyPublicUrl(\'' + esc(publicUrl) + '\')">Kopiraj link</button>' : '') +
-              '</div>';
-          }).join('');
-          return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
-            '<h1>Javni dosije</h1>' +
-            '<p style="color:#64748b;font-size:.83rem;padding:0 0 4px">QR kod i link za kupca — servisna istorija bez naloga.</p>' +
-            cards;
+            var qrPromise = (publicUrl && window.QRCode)
+              ? window.QRCode.toDataURL(publicUrl, { width: 160, margin: 1 })
+              : Promise.resolve(publicUrl ? publicUrl + '/qr' : '');
+            return qrPromise.then(function (qrSrc) {
+              var isDataUrl = qrSrc && qrSrc.startsWith('data:');
+              return '<div class="card mt16">' +
+                '<b>' + esc(v.make + ' ' + v.model) + (v.year ? ' ' + v.year : '') + '</b>' +
+                (v.plate ? '<p class="muted" style="font-size:.82rem">' + esc(v.plate) + '</p>' : '') +
+                (qrSrc ? '<div style="text-align:center;margin:12px 0">' +
+                  '<img src="' + (isDataUrl ? qrSrc : esc(qrSrc)) + '" alt="QR" style="width:160px;height:160px;border-radius:8px;background:#fff;padding:8px">' +
+                  '</div>' : '') +
+                (publicUrl ? '<p style="font-size:.72rem;color:#64748b;word-break:break-all;margin-bottom:8px">' + esc(publicUrl) + '</p>' +
+                  '<button class="btn btn-secondary" onclick="DR.copyPublicUrl(\'' + esc(publicUrl) + '\')">Kopiraj link</button>' : '') +
+                '</div>';
+            });
+          });
+          return Promise.all(cardPromises).then(function (cards) {
+            return '<button class="linkback" onclick="DR.go(\'settings\')" data-i18n="common.back"></button>' +
+              '<h1>Javni dosije</h1>' +
+              '<p style="color:#64748b;font-size:.83rem;padding:0 0 4px">QR kod i link za kupca — servisna istorija bez naloga.</p>' +
+              cards.join('');
+          });
         });
       });
     },
