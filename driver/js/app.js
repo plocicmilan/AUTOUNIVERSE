@@ -2652,6 +2652,20 @@
             date: sellDate
           });
           Store.put("events", saleEv);
+
+          // FEEDBACK #17 — obavesti mehaničare na AU Core (tiho, fire-and-forget)
+          if (hubConnected()) {
+            var _vmap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+            var sid = _vmap[vid];
+            if (sid) {
+              AUCore.apiCall("POST", "/vehicles/" + sid + "/transfer", { sold_at: sellDate })
+                .then(function (r) {
+                  if (r && r.mechanics_notified > 0) {
+                    toast("Mehaničari obavešteni (" + r.mechanics_notified + ")");
+                  }
+                }).catch(function () {});
+            }
+          }
         }
         Store.put("vehicles", v).then(function () {
           toast(t("common.saved")); App.activeVehicleId = vid; render("vehicle");
