@@ -1,0 +1,11 @@
+{
+  "appId": "rs.autouniverse.driver",
+  "appName": "Driver Toolbox",
+  "webDir": "../../build/driver",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
