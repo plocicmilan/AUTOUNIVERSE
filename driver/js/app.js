@@ -1424,21 +1424,34 @@
     reg_calc: function () {
       return '<button class="linkback" onclick="DR.go(\'kalkulatori\')" data-i18n="common.back"></button>' +
         '<h1>🧮 Kalkulator registracije</h1>' +
-        '<p style="color:#64748b;font-size:.83rem;padding:0 0 12px">Procena ukupnih troškova registracije (tehnički pregled + osiguranje + taksa). Tačna vrednost zavisi od osiguravajuće kuće i varijabilnih taksi — ovo je okviran iznos.</p>' +
+        '<p style="color:#64748b;font-size:.83rem;padding:0 0 12px">Procena ukupnih troškova registracije prema srpskom zakonu — porez na upotrebu po zapremini motora + AO osiguranje + tehnički pregled + ekološka naknada + takse.</p>' +
         '<div class="card">' +
-          '<label class="field"><span>Snaga motora (kW)</span>' +
-            '<input type="number" id="rc_kw" placeholder="npr. 85" min="1" max="999" onchange="DR.calcReg()" oninput="DR.calcReg()">' +
+          '<label class="field"><span>Zapremina motora (ccm)</span>' +
+            '<input type="number" id="rc_ccm" placeholder="npr. 1598" min="1" max="9999" onchange="DR.calcReg()" oninput="DR.calcReg()">' +
+          '</label>' +
+          '<label class="field"><span>Snaga motora (kW) — za AO osiguranje</span>' +
+            '<input type="number" id="rc_kw" placeholder="npr. 77" min="1" max="999" onchange="DR.calcReg()" oninput="DR.calcReg()">' +
+          '</label>' +
+          '<label class="field"><span>Godina vozila</span>' +
+            '<input type="number" id="rc_year" placeholder="npr. 2011" min="1970" max="2026" onchange="DR.calcReg()" oninput="DR.calcReg()">' +
           '</label>' +
           '<label class="field"><span>Gorivo</span>' +
             '<select id="rc_fuel" onchange="DR.calcReg()">' +
               '<option value="benzin">Benzin / Hibrid</option>' +
               '<option value="dizel">Dizel</option>' +
-              '<option value="struja">Električno</option>' +
+              '<option value="struja">Električno (oslobođeno poreza)</option>' +
               '<option value="gas">Gas (TNG/CNG)</option>' +
             '</select>' +
           '</label>' +
-          '<label class="field"><span>Godina vozila</span>' +
-            '<input type="number" id="rc_year" placeholder="npr. 2015" min="1970" max="2026" onchange="DR.calcReg()" oninput="DR.calcReg()">' +
+          '<label class="field"><span>Euro ekološka klasa</span>' +
+            '<select id="rc_euro" onchange="DR.calcReg()">' +
+              '<option value="euro5">Euro 5 (2009–2014)</option>' +
+              '<option value="euro6">Euro 6 (2015+)</option>' +
+              '<option value="euro4">Euro 4 (2005–2009)</option>' +
+              '<option value="euro3">Euro 3 (2000–2005)</option>' +
+              '<option value="euro2">Euro 2 i stariji</option>' +
+              '<option value="electric">Električno / BEV</option>' +
+            '</select>' +
           '</label>' +
           '<label class="field"><span>Kategorija</span>' +
             '<select id="rc_cat" onchange="DR.calcReg()">' +
@@ -1450,7 +1463,7 @@
         '<div id="rc_result" style="display:none;" class="card" style="margin-top:12px">' +
           '<h2 style="margin:0 0 8px">Procena troškova</h2>' +
           '<div id="rc_breakdown"></div>' +
-          '<p style="font-size:.75rem;color:#64748b;margin-top:8px">* Osiguranje: AO minimum za M1. Tehnički pregled: JKP Putevi Srbije. Taksa: MUP republička taksa.<br>Proverite aktuelne cene na <b>osiguranik.com</b> pre plaćanja.</p>' +
+          '<p style="font-size:.75rem;color:#64748b;margin-top:8px">* Porez na upotrebu: Zakon o porezima na upotrebu RS, tarife 2026. AO: minimum za M1, bonus-malus 0. Tehnički: JKP Putevi Srbije.<br>Proverite aktuelne cene na <b>cenaregistracije.rs</b> pre plaćanja.</p>' +
         '</div>';
     },
 
@@ -3006,49 +3019,76 @@
 
     /* ----- Kalkulator registracije ----- */
     calcReg: function () {
-      var kw   = parseFloat(el("rc_kw")   && el("rc_kw").value)   || 0;
-      var year = parseInt(el("rc_year")   && el("rc_year").value,  10) || 0;
+      var ccm  = parseFloat(el("rc_ccm")  && el("rc_ccm").value)   || 0;
+      var kw   = parseFloat(el("rc_kw")   && el("rc_kw").value)    || 0;
+      var year = parseInt(el("rc_year")   && el("rc_year").value,   10) || 0;
       var fuel = el("rc_fuel")  ? el("rc_fuel").value  : "benzin";
+      var euro = el("rc_euro")  ? el("rc_euro").value  : "euro5";
       var cat  = el("rc_cat")   ? el("rc_cat").value   : "M1";
       var res  = el("rc_result");
       var brkd = el("rc_breakdown");
       if (!res || !brkd) return;
-      if (!kw || !year) { res.style.display = "none"; return; }
+      if (!ccm || !kw || !year) { res.style.display = "none"; return; }
 
-      // Tehnički pregled (JKP Putevi Srbije, 2026 cenovnik — M1 stan. cena)
+      var age = 2026 - year;
+
+      // Tehnički pregled (JKP Putevi Srbije, 2026)
       var teh = cat === "M1" ? 3700 : 4800;
 
-      // AO osiguranje procena (osiguranik.com formula — M1, bonus 0%)
-      // Osnova ≈ (kW × 580) + godišnje; za dizel +10%, za struju -30%
-      var ao = Math.round(kw * 580 + 8000);
-      if (fuel === "dizel") ao = Math.round(ao * 1.10);
-      if (fuel === "struja") ao = Math.round(ao * 0.70);
-      if (fuel === "gas") ao = Math.round(ao * 0.95);
-      // starost bonus: >10 god -5%, >15 god -10%
-      var age = 2026 - year;
+      // Porez na upotrebu motornih vozila (Zakon o porezima na upotrebu RS)
+      // Osnova po zapremini motora (ccm), tarife 2026
+      var pBase = 0;
+      if      (ccm <= 1150) pBase = 1910;
+      else if (ccm <= 1300) pBase = 4200;
+      else if (ccm <= 1600) pBase = 7500;
+      else if (ccm <= 2000) pBase = 14500;
+      else if (ccm <= 2500) pBase = 45000;
+      else if (ccm <= 3000) pBase = 90000;
+      else                  pBase = 180000;
+      // Umanjenje po godinama starosti
+      var ageFactor = 1.0;
+      if      (age >= 21)            ageFactor = 0.15;
+      else if (age >= 16)            ageFactor = 0.30;
+      else if (age >= 11)            ageFactor = 0.50;
+      else if (age >= 6)             ageFactor = 0.80;
+      // Električna vozila oslobođena poreza na upotrebu
+      var porez = fuel === "struja" ? 0 : Math.round(pBase * ageFactor);
+      if (cat === "N1") porez = Math.round(porez * 1.20);
+
+      // AO osiguranje (minimum za M1, bonus-malus stepen 4 — osnovni)
+      var aoTiers = [
+        { max: 40, p: 6500 }, { max: 55, p: 8500 }, { max: 66, p: 10500 },
+        { max: 80, p: 12500 }, { max: 100, p: 15000 }, { max: 120, p: 18000 },
+        { max: 150, p: 22000 }, { max: 200, p: 28000 }, { max: 9999, p: 35000 }
+      ];
+      var ao = (aoTiers.find(function(t) { return kw <= t.max; }) || { p: 35000 }).p;
+      // Starost bonus na AO: >10 god -5%, >15 god -10%
       if (age > 15) ao = Math.round(ao * 0.90);
       else if (age > 10) ao = Math.round(ao * 0.95);
 
-      // Republička administrativna taksa (MUP, 2026 — tabela po kW)
-      var taksa = 0;
-      if (kw <= 55)       taksa = 3680;
-      else if (kw <= 75)  taksa = 5670;
-      else if (kw <= 100) taksa = 7350;
-      else if (kw <= 130) taksa = 10350;
-      else if (kw <= 160) taksa = 13800;
-      else                taksa = 18200;
-      if (cat === "N1") taksa = Math.round(taksa * 1.15);
+      // Ekološka naknada po Euro klasi
+      var ekoMap = { electric: 0, euro6: 500, euro5: 700, euro4: 1000, euro3: 1500, euro2: 2500 };
+      var eko = ekoMap[euro] !== undefined ? ekoMap[euro] : 700;
 
-      var total = teh + ao + taksa;
+      // Fiksne takse: republička admin (MUP) + nalepnica
+      var taksa = 1800 + 1490;
+
+      var total = teh + porez + ao + eko + taksa;
+
+      var porezNote = fuel === "struja" ? ' <span style="color:#059669;font-size:.8em">(oslobođeno)</span>' : '';
       brkd.innerHTML =
         '<table style="width:100%;font-size:.9rem;border-collapse:collapse">' +
           '<tr><td style="padding:6px 0">Tehnički pregled</td>' +
               '<td style="text-align:right;font-weight:600">' + teh.toLocaleString("sr") + ' RSD</td></tr>' +
-          '<tr><td style="padding:6px 0">AO osiguranje (procena)</td>' +
+          '<tr><td style="padding:6px 0">Porez na upotrebu (ccm + starost)' + porezNote + '</td>' +
+              '<td style="text-align:right;font-weight:600">' + porez.toLocaleString("sr") + ' RSD</td></tr>' +
+          '<tr><td style="padding:6px 0">AO osiguranje (procena, bonus 0)</td>' +
               '<td style="text-align:right;font-weight:600">' + ao.toLocaleString("sr") + ' RSD</td></tr>' +
-          '<tr><td style="padding:6px 0">Republička taksa</td>' +
+          '<tr><td style="padding:6px 0">Ekološka naknada (' + euro.toUpperCase() + ')</td>' +
+              '<td style="text-align:right;font-weight:600">' + eko.toLocaleString("sr") + ' RSD</td></tr>' +
+          '<tr><td style="padding:6px 0">Admin. takse + nalepnica</td>' +
               '<td style="text-align:right;font-weight:600">' + taksa.toLocaleString("sr") + ' RSD</td></tr>' +
-          '<tr style="border-top:1px solid #334"><td style="padding:8px 0"><b>UKUPNO (okvirno)</b></td>' +
+          '<tr style="border-top:1px solid #e2e8f0"><td style="padding:8px 0"><b>UKUPNO (okvirno)</b></td>' +
               '<td style="text-align:right;font-weight:700;font-size:1.1rem">' + total.toLocaleString("sr") + ' RSD</td></tr>' +
         '</table>';
       res.style.display = "block";
