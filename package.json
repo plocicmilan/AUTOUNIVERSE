@@ -6,15 +6,16 @@
   "type": "commonjs",
   "scripts": {
     "test": "node tests/run-all.js",
-    "build:garage": "node mobile/build_www.js garage",
-    "build:driver": "node mobile/build_www.js driver",
-    "build:all": "node mobile/build_www.js all",
-    "cap:sync:garage": "npm run build:garage && cd mobile/garage && npx cap sync android",
-    "cap:sync:driver": "npm run build:driver && cd mobile/driver && npx cap sync android",
-    "cap:open:garage": "cd mobile/garage && npx cap open android",
-    "cap:open:driver": "cd mobile/driver && npx cap open android",
-    "cap:apk:garage": "npm run cap:sync:garage && cd mobile/garage/android && .\\gradlew assembleDebug",
-    "cap:apk:driver": "npm run cap:sync:driver && cd mobile/driver/android && .\\gradlew assembleDebug"
+    "build:garage": "node scripts/build.js garage",
+    "build:driver": "node scripts/build.js driver",
+    "build:all": "node scripts/build.js garage && node scripts/build.js driver",
+    "cap:sync:garage": "npm run build:garage && cd platforms/garage && npx cap sync android",
+    "cap:sync:driver": "npm run build:driver && cd platforms/driver && npx cap sync android",
+    "cap:sync:all": "npm run build:all && cd platforms/garage && npx cap sync android && cd ../driver && npx cap sync android",
+    "cap:open:garage": "cd platforms/garage && npx cap open android",
+    "cap:open:driver": "cd platforms/driver && npx cap open android",
+    "cap:apk:garage": "npm run cap:sync:garage && cd platforms/garage/android && .\\gradlew assembleDebug",
+    "cap:apk:driver": "npm run cap:sync:driver && cd platforms/driver/android && .\\gradlew assembleDebug"
   },
   "repository": {
     "type": "git",
