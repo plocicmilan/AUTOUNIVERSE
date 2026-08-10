@@ -22,6 +22,8 @@ platforms/*/android/app/debug/
 *.apk
 *.aab
 *.keystore
+# Release APKs za download — izuzetak
+!landing/downloads/*.apk
 package-lock.json
 inst_user_settings.tmp
 

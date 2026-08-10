@@ -62,7 +62,8 @@
         <a href="/ekosistem" class="nav__link">Ekosistem</a>
         <a href="/driver" class="nav__link">Driver</a>
         <a href="/garage" class="nav__link">Garage</a>
-        <a href="#kalkulatori" class="nav__link">Kalkulatori</a>
+        <a href="https://vozila.autouniverse.rs/" class="nav__link">Vozila</a>
+        <a href="/kalkulatori" class="nav__link">Kalkulatori</a>
         <a href="/blog" class="nav__link">Blog</a>
         <a href="/o-nama" class="nav__link">O nama</a>
         <a href="/kontakt" class="nav__link">Kontakt</a>
@@ -77,7 +78,6 @@
     <div class="hero__grid-bg" aria-hidden="true"></div>
     <div class="container hero__inner">
       <div class="hero__content">
-        <div class="hero__badge">🇷🇸 Napravljeno u Srbiji</div>
         <h1 class="hero__title">
           Kompletan<br>
           <span class="hero__title--accent">životni ciklus</span><br>
@@ -85,7 +85,7 @@
         </h1>
         <p class="hero__sub">
           Driver za vlasnike. Garage za servise.<br>
-          Jedan ekosistem, nula kompromisa.
+          Baza vozila za sve. Jedan ekosistem.
         </p>
         <div class="hero__cta">
           <a href="/driver" class="btn btn--primary">
@@ -106,8 +106,13 @@
           </div>
           <div class="hero__stat-div"></div>
           <div class="hero__stat">
-            <span class="hero__stat-num">Free</span>
-            <span class="hero__stat-label">Za početnike</span>
+            <span class="hero__stat-num">50+</span>
+            <span class="hero__stat-label">Modela vozila</span>
+          </div>
+          <div class="hero__stat-div"></div>
+          <div class="hero__stat">
+            <span class="hero__stat-num">Core</span>
+            <span class="hero__stat-label">Besplatno</span>
           </div>
         </div>
       </div>
@@ -169,7 +174,7 @@
       <div class="section__header">
         <span class="section__tag">Ekosistem</span>
         <h2 class="section__title">Šta je AutoUniverse?</h2>
-        <p class="section__sub">Tri aplikacije. Jedan jezik. Vozilo u centru svega.</p>
+        <p class="section__sub">Aplikacije, alati i baza znanja. Vozilo u centru svega.</p>
       </div>
       <div class="cards cards--3">
         <div class="card card--driver reveal">
@@ -208,6 +213,21 @@
           </ul>
           <button class="card__cta card__cta--orange" onclick="document.getElementById('waitlist-email').focus()">Prati razvoj →</button>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--vozila-strip" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);padding:var(--spacing-10,2.5rem) 0">
+    <div class="container">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem">
+        <div>
+          <div style="font-size:0.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#f97316;margin-bottom:.5rem">Baza vozila</div>
+          <h3 style="font-size:1.5rem;font-weight:700;color:#fff;margin:0 0 .5rem">Tehnički podaci za 50+ modela</h3>
+          <p style="color:#94a3b8;margin:0;font-size:.95rem">Motori, kapaciteti ulja, filteri, česti kvarovi — sve na jednom mestu. Golf, Passat, Astra, Focus, Clio i još mnogo.</p>
+        </div>
+        <a href="https://vozila.autouniverse.rs/" class="btn btn--primary" style="white-space:nowrap;flex-shrink:0">
+          Pregledaj bazu →
+        </a>
       </div>
     </div>
   </section>
@@ -320,7 +340,7 @@
         <p class="section__sub">Izračunaj troškove pre nego što potrošiš. Bez registracije.</p>
       </div>
       <div class="calcs">
-        <a href="/kalkulator-registracije" class="calc-card reveal">
+        <a href="/kalkulatori/registracije" class="calc-card reveal">
           <div class="calc-card__icon">📋</div>
           <h3 class="calc-card__title">Cena registracije</h3>
           <p class="calc-card__text">Kubikaža, godište, gorivo → tačna cena po stavkama</p>
@@ -356,7 +376,7 @@
           <p class="calc-card__text">Okvirna cena obaveznog osiguranja po parametrima vozila</p>
           <span class="calc-card__arrow">→</span>
         </a>
-        <a href="/kalkulator-uvoza" class="calc-card reveal reveal--delay2">
+        <a href="/kalkulatori/uvoza" class="calc-card reveal reveal--delay2">
           <div class="calc-card__icon">🚢</div>
           <h3 class="calc-card__title">Troškovi uvoza</h3>
           <p class="calc-card__text">Carina + PDV + homologacija — uvoz iz EU i van EU</p>
@@ -440,8 +460,8 @@
           <div class="apk-card__icon">🚗</div>
           <h3 class="apk-card__title">Driver Toolbox</h3>
           <p class="apk-card__desc">Za vlasnike vozila — servisna knjižica, troškovi, podsetnici, PDF dosije.</p>
-          <div class="apk-card__meta">v1.0 · 3.9 MB · Android 5.1+</div>
-          <a href="/downloads/DriverToolbox-v1.0-debug.apk" class="btn btn--primary apk-card__btn" download>
+          <div class="apk-card__meta">v1.39 · Android 5.1+</div>
+          <a href="/downloads/DriverToolbox-v1.39-release.apk" class="btn btn--primary apk-card__btn" download>
             ⬇ Preuzmi APK
           </a>
         </div>
@@ -449,15 +469,14 @@
           <div class="apk-card__icon">🔧</div>
           <h3 class="apk-card__title">Garage Toolbox</h3>
           <p class="apk-card__desc">Za auto servise — radni nalozi, vozila klijenata, istorija servisa.</p>
-          <div class="apk-card__meta">v1.0 · 3.9 MB · Android 5.1+</div>
-          <a href="/downloads/GarageToolbox-v1.0-debug.apk" class="btn btn--outline apk-card__btn" download>
+          <div class="apk-card__meta">v1.57 · Android 5.1+</div>
+          <a href="/downloads/GarageToolbox-v1.57-release.apk" class="btn btn--outline apk-card__btn" download>
             ⬇ Preuzmi APK
           </a>
         </div>
       </div>
       <div class="apk-notice">
-        <strong>Kako instalirati:</strong> Preuzmi APK → Otvori fajl → U Podešavanjima dozvoli "Instalacija iz nepoznatih izvora" → Instaliraj.<br>
-        Ovo je test verzija (debug build). Google Play verzija uskoro.
+        <strong>Kako instalirati:</strong> Preuzmi APK → Otvori fajl → U Podešavanjima dozvoli "Instalacija iz nepoznatih izvora" → Instaliraj.
       </div>
     </div>
   </section>
@@ -476,13 +495,15 @@
           <h4>Ekosistem</h4>
           <a href="/driver">Driver Toolbox</a>
           <a href="/garage">Garage Toolbox</a>
-          <a href="#waitlist">AU Core (uskoro)</a>
+          <a href="https://vozila.autouniverse.rs/">Baza vozila</a>
+          <a href="/#waitlist">AU Core (uskoro)</a>
         </div>
         <div class="footer__col">
           <h4>Resursi</h4>
           <a href="/kalkulatori">Svi kalkulatori</a>
-          <a href="/kalkulator-registracije">Kalkulator registracije</a>
-          <a href="/kalkulator-uvoza">Kalkulator uvoza</a>
+          <a href="/kalkulatori/registracije">Kalkulator registracije</a>
+          <a href="/kalkulatori/uvoza">Kalkulator uvoza</a>
+          <a href="mailto:hello@autouniverse.rs">hello@autouniverse.rs</a>
           <a href="/blog">Blog</a>
           <a href="/kontakt">Kontakt</a>
         </div>

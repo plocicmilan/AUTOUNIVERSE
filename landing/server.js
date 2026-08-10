@@ -90,6 +90,12 @@ const MIME = {
   '.json': 'application/json',
   '.txt':  'text/plain',
   '.xml':  'application/xml',
+  '.apk':  'application/vnd.android.package-archive',
+};
+
+const REDIRECTS = {
+  '/kalkulator-registracije': '/kalkulatori/registracije',
+  '/kalkulator-uvoza':        '/kalkulatori/uvoza',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -235,6 +241,12 @@ const server = http.createServer(async (req, res) => {
     if (!name || !validateEmail(email) || !message) return json(res, 400, { error: 'Nedostaju polja.' });
     insertContact.run(name, email.toLowerCase(), type, message, ip);
     return json(res, 200, { ok: true });
+  }
+
+  // 301 redirects
+  if (req.method === 'GET' && REDIRECTS[url.pathname]) {
+    res.writeHead(301, { Location: REDIRECTS[url.pathname] });
+    res.end(); return;
   }
 
   // Static files — serve from root (index.html, css/, js/, assets/)
