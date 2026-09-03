@@ -81,6 +81,21 @@ PWA ekosistem za auto industriju. Filozofija: vozilo je centralni entitet. Sve p
 
 ---
 
+## Strateške odluke 2026-09-03 — AU Account MVP
+
+| Tema | Odluka |
+|---|---|
+| **Billing jedinica** | Per nalog (flat fee) — VPS trošak je fiksan |
+| **Pricing** | Free / Basic ~3€/mes / Pro ~8€/mes |
+| **Free limit** | 1 vozilo — blokira unos, stari podaci vidljivi |
+| **Conflict resolution** | Last-write-wins (timestamp) |
+| **Trial** | Nema — Free je permanentan |
+| **Storage model** | Hybrid C: Free = lokalno only, Basic/Pro = lokalno + cloud sync |
+| **Payment** | Odloženo — Faza 5, min 50+ korisnika |
+| **Analytics** | Basic/Pro korisnici pristaju na aggregate analytics pri registraciji (GDPR) → AU Score baza |
+
+---
+
 ## Strateške odluke 2026-07-23
 
 | Tema | Odluka |
@@ -147,11 +162,12 @@ PWA ekosistem za auto industriju. Filozofija: vozilo je centralni entitet. Sve p
 | 1 | Garage Toolbox v1 | ✅ ZAVRŠENA |
 | 2 | Driver Toolbox v1 | ✅ ZAVRŠENA |
 | 3 | Feedback petlja (Marko/Goran/Nikola) | 🟢 AKTIVNA — signal stigao, implementacija u toku |
-| 4 | AutoHub server + magic-link razmena | ✅ ZAVRŠENA — LIVE sa Cloudflare tunnelom |
+| 4 | AU Core server + magic-link razmena | ✅ ZAVRŠENA — LIVE na VPS 46.225.236.107, PM2 |
 | 4.1 | Driver v1.9 — expense, trade toggle, vehicle status, Autopijaca integracija | ✅ ZAVRŠENA |
 | 4.2 | Garage v1.28 — servisne kategorije, Autodelovi integracija | ✅ ZAVRŠENA |
-| 4.3 | Autopijaca + Autodelovi marketplace | ✅ MVP LIVE — Cloudflare tunneli, Industrial Dark UI |
-| 5 | AutoUniverse Account + napredne funkcije | 🔵 P2/P3 — čeka feedback sa terena |
+| 4.3 | Autopijaca + Autodelovi marketplace | ✅ MVP LIVE — VPS, Industrial Dark UI |
+| 5a | Tier sistem (free/basic/pro) + enforcement + /accounts/me | ✅ ZAVRŠENA — 2026-09-03, deployan na VPS |
+| 5b | Cloud sync (POST /vehicles/:id/sync) + PWA integracija | 🔵 SLEDEĆE |
 
 ---
 
