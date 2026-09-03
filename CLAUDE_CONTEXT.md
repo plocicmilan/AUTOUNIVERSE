@@ -24,8 +24,8 @@ PWA ekosistem za auto industriju. Filozofija: vozilo je centralni entitet. Sve p
 - **Zamenjuje:** svesku i Viber haos
 - **Core flow:** WO Snap (7 koraka) → PDF → Share Viber/SMS
 - **Ikona:** crveni zupčanik
-- **Verzija:** v1.56.0 (live na GitHub Pages)
-- **SW verzija:** `garage-toolbox-v1.56.0`
+- **Verzija:** v1.58.0 (live na GitHub Pages)
+- **SW verzija:** `garage-toolbox-v1.58.0`
 - **Moduli implementirani (2026-07-24):**
   - 🟢 WO Snap + autocomplete iz istorije, Vozila (foto, beleška), Kontakti (search, istorija, prihod)
   - 🟢 PDF (firma detalji, logo, watermark za free tier), Dosije vozila PDF
@@ -44,7 +44,7 @@ PWA ekosistem za auto industriju. Filozofija: vozilo je centralni entitet. Sve p
 - **Zamenjuje:** "ne znam kad je bio servis, koje su gume..."
 - **Core flow:** Dodaj vozilo → Početno stanje (4 kartice) → Podsetnici automatski
 - **Ikona:** tirkizni auto sa dokumentom
-- **Verzija:** v1.36.0 (live; SW: driver-toolbox-v1.36.0)
+- **Verzija:** v1.41.0 (live; SW: driver-toolbox-v1.41.0)
 - **Posebno:** "Iskopaj fioku" (retroaktivni unos), Trust Layer, Expense modul, Vehicle status, Trade toggle, Autopijaca integracija, Notification bell, Kalkulatori (registracija/gorivo/vlasništvo/uvoz/kasko), Browse Autopijaca/Autodelovi, Forgot/Reset lozinka, Sessions ekran, URL token handler (reset link iz emaila)
 
 ### AU Core (`aucore/`)
@@ -167,7 +167,8 @@ PWA ekosistem za auto industriju. Filozofija: vozilo je centralni entitet. Sve p
 | 4.2 | Garage v1.28 — servisne kategorije, Autodelovi integracija | ✅ ZAVRŠENA |
 | 4.3 | Autopijaca + Autodelovi marketplace | ✅ MVP LIVE — VPS, Industrial Dark UI |
 | 5a | Tier sistem (free/basic/pro) + enforcement + /accounts/me | ✅ ZAVRŠENA — 2026-09-03, deployan na VPS |
-| 5b | Cloud sync (POST /vehicles/:id/sync) + PWA integracija | 🔵 SLEDEĆE |
+| 5b | Vehicle batch sync (POST /vehicles/sync) + Garage/Driver integracija | ✅ ZAVRŠENA — 2026-09-03, deployan na VPS |
+| 5c | Events bidirectional sync (last_pull + from_server) | 🔵 SLEDEĆE |
 
 ---
 

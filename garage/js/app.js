@@ -3005,7 +3005,8 @@
             localStorage.setItem(AH_VMAP_KEY, JSON.stringify(vmap));
             localStorage.setItem("aucore_garage_last_pull", syncRes.sync_at || new Date().toISOString());
 
-            // Faza 2 — sinhronizuj evente po vozilu
+            // Faza 2 — bidirectional sync evenata po vozilu
+            var eventsLastPull = localStorage.getItem("aucore_garage_events_last_pull") || null;
             var byVehicle = {};
             events.forEach(function (e) {
               if (synced[e.id]) return;
@@ -3015,6 +3016,19 @@
               byVehicle[servId].push(e);
             });
 
+            // Dodaj sva sync-ovana vozila za pull (čak i bez novih evenata za push)
+            Object.values(vmap).filter(Boolean).forEach(function (sid) {
+              if (!byVehicle[sid]) byVehicle[sid] = [];
+            });
+
+            // Prikupi postojeće hub_event_id-eve za dedup
+            var existingHubIds = {};
+            events.forEach(function (e) { if (e.hub_event_id) existingHubIds[e.hub_event_id] = true; });
+
+            var serverToLocal = {};
+            Object.keys(vmap).forEach(function (lid) { if (vmap[lid]) serverToLocal[vmap[lid]] = lid; });
+
+            var pullTotal = 0;
             return Object.keys(byVehicle).reduce(function (p, servId) {
               return p.then(function () {
                 var batch = byVehicle[servId].map(function (e) {
@@ -3022,21 +3036,50 @@
                            event_date: (e.date || e.created_at || new Date().toISOString()),
                            retroactive: !!e.retroactive, source: e.source || "app", app: "garage" };
                 });
-                if (!batch.length) return;
-                return aucoreFetch("POST", "/vehicles/" + servId + "/events/batch", batch)
+                return aucoreFetch("POST", "/vehicles/" + servId + "/events/batch",
+                  { events: batch, last_pull: eventsLastPull })
                   .then(function (r) {
                     (r.synced || []).forEach(function (s) {
                       if (s.local_id && !s.error) synced[s.local_id] = true;
                     });
                     localStorage.setItem(AH_SYNCED_KEY, JSON.stringify(synced));
+                    if (r.sync_at) localStorage.setItem("aucore_garage_events_last_pull", r.sync_at);
+
+                    // Pull — importuj evente od vozača (source != 'garage')
+                    var localVehicleId = serverToLocal[servId];
+                    var importOps = (r.from_server || [])
+                      .filter(function (se) { return !existingHubIds[se.id] && se.app !== "garage"; })
+                      .map(function (se) {
+                        var parsedData = {};
+                        try { parsedData = typeof se.data === "string" ? JSON.parse(se.data) : (se.data || {}); } catch (_) {}
+                        var ev = {
+                          id: "hub_" + se.id,
+                          vehicle_id: localVehicleId ? Number(localVehicleId) : null,
+                          type: se.type || "other",
+                          date: se.event_date || new Date().toISOString().slice(0, 10),
+                          description: parsedData.description || parsedData.title || "",
+                          mileage_km: parsedData.mileage_km || null,
+                          source: se.source || "driver",
+                          retroactive: !!se.retroactive,
+                          hub_event_id: se.id,
+                          synced_at: new Date().toISOString(),
+                          app: se.app || "driver",
+                        };
+                        existingHubIds[se.id] = true;
+                        pullTotal++;
+                        return Store.put("events", ev);
+                      });
+                    return Promise.all(importOps);
                   });
               });
-            }, Promise.resolve());
+            }, Promise.resolve()).then(function () { return pullTotal; });
           });
-      }).then(function () {
+      }).then(function (pulled) {
         var cnt = Object.keys(JSON.parse(localStorage.getItem(AH_SYNCED_KEY) || "{}")).length;
-        if (statusEl) statusEl.textContent = "✓ Sinhronizirano " + cnt + " zapisa ukupno.";
-        toast("AU Core sync završen.");
+        var msg = "AU Core sync završen — " + cnt + " zapisa poslano";
+        if (pulled) msg += ", " + pulled + " primljeno";
+        if (statusEl) statusEl.textContent = "✓ " + msg + ".";
+        toast(msg + ".");
       }).catch(function (e) {
         if (statusEl) statusEl.textContent = "Greška: " + e.message;
         toast("Sync greška: " + e.message);

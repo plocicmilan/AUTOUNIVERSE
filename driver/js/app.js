@@ -2997,14 +2997,22 @@
       })
       .then(function (events) {
         var unsynced = events.filter(function (e) { return !e.synced_at; });
-        if (!unsynced.length) {
+        var hasSyncedVehicles = Object.values(vehicleMap).filter(Boolean).length > 0;
+        if (!unsynced.length && !hasSyncedVehicles) {
           if (statusEl) statusEl.textContent = "";
-          toast("Sve je već synkovano.");
+          toast("Nema šta da se sinkronizuje.");
           return;
         }
 
-        // Korak 2 — grupiši po server vehicle ID
+        // Korak 2 — grupiši po server vehicle ID + invertiraj mapu za pull
         var byServer = {};
+        var serverToLocal = {};
+        Object.keys(vehicleMap).forEach(function (lid) {
+          var sid = vehicleMap[lid];
+          if (sid) serverToLocal[sid] = lid;
+        });
+        var eventsLastPull = localStorage.getItem("aucore_driver_events_last_pull") || null;
+
         unsynced.forEach(function (e) {
           var sid = vehicleMap[e.vehicle_id];
           if (!sid) return;
@@ -3028,9 +3036,20 @@
           });
         });
 
-        // Korak 3 — batch upload po vozilu
+        // Svi server ID-evi koji imaju sync-ovano vozilo (za pull čak i bez push-a)
+        var allServerIds = Object.values(vehicleMap).filter(Boolean);
+        allServerIds.forEach(function (sid) {
+          if (!byServer[sid]) byServer[sid] = [];
+        });
+
+        // Korak 3 — bidirectional: push lokalne evente + pull mehaničareve
+        var existingHubIds = {};
+        events.forEach(function (e) {
+          if (e.hub_event_id) existingHubIds[e.hub_event_id] = true;
+        });
+
         var syncOps = Object.keys(byServer).map(function (sid) {
-          return AUCore.syncEvents(Number(sid), byServer[sid])
+          return AUCore.syncEvents(Number(sid), byServer[sid], eventsLastPull)
             .then(function (res) {
               var synced = res.synced || [];
               var syncedIds = {};
@@ -3041,12 +3060,44 @@
                   e.synced_at = new Date().toISOString();
                   return Store.put("events", e);
                 });
-              return Promise.all(markOps).then(function () { return synced.length; });
-            });
+
+              // Pull — importuj from_server evente koji nisu lokalni
+              var localVehicleId = serverToLocal[sid];
+              var importOps = (res.from_server || [])
+                .filter(function (se) { return !existingHubIds[se.id] && se.app !== "driver"; })
+                .map(function (se) {
+                  var parsedData = {};
+                  try { parsedData = typeof se.data === "string" ? JSON.parse(se.data) : (se.data || {}); } catch (_) {}
+                  var importedEvent = {
+                    id: "hub_" + se.id,
+                    vehicle_id: localVehicleId ? Number(localVehicleId) : null,
+                    type: se.type || "other",
+                    date: se.event_date || new Date().toISOString().slice(0, 10),
+                    description: parsedData.description || parsedData.title || "",
+                    mileage_km: parsedData.mileage_km || null,
+                    mechanic_name: se.author_name || null,
+                    source: se.source || "mechanic",
+                    retroactive: !!se.retroactive,
+                    hub_event_id: se.id,
+                    synced_at: new Date().toISOString(),
+                    app: se.app || "garage",
+                    public_on_marketplace: parsedData.public_on_marketplace !== false,
+                  };
+                  existingHubIds[se.id] = true;
+                  return Store.put("events", importedEvent);
+                });
+
+              return Promise.all(markOps.concat(importOps))
+                .then(function () { return { pushed: synced.length, pulled: importOps.length, syncAt: res.sync_at }; });
+            }).catch(function () { return { pushed: 0, pulled: 0 }; });
         });
 
-        return Promise.all(syncOps).then(function (counts) {
-          var evTotal = counts.reduce(function (s, n) { return s + n; }, 0);
+        return Promise.all(syncOps).then(function (results) {
+          var evTotal  = results.reduce(function (s, r) { return s + (r.pushed || 0); }, 0);
+          var pullTotal = results.reduce(function (s, r) { return s + (r.pulled || 0); }, 0);
+          // Ažuriraj events last_pull timestamp
+          var latestSync = results.map(function (r) { return r.syncAt || ""; }).sort().pop();
+          if (latestSync) localStorage.setItem("aucore_driver_events_last_pull", latestSync);
 
           // Korak 4 — sync podsetnici bez hub_rid
           return Store.all("reminders").then(function (reminders) {
@@ -3054,7 +3105,10 @@
             if (!unsynced.length) {
               localStorage.setItem("aucore_last_sync", new Date().toISOString());
               if (statusEl) statusEl.textContent = "";
-              toast("Sync završen: " + evTotal + " događaja poslano.");
+              var msg = "Sync završen";
+              if (evTotal) msg += ": " + evTotal + " poslano";
+              if (pullTotal) msg += (evTotal ? ", " : ": ") + pullTotal + " primljeno";
+              toast(msg + ".");
               render("settings");
               return;
             }
@@ -3088,7 +3142,11 @@
               var remTotal = remCounts.reduce(function (s, n) { return s + n; }, 0);
               localStorage.setItem("aucore_last_sync", new Date().toISOString());
               if (statusEl) statusEl.textContent = "";
-              toast("Sync završen: " + evTotal + " događaja, " + remTotal + " podsetnika.");
+              var parts = [];
+              if (evTotal)   parts.push(evTotal   + " poslano");
+              if (pullTotal) parts.push(pullTotal  + " primljeno");
+              if (remTotal)  parts.push(remTotal   + " podsetnika");
+              toast("Sync završen" + (parts.length ? ": " + parts.join(", ") : "") + ".");
               render("settings");
             });
           });

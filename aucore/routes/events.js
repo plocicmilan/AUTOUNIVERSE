@@ -39,40 +39,63 @@ module.exports = function eventRoutes(router) {
   });
 
   // Batch sync — šalje offline-first app (Garage/Driver)
+  // Podržava bidirectional sync: body.last_pull → vraća from_server (novije od last_pull)
   router.post('/vehicles/:id/events/batch', (req, res, body, params) => {
     const user = requireAuth(req);
     const vehicleId = Number(params.id);
     if (!hasAccess(user.id, vehicleId, 'write')) return res.json(403, { error: 'Nemaš pristup' });
 
-    const events = Array.isArray(body) ? body : body.events;
-    if (!events || !events.length) return res.json(400, { error: 'events niz je obavezan' });
-    if (events.length > 500) return res.json(400, { error: 'Max 500 evenata po batch-u' });
+    const incoming = Array.isArray(body) ? body : (Array.isArray(body.events) ? body.events : []);
+    const lastPull = body.last_pull || null;
+    const syncAt   = new Date().toISOString();
+
+    if (incoming.length > 500) return res.json(400, { error: 'Max 500 evenata po batch-u' });
 
     const db = getDb();
     const insert = db.prepare(`
       INSERT INTO events (vehicle_id, author_id, type, data, event_date, retroactive, source, app)
       VALUES (?,?,?,?,?,?,?,?)
     `);
+    const findDup = db.prepare(`
+      SELECT id FROM events
+      WHERE vehicle_id=? AND author_id=? AND type=? AND event_date=? AND source=?
+      LIMIT 1
+    `);
 
-    const results = db.transaction(() => {
-      return events.map(e => {
+    const synced = db.transaction(() => {
+      return incoming.map(e => {
         if (!e.type || !VALID_TYPES.includes(e.type)) return { error: `Nepoznat tip: ${e.type}`, local_id: e.local_id };
+        const eventDate = e.event_date ?? syncAt;
+        const source    = e.source ?? 'app';
+        // Idempotency: preskoči duplicate (isti vehicle/author/type/date/source)
+        const dup = findDup.get(vehicleId, user.id, e.type, eventDate, source);
+        if (dup) return { id: dup.id, local_id: e.local_id ?? null, action: 'skipped' };
         const r = insert.run(
           vehicleId,
           user.id,
           e.type,
           JSON.stringify(e.data ?? {}),
-          e.event_date ?? new Date().toISOString(),
+          eventDate,
           e.retroactive ? 1 : 0,
-          e.source ?? 'app',
+          source,
           e.app ?? 'unknown'
         );
-        return { id: r.lastInsertRowid, local_id: e.local_id ?? null };
+        return { id: r.lastInsertRowid, local_id: e.local_id ?? null, action: 'created' };
       });
     })();
 
-    audit('event.batch', { userId: user.id, entity: 'vehicle', entityId: vehicleId, detail: { count: events.length } });
-    res.json(200, { synced: results });
+    // Bidirectional pull: svi eventi na serveru noviji od last_pull (i evtl. od drugog korisnika)
+    const fromServer = lastPull
+      ? db.prepare(`
+          SELECT e.*, u.name AS author_name
+          FROM events e JOIN users u ON e.author_id = u.id
+          WHERE e.vehicle_id=? AND e.created_at > datetime(?)
+          ORDER BY e.event_date DESC
+        `).all(vehicleId, lastPull)
+      : [];
+
+    audit('event.batch', { userId: user.id, entity: 'vehicle', entityId: vehicleId, detail: { pushed: incoming.length, pulled: fromServer.length } });
+    res.json(200, { synced, from_server: fromServer, sync_at: syncAt });
   });
 
   // Unified timeline — eventi + podsetnici za vozilo, sortirani po datumu

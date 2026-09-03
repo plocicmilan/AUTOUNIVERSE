@@ -80,8 +80,11 @@ function setSession(token) {
   _baseUrl = null; // reset cache
 }
 
-async function syncEvents(vehicleId, events) {
-  return apiCall('POST', `/vehicles/${vehicleId}/events/batch`, events);
+async function syncEvents(vehicleId, events, lastPull) {
+  return apiCall('POST', `/vehicles/${vehicleId}/events/batch`, {
+    events: events,
+    last_pull: lastPull || null
+  });
 }
 
 // Kreiranje share tokena (Garage → vlasnik). Payload ne sme sadržati cene.
