@@ -1697,7 +1697,7 @@
     }
     if (mode === 'register') {
       return '<h2>AU Core</h2>' +
-        '<p class="empty" style="margin-bottom:.8rem">Kreiraj nalog — admin mora da te odobri.</p>' +
+        '<p class="empty" style="margin-bottom:.8rem">Kreiraj nalog — nalog postaje aktivan odmah.</p>' +
         '<label class="field"><span>Ime</span>' +
           '<input id="hub_name" type="text" autocomplete="name" placeholder="Tvoje ime"></label>' +
         '<label class="field"><span>Email</span>' +
@@ -2574,25 +2574,16 @@
       if (errEl) errEl.textContent = "";
 
       AUCore.apiCall("POST", "/auth/register", { name: name, email: email, password: pass })
-        .then(function (data) {
-          if (data.status === "pending") {
-            var card = el("aucoreCard");
-            if (card) card.innerHTML =
-              '<h2>AU Core</h2>' +
-              '<p class="lic-ok">✓ Nalog kreiran</p>' +
-              '<p class="empty" style="margin:.6rem 0">Admin mora da te odobri pre prvog logina.</p>' +
-              '<button class="btn btn-secondary mt8" onclick="DR.showHubLogin()">Prijavi se</button>';
-          } else {
-            // prvi korisnik (owner) — odmah aktivan, auto-login
-            return AUCore.apiCall("POST", "/auth/login", { email: email, password: pass })
-              .then(function (lr) {
-                AUCore.setSession(lr.session);
-                if (lr.user) localStorage.setItem("aucore_user", JSON.stringify(lr.user));
-                toast("AU Core: prijavljen kao " + (lr.user ? lr.user.name : name));
-                render("settings");
-                pollNotifications();
-              });
-          }
+        .then(function () {
+          // svi nalozi su odmah aktivni — auto-login
+          return AUCore.apiCall("POST", "/auth/login", { email: email, password: pass })
+            .then(function (lr) {
+              AUCore.setSession(lr.session);
+              if (lr.user) localStorage.setItem("aucore_user", JSON.stringify(lr.user));
+              toast("AU Core: prijavljen kao " + (lr.user ? lr.user.name : name));
+              render("settings");
+              pollNotifications();
+            });
         })
         .catch(function (e) {
           var msg = e.status === 409 ? "Email već postoji." : (e.message || "Greška pri registraciji.");

@@ -1886,16 +1886,7 @@
         '<div id="ahSyncStatus" style="font-size:.8rem;color:#94a3b8;margin-top:.4rem"></div>' +
         '<button class="btn btn-danger mt8" style="background:none;border:1px solid #475569;color:#94a3b8" onclick="GT.aucoreLogout()">Odjavi se sa AU Core-a</button>';
     }
-    var pending = localStorage.getItem('aucore_reg_pending');
-    if (pending) {
-      return '<div style="text-align:center;padding:1.2rem 0">' +
-        '<div style="font-size:2rem;margin-bottom:.5rem">⏳</div>' +
-        '<p style="font-weight:600;margin-bottom:.3rem">Nalog čeka odobrenje</p>' +
-        '<p style="font-size:.82rem;color:#94a3b8">Registrovan kao <b>' + esc(pending) + '</b>.<br>Admin će te aktivirati uskoro.</p>' +
-        '<button class="btn btn-secondary mt8" onclick="GT.aucoreLogin()">Već aktiviran? Prijavi se</button>' +
-        '</div>';
-    }
-    return '<p style="font-size:.82rem;color:#94a3b8;margin-bottom:.6rem">Sinhronizuj podatke sa serverom. Prvi nalog postaje admin.</p>' +
+    return '<p style="font-size:.82rem;color:#94a3b8;margin-bottom:.6rem">Sinhronizuj podatke sa serverom. Nalog postaje aktivan odmah.</p>' +
       '<label class="field"><span>Ime</span><input id="ah_name" type="text" placeholder="Marko Petrović"></label>' +
       '<label class="field"><span>Email</span><input id="ah_email" type="email" placeholder="marko@servis.rs"></label>' +
       '<label class="field"><span>Telefon</span><input id="ah_phone" type="tel" placeholder="+381 60 123 4567"></label>' +
@@ -2852,21 +2843,17 @@
       if (errEl) errEl.textContent = "";
       if (btn) { btn.disabled = true; btn.textContent = "Čeka se..."; }
       aucoreFetch("POST", "/auth/register", { name: name, email: email, phone: phone, password: pass }, true)
-        .then(function (r) {
-          if (r.status === "pending") {
-            localStorage.setItem('aucore_reg_pending', email);
-            toast("Registracija primljena. Čeka se odobrenje admina.");
-            render("settings");
-          } else {
-            return aucoreFetch("POST", "/auth/login", { email: email, password: pass }, true)
-              .then(function (lr) {
-                localStorage.setItem(AH_SESSION_KEY, JSON.stringify({ token: lr.session, name: lr.user.name, email: lr.user.email }));
-                if (window.AUCore) AUCore.setSession(lr.session);
-                toast("AU Core: prijavljen kao " + lr.user.name);
-                render("settings");
-                pollNotifications();
-              });
-          }
+        .then(function () {
+          // svi nalozi su odmah aktivni — auto-login
+          return aucoreFetch("POST", "/auth/login", { email: email, password: pass }, true)
+            .then(function (lr) {
+              localStorage.removeItem('aucore_reg_pending');
+              localStorage.setItem(AH_SESSION_KEY, JSON.stringify({ token: lr.session, name: lr.user.name, email: lr.user.email }));
+              if (window.AUCore) AUCore.setSession(lr.session);
+              toast("AU Core: prijavljen kao " + lr.user.name);
+              render("settings");
+              pollNotifications();
+            });
         })
         .catch(function (e) {
           if (errEl) errEl.textContent = e.message || "Greška — provjeri internet vezu.";
