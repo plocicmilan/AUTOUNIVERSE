@@ -76,12 +76,12 @@ function getSession(sessionId) {
   const db = getDb();
   const now = new Date().toISOString();
   const row = db.prepare(`
-    SELECT s.*, u.id AS uid, u.email, u.name, u.role
+    SELECT s.*, u.id AS uid, u.email, u.name, u.role, u.subscription_tier
     FROM sessions s JOIN users u ON s.user_id = u.id
     WHERE s.id=? AND s.expires_at > ?
   `).get(sessionId, now);
   if (!row) return null;
-  return { id: row.uid, email: row.email, name: row.name, role: row.role };
+  return { id: row.uid, email: row.email, name: row.name, role: row.role, subscription_tier: row.subscription_tier || 'free' };
 }
 
 function requireAuth(req) {

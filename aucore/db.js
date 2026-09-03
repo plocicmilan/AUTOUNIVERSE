@@ -218,6 +218,17 @@ function migrate(db) {
     );
   `);
 
+  // Vehicles — updated_at za last-write-wins sync (Faza 5)
+  const vehCols = db.pragma('table_info(vehicles)').map(c => c.name);
+  if (!vehCols.includes('updated_at')) db.exec("ALTER TABLE vehicles ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))");
+  if (!vehCols.includes('status'))                   db.exec("ALTER TABLE vehicles ADD COLUMN status TEXT NOT NULL DEFAULT 'active'");
+  if (!vehCols.includes('sold_at'))                  db.exec("ALTER TABLE vehicles ADD COLUMN sold_at TEXT");
+  if (!vehCols.includes('for_sale'))                 db.exec("ALTER TABLE vehicles ADD COLUMN for_sale INTEGER NOT NULL DEFAULT 0");
+  if (!vehCols.includes('sale_price'))               db.exec("ALTER TABLE vehicles ADD COLUMN sale_price REAL");
+  if (!vehCols.includes('sale_currency'))            db.exec("ALTER TABLE vehicles ADD COLUMN sale_currency TEXT DEFAULT 'EUR'");
+  if (!vehCols.includes('autopijaca_listing_id'))    db.exec("ALTER TABLE vehicles ADD COLUMN autopijaca_listing_id INTEGER");
+  if (!vehCols.includes('autopijaca_seller_token'))  db.exec("ALTER TABLE vehicles ADD COLUMN autopijaca_seller_token TEXT");
+
   // Sessions — prosirenje postojece tabele (device tracking + revocation, SPEC 6.3)
   const sesCols = db.pragma('table_info(sessions)').map(c => c.name);
   if (!sesCols.includes('device_id'))    db.exec("ALTER TABLE sessions ADD COLUMN device_id TEXT");
@@ -240,6 +251,36 @@ function migrate(db) {
   if (!usCols.includes('subscription_tier'))       db.exec("ALTER TABLE users ADD COLUMN subscription_tier TEXT NOT NULL DEFAULT 'free'");
   if (!usCols.includes('subscription_expires_at')) db.exec("ALTER TABLE users ADD COLUMN subscription_expires_at TEXT");
   if (!usCols.includes('last_login_at'))           db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT");
+
+  // Vehicle media & documents (Hub storage feature)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS vehicle_photos (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id       INTEGER NOT NULL REFERENCES users(id),
+      vehicle_id    INTEGER NOT NULL REFERENCES vehicles(id),
+      filename      TEXT    NOT NULL,
+      original_name TEXT    NOT NULL DEFAULT '',
+      size_bytes    INTEGER NOT NULL DEFAULT 0,
+      mime_type     TEXT    NOT NULL DEFAULT 'image/jpeg',
+      created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_vphoto_vehicle ON vehicle_photos(vehicle_id);
+    CREATE INDEX IF NOT EXISTS idx_vphoto_user    ON vehicle_photos(user_id);
+
+    CREATE TABLE IF NOT EXISTS vehicle_documents (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id       INTEGER NOT NULL REFERENCES users(id),
+      vehicle_id    INTEGER NOT NULL REFERENCES vehicles(id),
+      doc_type      TEXT    NOT NULL DEFAULT 'ostalo',
+      filename      TEXT    NOT NULL,
+      original_name TEXT    NOT NULL DEFAULT '',
+      size_bytes    INTEGER NOT NULL DEFAULT 0,
+      mime_type     TEXT    NOT NULL DEFAULT 'application/pdf',
+      created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_vdoc_vehicle ON vehicle_documents(vehicle_id);
+    CREATE INDEX IF NOT EXISTS idx_vdoc_user    ON vehicle_documents(user_id);
+  `);
 
   // Migracije za postojeće baze (legacy user tabela)
   const cols = db.pragma('table_info(users)').map(c => c.name);
@@ -267,4 +308,10 @@ function audit(action, opts = {}) {
   );
 }
 
-module.exports = { getDb, audit };
+const { getTier } = require('./lib/tiers');
+
+function getTierLimits(tier) {
+  return getTier(tier);
+}
+
+module.exports = { getDb, audit, getTierLimits };

@@ -1,5 +1,5 @@
 const { requireAuth } = require('../auth');
-const { getDb, audit } = require('../db');
+const { getDb, audit, getTierLimits } = require('../db');
 const { hasAccess, getGrants } = require('../permissions');
 
 module.exports = function vehicleRoutes(router) {
@@ -35,6 +35,20 @@ module.exports = function vehicleRoutes(router) {
     if (!make || !model) return res.json(400, { error: 'make i model obavezni' });
 
     const db = getDb();
+
+    // Tier enforcement: Free = max 1 vozilo
+    const limits = getTierLimits(user.subscription_tier);
+    const owned = db.prepare('SELECT COUNT(*) AS n FROM vehicles WHERE owner_id=? AND status != ?').get(user.id, 'deleted').n;
+    if (owned >= limits.vehicles) {
+      return res.json(403, {
+        error: 'tier_limit',
+        message: `${limits.label} nalog dozvoljava maksimum ${limits.vehicles} vozilo. Nadogradi nalog za više.`,
+        current_tier: user.subscription_tier,
+        vehicle_limit: limits.vehicles,
+        vehicle_count: owned,
+      });
+    }
+
     const result = db.prepare(
       'INSERT INTO vehicles (owner_id, make, model, year, plate, vin) VALUES (?,?,?,?,?,?)'
     ).run(user.id, make, model, year ?? null, plate ?? null, vin ?? null);
@@ -106,6 +120,7 @@ module.exports = function vehicleRoutes(router) {
       if (body[key] !== undefined) { sets.push(`${key} = ?`); vals.push(body[key]); }
     }
     if (sets.length === 0) return res.json(400, { error: 'Nema polja za ažuriranje' });
+    sets.push("updated_at = datetime('now')");
     vals.push(id);
     db.prepare(`UPDATE vehicles SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
     audit('vehicle.update', { userId: user.id, entity: 'vehicle', entityId: id, detail: { fields: sets.map(s => s.split(' ')[0]) } });
@@ -148,6 +163,52 @@ module.exports = function vehicleRoutes(router) {
         grant_count:    grants.length,
       }
     });
+  });
+
+  // POST /vehicles/:id/transfer — prodavac trigeruje prodaju, mehaničari dobijaju notifikaciju
+  router.post('/vehicles/:id/transfer', (req, res, body, params) => {
+    const user = requireAuth(req);
+    const id = Number(params.id);
+    const db = getDb();
+
+    const vehicle = db.prepare('SELECT * FROM vehicles WHERE id=?').get(id);
+    if (!vehicle) return res.json(404, { error: 'Ne postoji' });
+    if (vehicle.owner_id !== user.id) return res.json(403, { error: 'Samo vlasnik može pokrenuti transfer' });
+    if (vehicle.status === 'sold') return res.json(400, { error: 'Vozilo je već prodato' });
+
+    const { sold_at } = body;
+    const vName = `${vehicle.make} ${vehicle.model}${vehicle.year ? ' ' + vehicle.year : ''}`;
+
+    // Svi korisnici koji su ikad imali grant na ovo vozilo (mehaničari, ne vlasnik)
+    const mechanics = db.prepare(`
+      SELECT DISTINCT g.grantee_id, u.name
+      FROM grants g JOIN users u ON u.id = g.grantee_id
+      WHERE g.vehicle_id = ? AND g.grantee_id != ?
+    `).all(id, user.id);
+
+    db.transaction(() => {
+      db.prepare(`UPDATE vehicles SET status='sold', sold_at=? WHERE id=?`).run(
+        sold_at || new Date().toISOString().slice(0, 10), id
+      );
+
+      const ins = db.prepare(`
+        INSERT INTO notifications (recipient_user_id, category, priority, title, body, metadata)
+        VALUES (?, 'lead', 'normal', ?, ?, ?)
+      `);
+      for (const m of mechanics) {
+        ins.run(
+          m.grantee_id,
+          `Vozilo ${vName} je prodato`,
+          `${vName} koje si servisirao/la je prodato. Novi vlasnik možda traži pouzdan servis — budi spreman.`,
+          JSON.stringify({ vehicle_id: id, vehicle_name: vName })
+        );
+      }
+    })();
+
+    audit('vehicle.transfer', { userId: user.id, entity: 'vehicle', entityId: id,
+      detail: { mechanics_notified: mechanics.length, sold_at } });
+
+    res.json(200, { ok: true, vehicle_status: 'sold', mechanics_notified: mechanics.length });
   });
 
   router.delete('/vehicles/:id', (req, res, _, params) => {

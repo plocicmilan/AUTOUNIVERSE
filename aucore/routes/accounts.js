@@ -3,13 +3,86 @@
    GET  /accounts/verify/:token → potvrda emaila, HTML stranica              */
 
 const crypto = require('crypto');
-const { getDb, audit } = require('../db');
+const { getDb, audit, getTierLimits } = require('../db');
+const { requireAuth } = require('../auth');
 const { send, tplWelcome } = require('../email');
+const { fmtBytes } = require('../lib/tiers');
 const cfg = require('../config');
 
 const VERIFY_HOURS = 48;
 
 module.exports = function (router) {
+
+  /* ── Profil sa tier info i limitima ── */
+  router.get('/accounts/me', (req, res) => {
+    const user = requireAuth(req);
+    const db = getDb();
+
+    const fullUser = db.prepare('SELECT * FROM users WHERE id=?').get(user.id);
+    if (!fullUser) return res.json(404, { error: 'Korisnik ne postoji' });
+
+    const tier = fullUser.subscription_tier || 'free';
+    const limits = getTierLimits(tier);
+    const vehicleCount = db.prepare(
+      "SELECT COUNT(*) AS n FROM vehicles WHERE owner_id=? AND status != 'deleted'"
+    ).get(user.id).n;
+
+    res.json(200, {
+      id:    fullUser.id,
+      email: fullUser.email,
+      name:  fullUser.name,
+      phone: fullUser.phone || null,
+      role:  fullUser.role,
+      tier,
+      tier_label:      limits.label,
+      vehicle_count:   vehicleCount,
+      vehicle_limit:   limits.vehicles,
+      cloud_sync:      limits.cloud_sync,
+      at_limit:        vehicleCount >= limits.vehicles,
+      subscription_expires_at: fullUser.subscription_expires_at || null,
+      created_at:      fullUser.created_at,
+      last_login_at:   fullUser.last_login_at || null,
+    });
+  });
+
+  /* ── Storage info za Hub UI ── */
+  router.get('/accounts/me/storage', (req, res) => {
+    const user = requireAuth(req);
+    const db = getDb();
+
+    const fullUser = db.prepare('SELECT subscription_tier, tier FROM users WHERE id=?').get(user.id);
+    const tier = fullUser?.subscription_tier || fullUser?.tier || 'free';
+    const limits = getTierLimits(tier);
+
+    const vehicleCount = db.prepare(
+      "SELECT COUNT(*) AS n FROM vehicles WHERE owner_id=? AND status != 'deleted'"
+    ).get(user.id).n;
+
+    const photoBytes = db.prepare(
+      'SELECT COALESCE(SUM(size_bytes),0) AS n FROM vehicle_photos WHERE user_id=?'
+    ).get(user.id)?.n || 0;
+    const docBytes = db.prepare(
+      'SELECT COALESCE(SUM(size_bytes),0) AS n FROM vehicle_documents WHERE user_id=?'
+    ).get(user.id)?.n || 0;
+    const storageBytes = photoBytes + docBytes;
+
+    res.json(200, {
+      tier,
+      tier_label: limits.label,
+      usage: {
+        vehicles:      vehicleCount,
+        storage_bytes: storageBytes,
+        storage_fmt:   fmtBytes(storageBytes),
+      },
+      limits: {
+        vehicles:      limits.vehicles,
+        storage_bytes: limits.bytes,
+        storage_fmt:   fmtBytes(limits.bytes),
+        cloud_sync:    limits.cloud_sync,
+      },
+      at_vehicle_limit: vehicleCount >= limits.vehicles,
+    });
+  });
 
   /* ── Registracija ── */
   router.post('/accounts/register', async (req, res, body) => {
@@ -97,7 +170,7 @@ function verifyPage(ok, nameOrMsg) {
   <div class="ico">✅</div>
   <h1>Email potvrđen!</h1>
   <p>Zdravo <b>${esc(nameOrMsg)}</b>,<br>tvoj AutoUniverse nalog je aktivan.</p>
-  <a href="https://plocicmilan.github.io/AUTOUNIVERSE/garage/">Otvori Garage Toolbox</a>
+  <a href="https://hub.autouniverse.rs/">Otvori AutoUniverse Hub</a>
 </div>
 </body></html>`;
   } else {
