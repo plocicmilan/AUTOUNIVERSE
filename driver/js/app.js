@@ -252,8 +252,9 @@
           // switcher ako ima više vozila
           var switcher = vehicles.length > 1
             ? '<div class="vehswitch">' + vehicles.map(function (x) {
+                var sharedChip = x.read_only ? ' 🔑' : '';
                 return '<button class="chip' + (x.id === vid ? ' active' : '') +
-                  '" onclick="DR.setVehicle(\'' + esc(x.id) + '\')">' + esc(x.make + " " + x.model) + '</button>';
+                  '" onclick="DR.setVehicle(\'' + esc(x.id) + '\')">' + esc(x.make + " " + x.model) + sharedChip + '</button>';
               }).join("") + '</div>'
             : '';
 
@@ -292,19 +293,23 @@
             }, 0);
           }
 
+          var isShared = !!v.read_only;
+
           return '' +
             switcher +
             '<h1>' + esc(v.make + " " + v.model) + (v.year ? ' <span class="muted">(' + v.year + ')</span>' : '') + '</h1>' +
             '<p class="sub">' + esc(v.plate || "—") +
               (curKm != null ? ' • ⏱ ' + curKm + ' km' : '') +
               (hubServerId ? '<span id="hub_km_ext" style="color:#34d399"></span>' : '') +
-              (hubBadge ? ' ' + hubBadge : '') + '</p>' +
+              (hubBadge ? ' ' + hubBadge : '') +
+              (isShared ? ' <span style="background:#1e3a5f;color:#93c5fd;border-radius:4px;padding:1px 7px;font-size:.75rem;margin-left:4px">🔑 Deljeno vozilo</span>' : '') +
+            '</p>' +
 
             // TRUST CARD (posle H1, pre onboarding-a — kupac ga prvi vidi)
             trustCardHtml +
 
-            // onboarding: ako nema nijednog događaja, ponudi početno stanje
-            (vehEvents.length === 0
+            // onboarding: samo za sopstvena vozila
+            (!isShared && vehEvents.length === 0
               ? '<div class="onboard"><b data-i18n="d.initial_title"></b>' +
                 '<p class="empty" data-i18n="d.initial_sub"></p>' +
                 '<button class="btn btn-primary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button></div>'
@@ -343,30 +348,31 @@
               (rokovi || '<p class="empty" data-i18n="d.no_deadlines"></p>') +
             '</div>' +
 
-            '<button class="btn btn-primary" onclick="DR.addEvent(\'' + esc(vid) + '\',false)" data-i18n="d.add_event"></button>' +
+            // Akcije — write operacije skrivene za deljeno vozilo
+            (!isShared ? '<button class="btn btn-primary" onclick="DR.addEvent(\'' + esc(vid) + '\',false)" data-i18n="d.add_event"></button>' : '') +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'kalkulatori\')" style="background:#1e3a5f">🧮 Kalkulatori</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'timeline\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1c2a3a">📅 Timeline događaja</button>' +
             (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
-            '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' +
-            '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' +
-            '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vid) + '\',true)" data-i18n="d.dig_drawer"></button>' +
+            (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
+            (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
+            (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vid) + '\',true)" data-i18n="d.dig_drawer"></button>' : '') +
             (moduleUnlocked("pdf_dossier")
               ? '<button class="btn btn-secondary mt8" onclick="DR.exportDossier(\'' + esc(vid) + '\')" data-i18n="d.dossier"></button>'
               : '') +
-            '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle_form\',{id:\'' + esc(vid) + '\'})" data-i18n="common.edit"></button>' +
-            (v.status !== "sold" && v.status !== "totaled"
+            (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle_form\',{id:\'' + esc(vid) + '\'})" data-i18n="common.edit"></button>' : '') +
+            (!isShared && v.status !== "sold" && v.status !== "totaled"
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'sell_vehicle\',{id:\'' + esc(vid) + '\'})" data-i18n="d.sell_vehicle"></button>'
               : '') +
-            (hubServerId && v.status !== "sold" && v.status !== "totaled"
+            (!isShared && hubServerId && v.status !== "sold" && v.status !== "totaled"
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_sell\',{id:\'' + esc(vid) + '\',hub_id:' + hubServerId + '})" style="background:#1a2940">🏷️ Prodaj ovo vozilo</button>'
               : '') +
-            (v.trade_mode
+            (!isShared && v.trade_mode
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'publish_listing\',{id:\'' + esc(vid) + '\'})" data-i18n="d.publish_listing"></button>' +
                 '<button class="btn btn-secondary mt8" onclick="DR.go(\'trade_summary\')" style="background:#1a2a1a">📊 Trade sažetak</button>'
               : '') +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'browse_autopijaca\')">🔍 Pretraži vozila na prodaju</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'browse_autodelovi\')">🔧 Pretraži auto delove</button>' +
-            (moduleUnlocked("multi_vehicle")
+            (!isShared && moduleUnlocked("multi_vehicle")
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle_form\')" data-i18n="vehicles.add"></button>'
               : '');
         });
@@ -377,6 +383,10 @@
       var id = params && params.id;
       var pV = id ? Store.get("vehicles", id) : Promise.resolve(null);
       return pV.then(function (existing) {
+        if (existing && existing.read_only) {
+          return '<button class="linkback" onclick="DR.go(\'vehicle\')">← Nazad</button>' +
+            '<div class="card"><p class="empty">Deljeno vozilo nije moguće uređivati.</p></div>';
+        }
         var v = existing || Models.createVehicle({});
         App._editingVehicle = existing || null;
         var sd = v.service_data || {}, tires = v.tires || {}, eng = v.engine || {};
@@ -455,9 +465,15 @@
       return Promise.all([p, Store.all("vehicles")]).then(function (res) {
         var e = res[0]; App._editingEvent = e || null;
         if (e) { retro = !!e.retroactive; vehId = e.vehicle_id; }
+        // Guard: deljeno vozilo nema write pristup
+        var targetVeh = res[1].filter(function (v) { return v.id === (vehId || (e && e.vehicle_id)); })[0];
+        if (targetVeh && targetVeh.read_only) {
+          return '<button class="linkback" onclick="DR.go(\'vehicle\')">← Nazad</button>' +
+            '<div class="card"><p class="empty">Na deljenom vozilu nije moguće dodavati događaje.</p></div>';
+        }
         e = e || Models.createEvent({ vehicle_id: vehId, type: "service", app: "driver",
                                       date: retro ? "" : todayISO() });
-        var vehOpts = res[1].map(function (v) {
+        var vehOpts = res[1].filter(function (v) { return !v.read_only; }).map(function (v) {
           return '<option value="' + esc(v.id) + '"' + (e.vehicle_id === v.id ? " selected" : "") + '>' +
                  esc(v.make + " " + v.model + (v.plate ? " • " + v.plate : "")) + '</option>';
         }).join("");
