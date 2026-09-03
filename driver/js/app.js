@@ -2969,19 +2969,24 @@
 
       Store.all("vehicles").then(function (vehicles) {
         // Korak 1 — batch sync vozila (zamjena za one-by-one loop)
-        var payload = vehicles.map(function (v) {
-          return {
-            local_id:   String(v.id),
-            server_id:  vehicleMap[v.id] || null,
-            make:       v.make  || "?",
-            model:      v.model || "?",
-            year:       v.year  ? Number(v.year) : null,
-            plate:      v.plate || null,
-            vin:        v.vin   || null,
-            status:     v.status || "active",
-            updated_at: v.updated_at || v.created_at || new Date().toISOString(),
-          };
-        });
+        var existingSharedIds = {};
+        vehicles.forEach(function (v) { if (v.hub_vehicle_id) existingSharedIds[v.hub_vehicle_id] = v.id; });
+
+        var payload = vehicles
+          .filter(function (v) { return !v.read_only; })  // ne šalji tuđa (shared) vozila
+          .map(function (v) {
+            return {
+              local_id:   String(v.id),
+              server_id:  vehicleMap[v.id] || null,
+              make:       v.make  || "?",
+              model:      v.model || "?",
+              year:       v.year  ? Number(v.year) : null,
+              plate:      v.plate || null,
+              vin:        v.vin   || null,
+              status:     v.status || "active",
+              updated_at: v.updated_at || v.created_at || new Date().toISOString(),
+            };
+          });
 
         return AUCore.apiCall("POST", "/vehicles/sync", { vehicles: payload, last_pull: lastPull })
           .then(function (syncRes) {
@@ -2992,7 +2997,35 @@
             });
             localStorage.setItem(HUB_MAP_KEY, JSON.stringify(vehicleMap));
             localStorage.setItem("aucore_driver_last_pull", syncRes.sync_at || new Date().toISOString());
-            return Store.all("events");
+
+            // Korak 1.5 — pull shared vozila (podeljena sa mnom via grant)
+            return AUCore.apiCall("GET", "/vehicles").then(function (vRes) {
+              var shared = (vRes && vRes.shared) || [];
+              var now = new Date().toISOString();
+              var importOps = shared.map(function (sv) {
+                var localId = existingSharedIds[sv.id] || ("shared_" + sv.id);
+                vehicleMap[localId] = sv.id;
+                var record = {
+                  id: localId,
+                  make: sv.make || "", model: sv.model || "",
+                  year: sv.year || null, plate: sv.plate || null, vin: sv.vin || "",
+                  status: sv.status || "active",
+                  hub_vehicle_id: sv.id,
+                  hub_shared_role: sv.my_role || "read",
+                  read_only: true,
+                  category: "M1", type_label: "",
+                  engine: { code: "", displacement_ccm: null, power_kw: null, fuel: "", gearbox: "" },
+                  service_data: { oil_type: "", oil_qty_l: null, oil_filter: "", air_filter: "",
+                    fuel_filter: "", cabin_filter: "", brake_notes: "", battery: "", custom_fields: [] },
+                  tires: { size_front: "", size_rear: "", current_set: "" },
+                  registered_owner: "", trade_mode: false, trade: null, photos: [], notes: "",
+                  created_at: now, updated_at: sv.updated_at || now,
+                };
+                return Store.put("vehicles", record);
+              });
+              localStorage.setItem(HUB_MAP_KEY, JSON.stringify(vehicleMap));
+              return Promise.all(importOps);
+            }).catch(function () {}).then(function () { return Store.all("events"); });
           });
       })
       .then(function (events) {
