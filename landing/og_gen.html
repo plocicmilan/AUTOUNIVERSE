@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;600&display=swap');
+
+  body {
+    width: 1200px;
+    height: 630px;
+    background: #0f1d35;
+    font-family: 'Barlow', system-ui, sans-serif;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Grid background */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,107,53,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,107,53,.05) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: radial-gradient(ellipse 80% 80% at 45% 55%, black 30%, transparent 75%);
+  }
+
+  /* Orange glow */
+  .glow {
+    position: absolute;
+    right: -80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(255,107,53,.18) 0%, transparent 65%);
+  }
+
+  /* Blue accent */
+  .glow-blue {
+    position: absolute;
+    left: -100px;
+    bottom: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(14,165,233,.1) 0%, transparent 65%);
+  }
+
+  /* Left stripe accent */
+  .stripe {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+    background: linear-gradient(180deg, var(--orange, #ff6b35) 0%, transparent 100%);
+  }
+
+  .content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    padding: 64px 80px;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 40px;
+  }
+
+  .logo-badge {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-weight: 900;
+    font-size: 28px;
+    color: #ff6b35;
+    background: rgba(255,107,53,.1);
+    border: 2px solid #ff6b35;
+    padding: 4px 12px;
+    border-radius: 6px;
+    letter-spacing: -1px;
+  }
+
+  .logo-name {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    color: #e2e8f0;
+    letter-spacing: .5px;
+  }
+
+  .tagline {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #ff6b35;
+    margin-bottom: 20px;
+    opacity: .9;
+  }
+
+  h1 {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-weight: 900;
+    font-size: 82px;
+    line-height: .95;
+    letter-spacing: -2px;
+    text-transform: uppercase;
+    color: #e2e8f0;
+    margin-bottom: 28px;
+  }
+
+  h1 .accent { color: #ff6b35; }
+
+  .sub {
+    font-size: 22px;
+    color: #94a3b8;
+    line-height: 1.5;
+    max-width: 500px;
+    font-weight: 400;
+  }
+
+  /* Right side — app mockup nodes */
+  .nodes {
+    position: absolute;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    z-index: 2;
+  }
+
+  .node {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(255,255,255,.04);
+    border: 1.5px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    padding: 16px 24px;
+    width: 280px;
+  }
+
+  .node-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+
+  .node-name {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-weight: 900;
+    font-size: 20px;
+    text-transform: uppercase;
+    color: #e2e8f0;
+    letter-spacing: .5px;
+  }
+
+  .node-sub {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+
+  .node--driver { border-color: rgba(14,165,233,.3); background: rgba(14,165,233,.06); }
+  .node--garage { border-color: rgba(255,107,53,.3); background: rgba(255,107,53,.06); }
+
+  .badge-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 36px;
+  }
+
+  .badge {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 100px;
+  }
+
+  .badge--orange { background: rgba(255,107,53,.12); color: #ff6b35; border: 1px solid rgba(255,107,53,.3); }
+  .badge--blue { background: rgba(14,165,233,.12); color: #0ea5e9; border: 1px solid rgba(14,165,233,.3); }
+  .badge--green { background: rgba(34,197,94,.12); color: #22c55e; border: 1px solid rgba(34,197,94,.3); }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="glow"></div>
+  <div class="glow-blue"></div>
+  <div class="stripe"></div>
+
+  <div class="content">
+    <div class="logo-row">
+      <span class="logo-badge">AU</span>
+      <span class="logo-name">AutoUniverse</span>
+    </div>
+
+    <div class="tagline">Ekosistem za vaše vozilo</div>
+
+    <h1>Jedan<br>ekosistem.<br><span class="accent">Sve veze.</span></h1>
+
+    <p class="sub">Driver za vlasnike. Garage za servise.<br>Nula kompromisa.</p>
+
+    <div class="badge-row">
+      <span class="badge badge--orange">100% Offline</span>
+      <span class="badge badge--blue">Bez registracije</span>
+      <span class="badge badge--green">Besplatno</span>
+    </div>
+  </div>
+
+  <div class="nodes">
+    <div class="node node--driver">
+      <span class="node-icon">🧑‍💼</span>
+      <div>
+        <div class="node-name">Driver Toolbox</div>
+        <div class="node-sub">Za vlasnike vozila</div>
+      </div>
+    </div>
+    <div class="node node--garage">
+      <span class="node-icon">🔧</span>
+      <div>
+        <div class="node-name">Garage Toolbox</div>
+        <div class="node-sub">Za auto servise</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

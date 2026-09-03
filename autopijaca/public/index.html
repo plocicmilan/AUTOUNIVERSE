@@ -675,7 +675,7 @@ header {
           <div class="at-name">🏷️ Autopijaca</div>
           <div class="at-desc">Prodaja automobila direktno, bez posrednika. Sa verifikovanom istorijom servisa.</div>
         </span>
-        <a href="http://localhost:3002/delovi" class="app-tile t-blue" target="_blank">
+        <a href="https://autodelovi.autouniverse.rs/delovi" class="app-tile t-blue" target="_blank">
           <div class="at-name">⚙️ Autodelovi</div>
           <div class="at-desc">Prodaja auto delova. Filteri po vozilu, kategorijama i stanju.</div>
         </a>
@@ -963,20 +963,19 @@ header {
         dosijeEl.innerHTML = '';
       }
     }
-    const isPhone = l.contact_method !== 'message';
     const phone = l.contact_phone || '';
     const viberNum = phone.replace(/\D/g, '');
     document.getElementById('modal-contact').innerHTML = `
       <div class="clabel">Kontakt prodavca</div>
       <div class="cname">${l.contact_name}</div>
-      ${isPhone ? `
+      ${phone ? `
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <a class="btn-call" href="tel:${phone}" style="flex:1;justify-content:center">📞 Pozovi</a>
           ${viberNum ? `<a class="btn-call" href="viber://chat?number=%2B${viberNum}" style="flex:1;justify-content:center;background:#7360f2">💬 Viber</a>` : ''}
         </div>
         <div style="margin-top:8px;font-size:.82rem;color:var(--muted)">${phone}</div>
-      ` : '<span style="font-size:.85rem;color:var(--muted)">Pošalji poruku ispod ↓</span>'}`;
-    document.getElementById('msg-form').style.display = isPhone ? 'none' : 'block';
+      ` : ''}`;
+    document.getElementById('msg-form').style.display = 'block';
   }
 
   async function sendMessage() {
@@ -1084,5 +1083,6 @@ header {
     navigator.serviceWorker.register('/sw.js').catch(function () {});
   }
 </script>
+<script data-goatcounter="https://analytics.autouniverse.rs/count" async src="//analytics.autouniverse.rs/count.js"></script>
 </body>
 </html>
