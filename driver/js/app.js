@@ -357,6 +357,9 @@
             (v.status !== "sold" && v.status !== "totaled"
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'sell_vehicle\',{id:\'' + esc(vid) + '\'})" data-i18n="d.sell_vehicle"></button>'
               : '') +
+            (hubServerId && v.status !== "sold" && v.status !== "totaled"
+              ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_sell\',{id:\'' + esc(vid) + '\',hub_id:' + hubServerId + '})" style="background:#1a2940">🏷️ Prodaj ovo vozilo</button>'
+              : '') +
             (v.trade_mode
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'publish_listing\',{id:\'' + esc(vid) + '\'})" data-i18n="d.publish_listing"></button>' +
                 '<button class="btn btn-secondary mt8" onclick="DR.go(\'trade_summary\')" style="background:#1a2a1a">📊 Trade sažetak</button>'
@@ -1059,6 +1062,41 @@
         '</div>';
       setTimeout(function () { DR.loadVehicleForEdit(vid); }, 0);
       return html;
+    },
+
+    /* ===== HUB SELL — prodaja vozila via AU Core (za hub-sync vozila) ===== */
+    hub_sell: function (params) {
+      var vid = (params && params.id) || App.activeVehicleId;
+      var hubId = params && params.hub_id;
+      return Store.get("vehicles", vid).then(function (v) {
+        if (!v) return '<div class="card"><p class="empty">Vozilo nije pronađeno.</p></div>';
+        App._hubSellVehicleId = vid;
+        App._hubSellHubId = hubId;
+        var vName = esc(v.make + " " + v.model + (v.year ? " " + v.year : ""));
+        return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+          '<h1>🏷️ Prodaj vozilo</h1>' +
+          '<p class="sub">' + vName + '</p>' +
+          '<div class="card">' +
+            '<div class="form-group">' +
+              '<label class="label">Cijena (EUR) *</label>' +
+              '<input type="number" id="hs_price" class="input" placeholder="npr. 6500" min="1" step="1">' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label class="label">Ime kontakta *</label>' +
+              '<input type="text" id="hs_contact_name" class="input" placeholder="Vaše ime">' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label class="label">Telefon *</label>' +
+              '<input type="tel" id="hs_contact_phone" class="input" placeholder="+38160...">' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label class="label">Opis (opciono)</label>' +
+              '<textarea id="hs_desc" class="input" rows="3" placeholder="Stanje vozila, oprema, historija..."></textarea>' +
+            '</div>' +
+            '<button class="btn btn-primary" onclick="DR.publishViaHub()">Objavi oglas</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle\')" data-i18n="common.cancel"></button>' +
+          '</div>';
+      });
     },
 
     /* ===== BROWSE AUTOPIJACA — pretraga vozila na prodaju ===== */
@@ -2869,6 +2907,37 @@
       }).catch(function (e) { toast("Greška: " + e.message); });
     },
 
+    publishViaHub: function () {
+      var vid    = App._hubSellVehicleId;
+      var hubId  = App._hubSellHubId;
+      if (!vid || !hubId || !window.AUCore || !AUCore.getSession()) {
+        toast("Nisi prijavljen na AU Core. Poveži se u Podešavanjima.");
+        return;
+      }
+      var price = parseFloat(document.getElementById("hs_price") && document.getElementById("hs_price").value) || 0;
+      var contactName  = (document.getElementById("hs_contact_name") && document.getElementById("hs_contact_name").value) || "";
+      var contactPhone = (document.getElementById("hs_contact_phone") && document.getElementById("hs_contact_phone").value) || "";
+      var desc = (document.getElementById("hs_desc") && document.getElementById("hs_desc").value) || "";
+      if (!price)       { toast("Unesite cijenu."); return; }
+      if (!contactName) { toast("Unesite ime kontakta."); return; }
+      if (!contactPhone){ toast("Unesite telefon."); return; }
+      var btn = document.querySelector('.btn-primary[onclick="DR.publishViaHub()"]');
+      if (btn) { btn.disabled = true; btn.textContent = "Objavljujem..."; }
+      AUCore.apiCall("POST", "/vehicles/" + hubId + "/autopijaca", {
+        price: price,
+        currency: "EUR",
+        description: desc || undefined,
+        contact_name: contactName,
+        contact_phone: contactPhone
+      }).then(function (data) {
+        toast("Oglas objavljen! ID: " + data.listing_id);
+        DR.go("vehicle");
+      }).catch(function (e) {
+        if (btn) { btn.disabled = false; btn.textContent = "Objavi oglas"; }
+        toast("Greška: " + e.message);
+      });
+    },
+
     setExpensesVehicle: function (id) { App.expensesVehicleId = id; render("expenses"); },
     setExpensesPeriod: function (p) { App.expensesPeriod = p; render("expenses"); },
 
@@ -2896,21 +2965,35 @@
       if (statusEl) statusEl.textContent = "Sinkronizujem...";
 
       var vehicleMap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
+      var lastPull   = localStorage.getItem("aucore_driver_last_pull") || null;
 
       Store.all("vehicles").then(function (vehicles) {
-        // Korak 1 — resolve server vehicle IDs (kreiraj ako ne postoji)
-        var mapOps = vehicles.map(function (v) {
-          if (vehicleMap[v.id]) return Promise.resolve();
-          return AUCore.apiCall("POST", "/vehicles", {
-            make: v.make, model: v.model, year: v.year || null,
-            plate: v.plate || null, vin: v.vin || null
-          }).then(function (r) { vehicleMap[v.id] = r.id; });
+        // Korak 1 — batch sync vozila (zamjena za one-by-one loop)
+        var payload = vehicles.map(function (v) {
+          return {
+            local_id:   String(v.id),
+            server_id:  vehicleMap[v.id] || null,
+            make:       v.make  || "?",
+            model:      v.model || "?",
+            year:       v.year  ? Number(v.year) : null,
+            plate:      v.plate || null,
+            vin:        v.vin   || null,
+            status:     v.status || "active",
+            updated_at: v.updated_at || v.created_at || new Date().toISOString(),
+          };
         });
 
-        return Promise.all(mapOps).then(function () {
-          localStorage.setItem(HUB_MAP_KEY, JSON.stringify(vehicleMap));
-          return Store.all("events");
-        });
+        return AUCore.apiCall("POST", "/vehicles/sync", { vehicles: payload, last_pull: lastPull })
+          .then(function (syncRes) {
+            (syncRes.merged || []).forEach(function (m) {
+              if (m.local_id && m.server_id && m.action !== "rejected") {
+                vehicleMap[m.local_id] = m.server_id;
+              }
+            });
+            localStorage.setItem(HUB_MAP_KEY, JSON.stringify(vehicleMap));
+            localStorage.setItem("aucore_driver_last_pull", syncRes.sync_at || new Date().toISOString());
+            return Store.all("events");
+          });
       })
       .then(function (events) {
         var unsynced = events.filter(function (e) { return !e.synced_at; });

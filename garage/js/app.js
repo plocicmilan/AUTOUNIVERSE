@@ -2971,56 +2971,68 @@
       if (statusEl) statusEl.textContent = "Sinhronizujem…";
       var vmap   = JSON.parse(localStorage.getItem(AH_VMAP_KEY)   || "{}");
       var synced = JSON.parse(localStorage.getItem(AH_SYNCED_KEY) || "{}");
+      var lastPull = localStorage.getItem("aucore_garage_last_pull") || null;
 
       Promise.all([Store.all("vehicles"), Store.all("events")]).then(function (res) {
         var vehicles = res[0];
         var events   = res[1];
 
-        // Keširaj listu vozila za prikaz u connected mode panelu
         try { localStorage.setItem("gt_vehicles_cache", JSON.stringify(vehicles.map(function (v) { return { id: v.id, make: v.make, model: v.model, plate: v.plate }; }))); } catch (_) {}
 
-        // Faza 1: registruj vozila na AU Core-u ako nisu mapirana
-        return vehicles.reduce(function (p, v) {
-          return p.then(function () {
-            if (vmap[v.id]) return;
-            return aucoreFetch("POST", "/vehicles", {
-              make: v.make || "?", model: v.model || "?",
-              year: v.year ? Number(v.year) : null,
-              plate: v.plate || null, vin: v.vin || null
-            }).then(function (r) {
-              vmap[v.id] = r.id;
-              localStorage.setItem(AH_VMAP_KEY, JSON.stringify(vmap));
-            });
-          });
-        }, Promise.resolve()).then(function () {
-          // Faza 2: sinhronizuj evente po vozilu
-          var byVehicle = {};
-          events.forEach(function (e) {
-            if (synced[e.id]) return;
-            var servId = vmap[e.vehicle_id];
-            if (!servId) return;
-            if (!byVehicle[servId]) byVehicle[servId] = [];
-            byVehicle[servId].push(e);
-          });
-
-          return Object.keys(byVehicle).reduce(function (p, servId) {
-            return p.then(function () {
-              var batch = byVehicle[servId].map(function (e) {
-                return { local_id: e.id, type: ahMapEventType(e.type), data: e,
-                         event_date: (e.date || e.created_at || new Date().toISOString()),
-                         retroactive: !!e.retroactive, source: e.source || "app", app: "garage" };
-              });
-              if (!batch.length) return;
-              return aucoreFetch("POST", "/vehicles/" + servId + "/events/batch", batch)
-                .then(function (r) {
-                  (r.synced || []).forEach(function (s) {
-                    if (s.local_id && !s.error) synced[s.local_id] = true;
-                  });
-                  localStorage.setItem(AH_SYNCED_KEY, JSON.stringify(synced));
-                });
-            });
-          }, Promise.resolve());
+        // Faza 1 — batch sync vozila (zamjena za one-by-one loop)
+        var payload = vehicles.map(function (v) {
+          return {
+            local_id:   String(v.id),
+            server_id:  vmap[v.id] || null,
+            make:       v.make  || "?",
+            model:      v.model || "?",
+            year:       v.year  ? Number(v.year) : null,
+            plate:      v.plate || null,
+            vin:        v.vin   || null,
+            status:     v.status || "active",
+            updated_at: v.updated_at || v.created_at || new Date().toISOString(),
+          };
         });
+
+        return aucoreFetch("POST", "/vehicles/sync", { vehicles: payload, last_pull: lastPull })
+          .then(function (syncRes) {
+            // Ažuriraj mapu local_id → server_id
+            (syncRes.merged || []).forEach(function (m) {
+              if (m.local_id && m.server_id && m.action !== "rejected") {
+                vmap[m.local_id] = m.server_id;
+              }
+            });
+            localStorage.setItem(AH_VMAP_KEY, JSON.stringify(vmap));
+            localStorage.setItem("aucore_garage_last_pull", syncRes.sync_at || new Date().toISOString());
+
+            // Faza 2 — sinhronizuj evente po vozilu
+            var byVehicle = {};
+            events.forEach(function (e) {
+              if (synced[e.id]) return;
+              var servId = vmap[String(e.vehicle_id)];
+              if (!servId) return;
+              if (!byVehicle[servId]) byVehicle[servId] = [];
+              byVehicle[servId].push(e);
+            });
+
+            return Object.keys(byVehicle).reduce(function (p, servId) {
+              return p.then(function () {
+                var batch = byVehicle[servId].map(function (e) {
+                  return { local_id: e.id, type: ahMapEventType(e.type), data: e,
+                           event_date: (e.date || e.created_at || new Date().toISOString()),
+                           retroactive: !!e.retroactive, source: e.source || "app", app: "garage" };
+                });
+                if (!batch.length) return;
+                return aucoreFetch("POST", "/vehicles/" + servId + "/events/batch", batch)
+                  .then(function (r) {
+                    (r.synced || []).forEach(function (s) {
+                      if (s.local_id && !s.error) synced[s.local_id] = true;
+                    });
+                    localStorage.setItem(AH_SYNCED_KEY, JSON.stringify(synced));
+                  });
+              });
+            }, Promise.resolve());
+          });
       }).then(function () {
         var cnt = Object.keys(JSON.parse(localStorage.getItem(AH_SYNCED_KEY) || "{}")).length;
         if (statusEl) statusEl.textContent = "✓ Sinhronizirano " + cnt + " zapisa ukupno.";
