@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kako koristiti Driver Toolbox — Kompletno uputstvo | AutoUniverse</title>
+<meta name="description" content="Korak po korak uputstvo za Driver Toolbox aplikaciju. Dodavanje vozila, praćenje servisa, kalkulatori, podsetnici i sve ostale funkcije.">
+<link rel="canonical" href="https://autouniverse.rs/driver-uputstvo">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#fff;color:#1C1F24;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:#0ea5e9;text-decoration:none}
+a:hover{text-decoration:underline}
+:root{
+  --blue:#0ea5e9;--blue-dark:#0369a1;--blue-light:#e0f2fe;
+  --navy:#0f1d35;--green:#059669;
+  --dark:#1C1F24;--mid:#4A4E58;--muted:#6B7280;
+  --line:#E5E7EB;--bg:#F8F7F3;--radius:12px
+}
+
+/* NAV */
+.nav{background:#fff;border-bottom:1px solid var(--line);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem;color:var(--navy)}
+.nav-logo .dot{width:10px;height:10px;background:var(--blue);border-radius:50%}
+.nav-cta{background:var(--blue);color:#fff;padding:.5rem 1.2rem;border-radius:8px;font-weight:700;font-size:.9rem}
+
+/* HERO */
+.hero{background:var(--navy);color:#fff;padding:56px 24px 48px;text-align:center}
+.hero-badge{display:inline-block;background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.3);color:#7dd3fc;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.3rem .9rem;border-radius:20px;margin-bottom:1rem}
+.hero h1{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:800;line-height:1.15;margin-bottom:.8rem}
+.hero h1 span{color:#7dd3fc}
+.hero p{color:#94a3b8;max-width:520px;margin:0 auto 1.5rem;font-size:1rem}
+.hero-btn{display:inline-block;background:var(--blue);color:#fff;padding:.75rem 2rem;border-radius:10px;font-weight:700;font-size:.95rem}
+
+/* TOC */
+.toc{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:28px;margin:40px auto;max-width:700px}
+.toc h2{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:12px}
+.toc ol{padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.toc li a{color:var(--blue);font-size:.93rem}
+
+/* LAYOUT */
+.container{max-width:860px;margin:0 auto;padding:0 20px}
+.section{padding:60px 0}
+.section+.section{border-top:1px solid var(--line)}
+
+/* STEP */
+.step-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.step-num{width:36px;height:36px;background:var(--blue);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;flex-shrink:0}
+.step-title{font-size:1.5rem;font-weight:800;color:var(--navy)}
+.step-sub{font-size:.9rem;color:var(--muted);margin-top:2px}
+
+.step-body{display:grid;grid-template-columns:1fr 200px;gap:36px;align-items:start}
+@media(max-width:600px){.step-body{grid-template-columns:1fr}.phone-img{order:-1}}
+
+.step-text p{color:var(--mid);line-height:1.7;margin-bottom:12px;font-size:.95rem}
+.step-text p:last-child{margin-bottom:0}
+
+.tip{background:#f0f9ff;border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;font-size:.88rem;color:var(--mid)}
+.tip strong{color:var(--blue-dark)}
+
+.warn{background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;font-size:.88rem;color:#92400e}
+
+.phone-img{text-align:center}
+.phone-img img{width:180px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);border:1px solid var(--line)}
+.phone-img .img-caption{font-size:.75rem;color:var(--muted);margin-top:8px}
+
+/* STEPS LIST */
+.steps-list{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.steps-list li{display:flex;gap:10px;align-items:flex-start;font-size:.93rem;color:var(--mid)}
+.steps-list li .num{background:var(--blue-light);color:var(--blue-dark);font-weight:700;font-size:.78rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:.3rem .9rem;font-size:.83rem;color:var(--mid);font-weight:600}
+.chip.green{background:#f0fdf4;border-color:#86efac;color:#166534}
+
+/* CALC GRID */
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:16px}
+.calc-card{border:1px solid var(--line);border-radius:10px;padding:16px}
+.calc-card .icon{font-size:1.5rem;margin-bottom:8px}
+.calc-card .name{font-weight:700;font-size:.9rem;color:var(--navy)}
+.calc-card .desc{font-size:.82rem;color:var(--muted);margin-top:4px;line-height:1.5}
+
+/* FOOTER */
+.footer{background:var(--bg);border-top:1px solid var(--line);text-align:center;padding:32px 20px;font-size:.85rem;color:var(--muted)}
+.footer a{color:var(--blue)}
+
+/* CTA BAR */
+.cta-bar{background:var(--navy);color:#fff;text-align:center;padding:56px 24px}
+.cta-bar h2{font-size:1.8rem;font-weight:800;margin-bottom:.6rem}
+.cta-bar p{color:#94a3b8;margin-bottom:1.8rem}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo"><span class="dot"></span>AutoUniverse</a>
+  <a href="https://driver.autouniverse.rs/" class="nav-cta" target="_blank">Otvori app →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">📖 Uputstvo za korisnike</div>
+  <h1>Kako koristiti<br><span>Driver Toolbox</span></h1>
+  <p>Korak po korak — od instalacije do prvog sačuvanog servisa. Čita se za 5 minuta.</p>
+  <a href="https://driver.autouniverse.rs/" class="hero-btn" target="_blank">Otvori Driver Toolbox</a>
+</section>
+
+<!-- TOC -->
+<div class="container">
+  <div class="toc">
+    <h2>📋 Sadržaj</h2>
+    <ol>
+      <li><a href="#instalacija">Instalacija na telefon</a></li>
+      <li><a href="#dodaj-vozilo">Dodavanje vozila</a></li>
+      <li><a href="#pocetno-stanje">Unos početnog stanja</a></li>
+      <li><a href="#servis">Beleži servis i događaje</a></li>
+      <li><a href="#troskovi">Pregled troškova</a></li>
+      <li><a href="#podsetnici">Podsetnici za rokove</a></li>
+      <li><a href="#dokumenta">Dokumenta vozila</a></li>
+      <li><a href="#kalkulatori">Kalkulatori</a></li>
+      <li><a href="#kupovina">Šta proveriti pri kupovini</a></li>
+      <li><a href="#backup">Backup i podešavanja</a></li>
+    </ol>
+  </div>
+</div>
+
+<!-- 1. INSTALACIJA -->
+<div class="container">
+<section class="section" id="instalacija">
+  <div class="step-header">
+    <div class="step-num">1</div>
+    <div>
+      <div class="step-title">Instalacija na telefon</div>
+      <div class="step-sub">Driver je PWA — nema App Store-a, instalirate direktno iz browsera</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Otvorite <strong>driver.autouniverse.rs</strong> u browseru na telefonu. App radi odmah — bez registracije, bez lozinke.</p>
+      <p>Za ikonicu na ekranu (preporučeno):</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span><strong>Android (Chrome):</strong> Dodirnite tri tačkice gore desno → "Dodaj na početni ekran" → Instaliraj</span></li>
+        <li><span class="num">2</span><span><strong>iPhone (Safari):</strong> Dodirnite dugme Deli (kvadrat sa strelicom) → "Dodaj na početni ekran" → Dodaj</span></li>
+      </ul>
+      <div class="tip"><strong>Napomena:</strong> Na iPhonu mora biti Safari — Chrome na iOS-u ne podržava instalaciju PWA.</div>
+      <p>Posle instalacije app se otvara kao prava aplikacija — bez URL bara, fullscreen, radi i bez interneta.</p>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/01-pocetni-ekran.png" alt="Driver Toolbox početni ekran">
+      <div class="img-caption">Početni ekran pri prvom otvaranju</div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. DODAJ VOZILO -->
+<section class="section" id="dodaj-vozilo">
+  <div class="step-header">
+    <div class="step-num">2</div>
+    <div>
+      <div class="step-title">Dodavanje vozila</div>
+      <div class="step-sub">Unesite podatke o svom vozilu — samo osnovno je obavezno</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Dodirnite <strong>+ Dodaj vozilo</strong>. Otvara se forma sa poljima:</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span><strong>Marka i Model</strong> — kucajte i izaberite iz liste (npr. "Volkswagen" → "Golf")</span></li>
+        <li><span class="num">2</span><span><strong>Godište</strong> — unesite godinu proizvodnje</span></li>
+        <li><span class="num">3</span><span><strong>Tablica</strong> — registarski broj (npr. KR-123-AB)</span></li>
+        <li><span class="num">4</span><span><strong>Broj šasije (VIN)</strong> — opciono, ali korisno. Kliknite "Dekoduj" i app će automatski preuzeti podatke o vozilu.</span></li>
+      </ul>
+      <p>Možete popuniti i tehničku karticu — tip ulja, gume, dimenzije — ovi podaci se prikazuju na kartici vozila kao podsećanje.</p>
+      <div class="tip"><strong>Savet:</strong> Polje "Papirni vlasnik" popunite ako saobraćajna nije na vaše ime — korisno za praćenje.</div>
+      <p>Kliknite <strong>Sačuvaj</strong> — vozilo je dodato.</p>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/02-dodaj-vozilo-popunjeno.png" alt="Forma za dodavanje vozila">
+      <div class="img-caption">Popunjena forma za dodavanje</div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. POCETNO STANJE -->
+<section class="section" id="pocetno-stanje">
+  <div class="step-header">
+    <div class="step-num">3</div>
+    <div>
+      <div class="step-title">Unos početnog stanja</div>
+      <div class="step-sub">Vozilo ima istoriju? Unesite zadnji servis da podsetnici rade ispravno</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Posle dodavanja vozila, app će vas pozvati da unesete <strong>početno stanje</strong>. Ovo je važan korak — bez njega podsetnici ne znaju kad ste poslednji put servisirali auto.</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span><strong>Trenutna kilometraža</strong> — koliko km vozilo ima danas</span></li>
+        <li><span class="num">2</span><span><strong>Poslednji servis</strong> — unesite datum i km poslednje zamene ulja ili bilo kog servisa koji pamtite</span></li>
+        <li><span class="num">3</span><span><strong>Datum tačnosti</strong> — ako ne znate tačan datum, izaberite "Približno" — unestite okvirno</span></li>
+      </ul>
+      <div class="tip"><strong>Sve je opciono</strong> — popunite šta znate, ostatak preskočite. Možete dopuniti kasnije.</div>
+      <div class="warn"><strong>Ne preskačite ovo!</strong> Bez početnog stanja kalkulator troškova i podsetnici po kilometraži neće raditi ispravno.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/04-pocetno-stanje.png" alt="Ekran za unos početnog stanja">
+      <div class="img-caption">Unos početnog stanja vozila</div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. SERVIS -->
+<section class="section" id="servis">
+  <div class="step-header">
+    <div class="step-num">4</div>
+    <div>
+      <div class="step-title">Beleži servis i događaje</div>
+      <div class="step-sub">Svaki servis, gorivo, guma, kvar — jednim dodirom</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Iz kartice vozila ili tabova <strong>Istorija / Troškovi</strong>, dodirnite <strong>+ Servis / događaj</strong>.</p>
+      <p>Izaberite tip događaja:</p>
+      <div class="chips">
+        <span class="chip">Servis</span>
+        <span class="chip">Gorivo</span>
+        <span class="chip">Gume</span>
+        <span class="chip">Registracija</span>
+        <span class="chip">Kvar</span>
+        <span class="chip">Osiguranje</span>
+        <span class="chip">Ostalo</span>
+      </div>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span>Unesite <strong>naslov</strong> (npr. "Mali servis — ulje + filteri")</span></li>
+        <li><span class="num">2</span><span>Izaberite <strong>datum</strong> i unesite <strong>kilometražu</strong></span></li>
+        <li><span class="num">3</span><span>Dodajte <strong>opis</strong> — šta je urađeno, koji delovi, servis ime</span></li>
+        <li><span class="num">4</span><span>Opciono: <strong>+ Slika</strong> — fotografišite račun ili faktura</span></li>
+      </ul>
+      <div class="tip"><strong>Retroaktivni unos:</strong> Štiklirajte "Ovo se već desilo" ako unosite stari servis — app ga neće tretirati kao budući podsednik.</div>
+      <p>Tab <strong>Istorija</strong> prikazuje sve događaje hronološki. Prebacite na <strong>Timeline</strong> za grupisan pregled po godini i mesecu.</p>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/07-dodaj-servis.png" alt="Forma za dodavanje servisa">
+      <div class="img-caption">Forma za novi servis ili događaj</div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. TROSKOVI -->
+<section class="section" id="troskovi">
+  <div class="step-header">
+    <div class="step-num">5</div>
+    <div>
+      <div class="step-title">Pregled troškova</div>
+      <div class="step-sub">Koliko vas auto košta — mesečno, godišnje, od kupovine</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Tab <strong>Troškovi</strong> sumira sve novčane izdatke za vozilo. Filtrirajte po periodu:</p>
+      <div class="chips">
+        <span class="chip green">Ovaj mesec</span>
+        <span class="chip">Prošli mesec</span>
+        <span class="chip">3 meseca</span>
+        <span class="chip">Ova godina</span>
+        <span class="chip">Sve</span>
+      </div>
+      <p>Svaki servis ili događaj sa unetom cenom ulazi automatski u troškove — nema dvostrukog unosa.</p>
+      <p>Dugme <strong>Export troškovi (CSV)</strong> generiše fajl koji možete otvoriti u Excelu — korisno za godišnji pregled ili za računovođa.</p>
+      <div class="tip"><strong>Savet:</strong> Uvek unosite cenu uz servis — to je jedini način da kalkulator troškova vlasništva prikaže tačan iznos.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/05-troskovi.png" alt="Ekran troškova">
+      <div class="img-caption">Pregled troškova po periodu</div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. PODSETNICI -->
+<section class="section" id="podsetnici">
+  <div class="step-header">
+    <div class="step-num">6</div>
+    <div>
+      <div class="step-title">Podsetnici za rokove</div>
+      <div class="step-sub">Registracija, servis, tehnički pregled — nikad više kasnite</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Tab <strong>Podsetnici</strong> → <strong>+ Novi podsetnik</strong>. Podesite šta i kad:</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span><strong>Naziv</strong> — npr. "Registracija" ili "Servis svake 10.000 km"</span></li>
+        <li><span class="num">2</span><span><strong>Tip</strong> — po datumu (npr. registracija 15. marta) ili po kilometraži (servis na 150.000 km)</span></li>
+        <li><span class="num">3</span><span><strong>Upozorenje unapred</strong> — koliko dana ili km pre roka da vas app upozori</span></li>
+      </ul>
+      <p>Na kartici vozila odmah vidite status svih rokova — zeleno (na vreme), žuto (blizu), crveno (isteklo).</p>
+      <div class="tip"><strong>Preporučeni podsetnici:</strong> Registracija (godišnje), Zamena ulja (svake 10.000 km ili godišnje), Tehnički pregled, Zimske/letnje gume (mart/oktobar).</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/08-podsetnici.png" alt="Ekran podsetnika">
+      <div class="img-caption">Lista podsetnika</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. DOKUMENTA -->
+<section class="section" id="dokumenta">
+  <div class="step-header">
+    <div class="step-num">7</div>
+    <div>
+      <div class="step-title">Dokumenta vozila</div>
+      <div class="step-sub">Saobraćajna, polisa, tehnički — uvek pri ruci</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Tab <strong>Dokumenta</strong> → <strong>+ Dodaj dokument</strong>. Fotografišite ili uvezite PDF:</p>
+      <div class="chips">
+        <span class="chip">Saobraćajna dozvola</span>
+        <span class="chip">Polisa osiguranja</span>
+        <span class="chip">Tehnički pregled</span>
+        <span class="chip">Račun</span>
+        <span class="chip">Ostalo</span>
+      </div>
+      <p>Za svaki dokument možete uneti datum isteka — app vas podseća kad rok počne da se bliži.</p>
+      <div class="tip"><strong>Savet:</strong> Odmah po registraciji/osiguranju fotografišite novi dokument u app. Ako ostanete bez fizičke saobraćajne, imate je u telefonu.</div>
+      <div class="warn"><strong>Važno:</strong> Slike dokumenata se čuvaju lokalno samo na vašem telefonu. Redovno radite backup (Podešavanja → Izvezi sve podatke).</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/09-dokumenta.png" alt="Ekran dokumenata">
+      <div class="img-caption">Lista dokumenata vozila</div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. KALKULATORI -->
+<section class="section" id="kalkulatori">
+  <div class="step-header">
+    <div class="step-num">8</div>
+    <div>
+      <div class="step-title">Kalkulatori</div>
+      <div class="step-sub">Procenite troškove pre nego što platite</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Iz kartice vozila → dugme <strong>🧮 Kalkulatori</strong>. Dostupno 5 kalkulatora:</p>
+      <div class="calc-grid">
+        <div class="calc-card">
+          <div class="icon">📋</div>
+          <div class="name">Registracija</div>
+          <div class="desc">Unesite zapreminu, kW, godiste i Euro klasu → dobijate procenu: porez + AO + taksa + ekološka naknada</div>
+        </div>
+        <div class="calc-card">
+          <div class="icon">⛽</div>
+          <div class="name">Potrošnja goriva</div>
+          <div class="desc">Koliko litara i dinara trošite mesečno i godišnje na osnovu vaše stvarne potrošnje i kilometraže</div>
+        </div>
+        <div class="calc-card">
+          <div class="icon">💰</div>
+          <div class="name">Troškovi vlasništva</div>
+          <div class="desc">Ukupni godišnji trošak: gorivo + registracija + servis + osiguranje — pravi cena posedovanja auta</div>
+        </div>
+        <div class="calc-card">
+          <div class="icon">🚢</div>
+          <div class="name">Kalkulator uvoza</div>
+          <div class="desc">Uvozite auto iz inostranstva? Carina + PDV + homologacija → ukupan trošak uvoza u RSD</div>
+        </div>
+        <div class="calc-card">
+          <div class="icon">🛡️</div>
+          <div class="name">Procena kasko premije</div>
+          <div class="desc">Okvirna godišnja premija kasko osiguranja na osnovu vrednosti vozila, starosti i tipa</div>
+        </div>
+      </div>
+      <div class="tip" style="margin-top:16px"><strong>Savet:</strong> Kalkulator registracije računa prema srpskom zakonu — porez po kubiklaži, AO po kW, ekološka naknada po Euro klasi. Rezultat je procena, ne zvanična tarifa.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/10-kalkulatori.png" alt="Meni kalkulatora">
+      <div class="img-caption">Meni kalkulatora</div>
+    </div>
+  </div>
+</section>
+
+<!-- 9. KUPOVINA CHECK -->
+<section class="section" id="kupovina">
+  <div class="step-header">
+    <div class="step-num">9</div>
+    <div>
+      <div class="step-title">Šta proveriti pri kupovini</div>
+      <div class="step-sub">30-stavkasti checklist za pregled polovnog auta</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Idite na karticu vozila → dugme <strong>🔎 Šta proveriti pri kupovini</strong>. Koristite ovaj ekran dok ste na terenu i gledate auto koji kupujete.</p>
+      <p>Checklist je podeljen u 5 kategorija:</p>
+      <div class="chips">
+        <span class="chip">📄 Dokumenta</span>
+        <span class="chip">🚗 Karoserija</span>
+        <span class="chip">🔧 Motor i podvozje</span>
+        <span class="chip">🪑 Enterijer</span>
+        <span class="chip">🛣️ Test vožnja</span>
+      </div>
+      <p>Štiklirajte stavku po stavku dok pregledate vozilo. Sve crveno = problemi. Sve zeleno = slobodno pregovarajte.</p>
+      <div class="tip"><strong>Savet:</strong> Koristite ovo pre nego što dате kaparu — mnoge stavke (zarđali pragovi, različite boje panela, kredit na autu) su lako uočljive ali se zaborave u žaru kupovine.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/12-kupovina-check.png" alt="Checklist pri kupovini">
+      <div class="img-caption">Checklist za pregled auta</div>
+    </div>
+  </div>
+</section>
+
+<!-- 10. BACKUP -->
+<section class="section" id="backup">
+  <div class="step-header">
+    <div class="step-num">10</div>
+    <div>
+      <div class="step-title">Backup i podešavanja</div>
+      <div class="step-sub">Sačuvajte podatke pre promene telefona</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Tab <strong>Podešavanja</strong> — ovde možete:</p>
+      <ul class="steps-list">
+        <li><span class="num">✓</span><span><strong>Ime vlasnika i telefon</strong> — pojavljuje se u PDF dokumentima koje app generiše</span></li>
+        <li><span class="num">✓</span><span><strong>Valuta</strong> — RSD ili EUR</span></li>
+        <li><span class="num">✓</span><span><strong>Jezik</strong> — srpski ili engleski</span></li>
+        <li><span class="num">✓</span><span><strong>Izvezi sve podatke</strong> — sačuvajte backup na telefon ili cloud (Google Drive, iCloud). Fajl je JSON format.</span></li>
+        <li><span class="num">✓</span><span><strong>Uvezi backup</strong> — restaurirajte podatke na novom telefonu ili posle reinstalacije</span></li>
+      </ul>
+      <div class="warn"><strong>Obavezno:</strong> Uradite backup pre promene telefona ili brisanja app. Podaci se ne čuvaju automatski u cloud-u — to je vaša odgovornost.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/13-podesavanja.png" alt="Ekran podešavanja">
+      <div class="img-caption">Podešavanja i backup</div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- CTA -->
+<div class="cta-bar">
+  <h2>Spremi ste za start</h2>
+  <p>Otvorite Driver Toolbox i dodajte prvo vozilo za manje od minute.</p>
+  <a href="https://driver.autouniverse.rs/" class="hero-btn" target="_blank">Otvori Driver Toolbox →</a>
+</div>
+
+<footer class="footer">
+  <p>© 2026 <a href="/">AutoUniverse</a> · Belora Ventures Studio · Kruševac, Srbija ·
+  <a href="/driver">Driver Toolbox</a> · <a href="/garage">Garage Toolbox</a></p>
+</footer>
+
+  <script data-goatcounter="https://analytics.autouniverse.rs/count" async src="//analytics.autouniverse.rs/count.js"></script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kako koristiti Garage Toolbox — Kompletno uputstvo | AutoUniverse</title>
+<meta name="description" content="Korak po korak uputstvo za Garage Toolbox aplikaciju za auto mehaničare. Radni nalozi, predračuni, kontakti, dnevnik, PDF i izvoz podataka.">
+<link rel="canonical" href="https://autouniverse.rs/garage-uputstvo">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#fff;color:#1C1F24;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:#e53e3e;text-decoration:none}
+a:hover{text-decoration:underline}
+:root{
+  --red:#e53e3e;--red-dark:#c53030;--red-light:#fff5f5;
+  --navy:#0f1d35;--green:#059669;
+  --dark:#1C1F24;--mid:#4A4E58;--muted:#6B7280;
+  --line:#E5E7EB;--bg:#F8F7F3;--radius:12px
+}
+
+/* NAV */
+.nav{background:#fff;border-bottom:1px solid var(--line);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem;color:var(--navy)}
+.nav-logo .dot{width:10px;height:10px;background:var(--red);border-radius:50%}
+.nav-cta{background:var(--red);color:#fff;padding:.5rem 1.2rem;border-radius:8px;font-weight:700;font-size:.9rem}
+
+/* HERO */
+.hero{background:var(--navy);color:#fff;padding:56px 24px 48px;text-align:center}
+.hero-badge{display:inline-block;background:rgba(229,62,62,.15);border:1px solid rgba(229,62,62,.3);color:#fc8181;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.3rem .9rem;border-radius:20px;margin-bottom:1rem}
+.hero h1{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:800;line-height:1.15;margin-bottom:.8rem}
+.hero h1 span{color:#fc8181}
+.hero p{color:#94a3b8;max-width:520px;margin:0 auto 1.5rem;font-size:1rem}
+.hero-btn{display:inline-block;background:var(--red);color:#fff;padding:.75rem 2rem;border-radius:10px;font-weight:700;font-size:.95rem}
+
+/* TOC */
+.toc{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:28px;margin:40px auto;max-width:700px}
+.toc h2{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:12px}
+.toc ol{padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.toc li a{color:var(--red);font-size:.93rem}
+
+/* LAYOUT */
+.container{max-width:860px;margin:0 auto;padding:0 20px}
+.section{padding:60px 0}
+.section+.section{border-top:1px solid var(--line)}
+
+/* STEP */
+.step-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.step-num{width:36px;height:36px;background:var(--red);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;flex-shrink:0}
+.step-title{font-size:1.5rem;font-weight:800;color:var(--navy)}
+.step-sub{font-size:.9rem;color:var(--muted);margin-top:2px}
+
+.step-body{display:grid;grid-template-columns:1fr 200px;gap:36px;align-items:start}
+@media(max-width:600px){.step-body{grid-template-columns:1fr}.phone-img{order:-1}}
+
+.step-text p{color:var(--mid);line-height:1.7;margin-bottom:12px;font-size:.95rem}
+.step-text p:last-child{margin-bottom:0}
+
+.tip{background:#fff5f5;border-left:3px solid var(--red);border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;font-size:.88rem;color:var(--mid)}
+.tip strong{color:var(--red-dark)}
+
+.warn{background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;font-size:.88rem;color:#92400e}
+
+.phone-img{text-align:center}
+.phone-img img{width:180px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);border:1px solid var(--line)}
+.phone-img .img-caption{font-size:.75rem;color:var(--muted);margin-top:8px}
+
+/* STEPS LIST */
+.steps-list{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.steps-list li{display:flex;gap:10px;align-items:flex-start;font-size:.93rem;color:var(--mid)}
+.steps-list li .num{background:var(--red-light);color:var(--red-dark);font-weight:700;font-size:.78rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:.3rem .9rem;font-size:.83rem;color:var(--mid);font-weight:600}
+.chip.green{background:#f0fdf4;border-color:#86efac;color:#166534}
+
+/* FOOTER */
+.footer{background:var(--bg);border-top:1px solid var(--line);text-align:center;padding:32px 20px;font-size:.85rem;color:var(--muted)}
+.footer a{color:var(--red)}
+
+/* CTA BAR */
+.cta-bar{background:var(--navy);color:#fff;text-align:center;padding:56px 24px}
+.cta-bar h2{font-size:1.8rem;font-weight:800;margin-bottom:.6rem}
+.cta-bar p{color:#94a3b8;margin-bottom:1.8rem}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo"><span class="dot"></span>AutoUniverse</a>
+  <a href="https://garage.autouniverse.rs/" class="nav-cta" target="_blank">Otvori app →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">📖 Uputstvo za korisnike</div>
+  <h1>Kako koristiti<br><span>Garage Toolbox</span></h1>
+  <p>Korak po korak — od instalacije do prvog sačuvanog radnog naloga. Čita se za 5 minuta.</p>
+  <a href="https://garage.autouniverse.rs/" class="hero-btn" target="_blank">Otvori Garage Toolbox</a>
+</section>
+
+<!-- TOC -->
+<div class="container">
+  <div class="toc">
+    <h2>📋 Sadržaj</h2>
+    <ol>
+      <li><a href="#instalacija">Instalacija na telefon</a></li>
+      <li><a href="#profil">Podešavanja profila radnje</a></li>
+      <li><a href="#novi-posao">Novi radni nalog</a></li>
+      <li><a href="#predracun">Predračun</a></li>
+      <li><a href="#kontakti">Kontakti (klijenti)</a></li>
+      <li><a href="#vozila">Vozila klijenata</a></li>
+      <li><a href="#dnevnik">Dnevnik i zakazivanje</a></li>
+      <li><a href="#export">Export i PDF</a></li>
+    </ol>
+  </div>
+</div>
+
+<!-- 1. INSTALACIJA -->
+<div class="container">
+<section class="section" id="instalacija">
+  <div class="step-header">
+    <div class="step-num">1</div>
+    <div>
+      <div class="step-title">Instalacija na telefon</div>
+      <div class="step-sub">Garage Toolbox je PWA — nema App Store-a, instalirate direktno iz browsera</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Otvorite <strong>garage.autouniverse.rs</strong> u browseru na telefonu. App radi odmah — bez registracije, bez lozinke.</p>
+      <p>Za ikonicu na ekranu (preporučeno):</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span><strong>Android (Chrome):</strong> Dodirnite tri tačkice gore desno → "Dodaj na početni ekran" → Instaliraj</span></li>
+        <li><span class="num">2</span><span><strong>iPhone (Safari):</strong> Dodirnite dugme Deli (kvadrat sa strelicom) → "Dodaj na početni ekran" → Dodaj</span></li>
+      </ul>
+      <div class="tip"><strong>Napomena:</strong> Na iPhonu mora biti Safari — Chrome na iOS-u ne podržava instalaciju PWA.</div>
+      <p>Posle instalacije app se otvara kao prava aplikacija — bez URL bara, fullscreen, radi i bez interneta.</p>
+      <p>Početni ekran prikazuje 4 brojača (Vozila, Kontakti, Danas, Predračuni) i dugme <strong>+ Novi posao</strong> — tu uvek počinje rad.</p>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/01-pocetni.png" alt="Garage Toolbox početni ekran">
+      <div class="img-caption">Početni ekran aplikacije</div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. PROFIL -->
+<section class="section" id="profil">
+  <div class="step-header">
+    <div class="step-num">2</div>
+    <div>
+      <div class="step-title">Podešavanja profila radnje</div>
+      <div class="step-sub">Podesite podatke radnje — pojavljuju se na svakom PDF-u koji app generiše</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Pre prvog radnog naloga, otidite na <strong>Podešavanja</strong> (ikonica zupčanika u donjem delu ekrana) i popunite profil radnje:</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span><strong>Ime / naziv radnje</strong> — pojavljuje se u zaglavlju svakog radnog naloga i predračuna</span></li>
+        <li><span class="num">2</span><span><strong>Telefon i Adresa</strong> — prikazuje se klijentu na štampanom nalogu</span></li>
+        <li><span class="num">3</span><span><strong>Email i Website</strong> — opciono, za vizit kartu</span></li>
+        <li><span class="num">4</span><span><strong>Logo (za PDF)</strong> — fotografišite ili uvezite logo firme. Pojavljuje se na svakom dokumentu koji app generiše.</span></li>
+      </ul>
+      <p>Dugme <strong>Vizit karta</strong> generiše digitalnu vizit kartu sa vašim podacima — možete je podeliti ili sačuvati.</p>
+      <div class="tip"><strong>Savet:</strong> Ove podatke unesite jednom — posle se automatski primenjuju na sve dokumente. Nema potrebe da unosite podatke za svaki nalog posebno.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/07-podesavanja.png" alt="Podešavanja profila radnje">
+      <div class="img-caption">Profil radnje u Podešavanjima</div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. NOVI RADNI NALOG -->
+<section class="section" id="novi-posao">
+  <div class="step-header">
+    <div class="step-num">3</div>
+    <div>
+      <div class="step-title">Novi radni nalog</div>
+      <div class="step-sub">Kreiranje WO-a u 3 koraka — vozilo, radovi, finalizacija</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Dodirnite <strong>+ Novi posao</strong> na početnom ekranu, zatim <strong>Radni nalog</strong>. Forma je podeljena u korake:</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span><strong>Vozilo</strong> — izaberite iz liste ili dodirnite "+ Novo vozilo (brzo)" da dodate direktno ovde. Unesite <strong>kilometražu</strong> pri prijemu.</span></li>
+        <li><span class="num">2</span><span><strong>Klijent</strong> — povežite kontakt (vlasnik vozila). Novi klijent se može dodati odmah iz forme.</span></li>
+        <li><span class="num">3</span><span><strong>Radovi i delovi</strong> — unosite stavke: naziv rada/dela, količina, cena. App automatski računa ukupan iznos.</span></li>
+        <li><span class="num">4</span><span><strong>Napomene</strong> — interne beleške ili poruka za klijenta.</span></li>
+      </ul>
+      <p>Na kraju dodirnite <strong>Sačuvaj</strong> — nalog se pojavljuje u Dnevniku pod "Aktivni radovi".</p>
+      <div class="tip"><strong>Brzi unos:</strong> Ako vam dođe nepoznat klijent, koristite "Novo vozilo (brzo)" da registrujete auto bez prethodnog dodavanja — nalog i klijent se kreiraju zajedno u jednom prolazu.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/03-radni-nalog-forma.png" alt="Forma za novi radni nalog">
+      <div class="img-caption">Korak 1 — odabir vozila</div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. PREDRACUN -->
+<section class="section" id="predracun">
+  <div class="step-header">
+    <div class="step-num">4</div>
+    <div>
+      <div class="step-title">Predračun</div>
+      <div class="step-sub">Pošaljite klijentu procenu pre nego što počnete posao</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Dodirnite <strong>+ Novi posao</strong> → <strong>Predračun</strong>. Forma je identična radnom nalogu — razlika je u statusu dokumenta.</p>
+      <p>Predračun se prikazuje u brojaču <strong>Predračuni</strong> na početnom ekranu i u Dnevniku kao posebna kategorija.</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span>Popunite vozilo, klijenta i stavke (radovi + delovi)</span></li>
+        <li><span class="num">2</span><span>Sačuvajte → app generiše PDF predračun sa vašim logom i podacima radnje</span></li>
+        <li><span class="num">3</span><span>Podelite PDF direktno sa telefona (Viber, WhatsApp, email...)</span></li>
+      </ul>
+      <div class="tip"><strong>Konverzija:</strong> Kada klijent odobri predračun, možete ga direktno konvertovati u radni nalog — bez ponovnog unosa podataka.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/02-novi-posao-forma.png" alt="Izbor: Radni nalog ili Predračun">
+      <div class="img-caption">Izbor tipa dokumenta</div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. KONTAKTI -->
+<section class="section" id="kontakti">
+  <div class="step-header">
+    <div class="step-num">5</div>
+    <div>
+      <div class="step-title">Kontakti (klijenti)</div>
+      <div class="step-sub">Baza klijenata — ime, telefon, vozila, istorija naloga</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Tab <strong>Kontakti</strong> čuva sve vaše klijente. Dodirnite <strong>+ Novi kontakt</strong> da ručno dodate klijenta:</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span><strong>Ime i prezime</strong> ili naziv firme</span></li>
+        <li><span class="num">2</span><span><strong>Telefon</strong> — za brzo pozivanje direktno iz app-a</span></li>
+        <li><span class="num">3</span><span><strong>Email</strong> — opciono</span></li>
+      </ul>
+      <p>Na kartici svakog klijenta vidite listu njegovih vozila i istoriju svih radnih naloga — korisno kad klijent dođe po drugi put i pitate se šta ste mu radili.</p>
+      <p>Dugme <strong>Export kontakti CSV</strong> izvozi celu bazu klijenata — korisno za backup ili uvoz u drugi sistem.</p>
+      <div class="tip"><strong>Savet:</strong> Kontakt se automatski dodaje kad kreirate novi nalog sa novim klijentom. Nije potrebno prethodno dodavati kontakt odvojeno.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/05-kontakti.png" alt="Lista kontakta">
+      <div class="img-caption">Baza klijenata</div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. VOZILA -->
+<section class="section" id="vozila">
+  <div class="step-header">
+    <div class="step-num">6</div>
+    <div>
+      <div class="step-title">Vozila klijenata</div>
+      <div class="step-sub">Evidencija svih vozila koja prolaze kroz vašu radnju</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Tab <strong>Vozila</strong> prikazuje sva registrovana vozila. Pretraga radi po tablici, modelu ili vlasniku — brzo nalazite vozilo kad vam dođe klijent.</p>
+      <p>Vozilo se dodaje na dva načina:</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span><strong>Direktno</strong> — dugme "+ Dodaj vozilo" i popunite tablicu, marku, model, godište</span></li>
+        <li><span class="num">2</span><span><strong>Uz nalog</strong> — pri kreaciji radnog naloga, opcija "+ Novo vozilo (brzo)" dodaje vozilo i odmah ga vezuje za nalog</span></li>
+      </ul>
+      <p>Na kartici vozila vidite celu istoriju: svi radni nalozi, šta je rađeno, na kojoj kilometraži — bez gledanja po papirima.</p>
+      <div class="tip"><strong>QR deljenje:</strong> Svako vozilo ima QR kod koji možete podeliti sa vlasnikom. Ako vlasnik ima <a href="/driver">Driver Toolbox</a>, može skenirati i preuzeti podatke direktno u svoju app.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/06-vozila.png" alt="Lista vozila">
+      <div class="img-caption">Evidencija vozila klijenata</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. DNEVNIK -->
+<section class="section" id="dnevnik">
+  <div class="step-header">
+    <div class="step-num">7</div>
+    <div>
+      <div class="step-title">Dnevnik i zakazivanje</div>
+      <div class="step-sub">Pregled aktivnih radova i zakazani termini za nedelju dana</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Tab <strong>Dnevnik</strong> deli radove na dva dela:</p>
+      <ul class="steps-list">
+        <li><span class="num">🔧</span><span><strong>Aktivni radovi</strong> — svi trenutno otvoreni radni nalozi. Završite nalog → nestaje odavde.</span></li>
+        <li><span class="num">📅</span><span><strong>Zakazano (danas + 7 dana)</strong> — termini zakazani za narednih 7 dana. Koristite dugme "+ Zakaži termin" za rezervaciju.</span></li>
+      </ul>
+      <p>Prebacite na <strong>Nedelja</strong> prikaz za vizuelni pregled termina po danima.</p>
+      <p>Dugme <strong>Export u kalendar (.ics)</strong> izvozi termine u standardni calendar format — uvezite u Google Calendar, Outlook ili Apple Calendar.</p>
+      <p>Dugme <strong>Export WO/fakture (CSV)</strong> generiše tabelarni pregled svih naloga — korisno za računovođa ili za mesečni obračun.</p>
+      <div class="tip"><strong>Savet:</strong> Koristite zakazivanje za klijente koji dolaze — vidite u jednom pogledu šta vas čeka sutra i ove nedelje.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/04-dnevnik.png" alt="Dnevnik radova i termina">
+      <div class="img-caption">Dnevnik — aktivni radovi i termini</div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. EXPORT I PDF -->
+<section class="section" id="export">
+  <div class="step-header">
+    <div class="step-num">8</div>
+    <div>
+      <div class="step-title">Export i PDF</div>
+      <div class="step-sub">Pošaljite radni nalog klijentu ili sačuvajte za evidenciju</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Svaki radni nalog i predračun može se exportovati kao <strong>PDF</strong> direktno iz app-a. PDF sadrži:</p>
+      <div class="chips">
+        <span class="chip">Logo i naziv radnje</span>
+        <span class="chip">Podaci klijenta</span>
+        <span class="chip">Podaci vozila + km</span>
+        <span class="chip">Lista radova i delova</span>
+        <span class="chip">Ukupan iznos</span>
+        <span class="chip">Datum i napomene</span>
+      </div>
+      <p>PDF se generiše lokalno na telefonu — ne treba internet. Zatim ga direktno podelite:</p>
+      <ul class="steps-list">
+        <li><span class="num">✓</span><span>WhatsApp / Viber — pošaljite PDF direktno klijentu</span></li>
+        <li><span class="num">✓</span><span>Email — priložite PDF uz mejl</span></li>
+        <li><span class="num">✓</span><span>Sačuvajte na telefon — za arhivu ili štampanje</span></li>
+      </ul>
+      <div class="tip"><strong>Napomena:</strong> Logo koji ste podesili u Podešavanjima pojavljuje se automatski na svakom PDF-u. Ako logo nije postavljen, PDF će imati samo tekstualne podatke radnje.</div>
+      <div class="warn"><strong>Backup podataka:</strong> Svi podaci se čuvaju lokalno na telefonu. Redovno exportujte CSV iz Dnevnika za backup. Podaci se ne čuvaju automatski u cloud-u.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/01-pocetni.png" alt="Garage Toolbox pregled">
+      <div class="img-caption">Početni ekran sa brojatem naloga</div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- CTA -->
+<div class="cta-bar">
+  <h2>Spremi ste za start</h2>
+  <p>Otvorite Garage Toolbox, podesite profil radnje i kreirajte prvi radni nalog za manje od 2 minute.</p>
+  <a href="https://garage.autouniverse.rs/" class="hero-btn" target="_blank">Otvori Garage Toolbox →</a>
+</div>
+
+<footer class="footer">
+  <p>© 2026 <a href="/">AutoUniverse</a> · Belora Ventures Studio · Kruševac, Srbija ·
+  <a href="/driver">Driver Toolbox</a> · <a href="/garage">Garage Toolbox</a></p>
+</footer>
+
+<script data-goatcounter="https://analytics.autouniverse.rs/count" async src="//analytics.autouniverse.rs/count.js"></script>
+</body>
+</html>

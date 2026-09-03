@@ -1,7 +1,7 @@
 # AUTO UNIVERSE — MAPA SVETA v2.0
 
-**Datum:** 20.07.2026. | **Status:** Aktivni razvoj
-**Trenutno stanje:** Garage Toolbox v1.18.0 (u testiranju) • Driver Toolbox u ranom testiranju • AU Core u razvoju (lokalno, izložen kroz Cloudflare Tunnel)
+**Datum:** 20.07.2026. | **Status:** Aktivni razvoj | **Poslednji update:** 08.08.2026.
+**Trenutno stanje:** Garage Toolbox v1.57.0 (LIVE) • Driver Toolbox v1.39.0 (LIVE) • APK builds na autouniverse.rs/downloads/ • Vozila vertikala 50 modela LIVE (vozila.autouniverse.rs) • autouniverse.rs na Hetzner VPS + SSL • AU Core u razvoju (lokalno)
 **Princip:** Thinking big, starting small, not closing doors. Mapa je spisak MOGUĆNOSTI, ne obaveza.
 
 **Napomena o testerima:** Testeri su prijatelji koji probaju sve aplikacije koje dobiju, ne samo one koje odgovaraju njihovoj primarnoj ulozi. Feedback za aplikacije van njihovog domena ponekad je jednako koristan kao onaj iz domena.
@@ -75,9 +75,10 @@ NIVO 0 — ZAJEDNIČKI TEMELJ (kod koji dele sve aplikacije)
 
 | Aplikacija | Korisnik | Status |
 |---|---|---|
-| **Garage Toolbox** | automehaničar (freelance i servis) | 🟢 U TESTIRANJU (v1.18.0) |
-| **Driver Toolbox** | vlasnik vozila | 🟢 RANO TESTIRANJE |
-| **AU Core** | infrastruktura (bez krajnjeg korisnika) | 🟢 U RAZVOJU |
+| **Garage Toolbox** | automehaničar (freelance i servis) | 🟢 LIVE (v1.57.0) — APK na autouniverse.rs/downloads/ |
+| **Driver Toolbox** | vlasnik vozila | 🟢 LIVE (v1.39.0) — APK na autouniverse.rs/downloads/ |
+| **Vozila vertikala (SSG)** | svi korisnici — baza podataka vozila | 🟢 LIVE (50 modela) — vozila.autouniverse.rs |
+| **AU Core** | infrastruktura (bez krajnjeg korisnika) | 🟡 U RAZVOJU (lokalno, nije javno) |
 | Specijalizovane aplikacije Faze 4+ | vulkanizer (Tire), limar (Body), lakirer (Paint), autoelektričar (Electric), autostakla (Glass), detailing (Wash), šlep služba (Tow), auto salon (Dealer), flote (Fleet), rent-a-car (Rent), osiguranje (Insurance), tehnički pregled (Technical), otpad/rashodovana vozila (Salvage) | ⚪ Faza 4+ — zasebne aplikacije koje dele jezgro (vidi DEO VII) |
 
 > **Napomena o listi specijalizovanih aplikacija:** Spisak nije konačan. Kao i sve u izgradnji, podložan je dopunama i izmenama. Nove aplikacije se dodaju kada iz feedback-a dođe konkretan signal, ne pre.
@@ -759,14 +760,16 @@ Faze u ovom dokumentu **ne znače "kada se počinje sa kodiranjem"**. Kodiranje 
 
 Testeri imaju pristup verzijama koje javno još ne postoje. To je legitiman deo razvoja, ne "isporuka".
 
-## 2. Trenutno stanje (snapshot 20.07.2026)
+## 2. Trenutno stanje (snapshot 08.08.2026)
 
 | Aplikacija | Status | Šta ima | Šta nedostaje |
 |---|---|---|---|
-| **Garage Toolbox** | v1.18.0, u testiranju | 53+ automatskih testova, PDF, WO Snap tok, offline-first, tehnička kartica, jsPDF sa DejaVu srpskim fontovima | Play Store paketovanje, Capacitor shell, integracija sa AU Core-om |
-| **Driver Toolbox** | Rano testiranje | Karton vozila, istorija, dokumenti, podsetnici, gume | Cost tracking modul, trade_mode, sync sa AU Core-om |
-| **AU Core** | U razvoju, lokalno | Node.js + better-sqlite3, izložen kroz Cloudflare Tunnel | `grant()` primitiv, discovery, produkcioni hosting, admin panel |
-| **Honey Toolbox** | v0.9 (paralelni projekat) | Excel import/export, Capacitor scaffold — nasleđuje se za AutoUniverse | Nije direktno deo AutoUniverse-a, ali dokazuje Capacitor pipeline |
+| **Garage Toolbox** | v1.57.0, LIVE | 53+ testova, PDF, WO Snap tok, offline-first, tehnička kartica, jsPDF srpski fontovi, APK distribucija sa sajta | Play Store listing, AU Core integracija |
+| **Driver Toolbox** | v1.39.0, LIVE | Karton vozila, istorija, dokumenti, podsetnici, gume, APK distribucija sa sajta | Cost tracking modul, trade_mode, sync sa AU Core-om |
+| **Vozila vertikala** | LIVE — 50 modela | SSG (node build.mjs), 50 detail stranica + hub + sitemap, vozila.autouniverse.rs, favicon, interni linking u JSON-u (rendering čeka) | Rendering related models sekcije, filter na hub stranici, GSC sitemap submission |
+| **AU Core** | U razvoju, lokalno | Node.js + better-sqlite3 | `grant()` primitiv, discovery, produkcioni hosting, admin panel |
+| **autouniverse.rs** | LIVE na Hetzner VPS | Certbot SSL (važi do 2026-11-06), nginx, landing + sve stranice, APK downloads folder | — |
+| **Honey Toolbox** | v0.9.1 (MiniUniverse projekat) | Excel import/export, Capacitor — dokazuje Capacitor pipeline | Nije deo AutoUniverse-a |
 
 ## 3. Faza 1 — Osnovni pipeline (u toku)
 
@@ -780,10 +783,10 @@ Testeri imaju pristup verzijama koje javno još ne postoje. To je legitiman deo 
 - Domen infrastruktura — `autouniverse.rs`, Coming Soon stranica
 
 **Kriterijumi za "javni izlazak" (kraj Faze 1):**
-1. **Proof-of-concept flow prošao:** mehaničar radi `grant()` vlasniku, koji vidi zapis sa fotografijama u Driver-u na dva stvarna telefona kroz tunnel
-2. **Google Play Gate G1 — otvoreno pitanje, ne blokira Fazu 1.** Ako se ne uspe obezbediti 12 opt-in testera + 14 dana testiranja, plan B je **direktna distribucija APK-a preko `autouniverse.rs`** — korisnik skida instalacioni fajl sa sajta, uz uputstvo za "instalacija iz nepoznatih izvora"
-3. **Prvi manual (PDF uputstvo) po aplikaciji spreman** — obavezno pravilo
-4. **Feedback iz najmanje 4 testera** (mehaničari + Driver testeri) da postojeće funkcije rade
+1. **Proof-of-concept flow prošao:** mehaničar radi `grant()` vlasniku, koji vidi zapis sa fotografijama u Driver-u na dva stvarna telefona kroz tunnel — ⏳ U TOKU
+2. **Google Play Gate G1 — ✅ PLAN B AKTIVIRAN.** APK builds su na `autouniverse.rs/downloads/` — korisnik skida sa sajta uz uputstvo za "instalacija iz nepoznatih izvora". (DriverToolbox-v1.0-debug.apk 6.3 MB, GarageToolbox-v1.0-debug.apk 6.4 MB)
+3. **Prvi manual (PDF uputstvo) po aplikaciji spreman** — ⏳ nije urađeno
+4. **Feedback iz najmanje 4 testera** (mehaničari + Driver testeri) da postojeće funkcije rade — ⏳ čeka APK testove
 
 ## 4. Faza 2 — Prvi javni pilot
 
@@ -1026,17 +1029,18 @@ Preuzeto iz dokazanog Toolbox projekta, uz dopune:
 
 ## 2. Subdomen mapa
 
-| Subdomen | Namena | Faza aktivacije |
+| Subdomen | Namena | Status |
 |---|---|---|
-| `autouniverse.rs` | Root marketing landing, statička HTML | Sada |
-| `www.autouniverse.rs` | Redirect ka root domenu | Sada |
-| `hub.autouniverse.rs` | AU Core API endpoint | Kada AU Core izađe iz Cloudflare Tunnel faze |
-| `api.autouniverse.rs` | Alias ka `hub.` ili dedicirana developerska dokumentacija | Kada bude prvi partner |
-| `garage.autouniverse.rs` | Garage Toolbox PWA | Kada Garage stabilizuje za javnost |
-| `driver.autouniverse.rs` | Driver Toolbox PWA | Kada Driver stabilizuje za javnost |
-| `docs.autouniverse.rs` | Developer / korisnička dokumentacija | Faza 4+ |
-| `status.autouniverse.rs` | Status stranica za uptime | Kada AU Core bude produkcija sa realnim SLA |
-| `admin.autouniverse.rs` | Admin panel (samo za operatera) | Kada AU Core bude produkcija |
+| `autouniverse.rs` | Root marketing landing, statička HTML | ✅ LIVE — Hetzner VPS, SSL do 2026-11-06 |
+| `www.autouniverse.rs` | Redirect ka root domenu | ✅ LIVE |
+| `garage.autouniverse.rs` | Garage Toolbox PWA | ✅ LIVE |
+| `driver.autouniverse.rs` | Driver Toolbox PWA | ✅ LIVE |
+| `vozila.autouniverse.rs` | Baza vozila SSG (50 modela) | ✅ LIVE |
+| `hub.autouniverse.rs` | AU Core API endpoint | ⏳ Kada AU Core izađe iz Cloudflare Tunnel faze |
+| `api.autouniverse.rs` | Alias ka `hub.` ili dedicirana developerska dokumentacija | ⏳ Kada bude prvi partner |
+| `docs.autouniverse.rs` | Developer / korisnička dokumentacija | ⏳ Faza 4+ |
+| `status.autouniverse.rs` | Status stranica za uptime | ⏳ Kada AU Core bude produkcija sa SLA |
+| `admin.autouniverse.rs` | Admin panel (samo za operatera) | ⏳ Kada AU Core bude produkcija |
 
 **Odloženo:** subdomeni za specijalizovane aplikacije (`tire.`, `body.`, `electric.`, ...) — odluka kada svaka pojedinačna aplikacija dođe u razvoj.
 
@@ -1089,12 +1093,13 @@ Preuzeto iz dokazanog Toolbox projekta, uz dopune:
 
 ## 6. Redosled aktivacije
 
-**Sada (nedelja dana):**
-1. Registruj `autouniverse.rs` preko istraženog RNIDS registrara (otvoreno pitanje)
-2. Prenesi DNS na Cloudflare
-3. Postavi Cloudflare Email Routing → sve adrese forward na lični email
-4. Postavi minimalnu "Coming Soon" HTML stranicu
-5. `www.autouniverse.rs` redirect ka root
+**Infrastruktura status (08.08.2026) — sve urađeno:**
+1. ✅ `autouniverse.rs` registrovan (mint.rs, plaćeno 2026-07-22)
+2. ✅ DNS na Cloudflare
+3. ✅ Hetzner VPS (46.225.236.107) — nginx, certbot SSL
+4. ✅ Landing sajt LIVE (ne "Coming Soon" — pune stranice)
+5. ✅ `www.autouniverse.rs` redirect ka root
+6. ✅ APK downloads na `/downloads/` folderu
 
 **Coming Soon stranica — predlog sadržaja:**
 - Logo (privremen tekst-logo je OK)
@@ -1186,6 +1191,6 @@ Konsolidovana lista strateških odluka koje čekaju odgovor. Ne blokiraju razvoj
 
 ---
 
-*Živi dokument. v2.0 — 20.07.2026.*
-*Prethodna verzija: v1.0 (10.07.2026) — sačuvana kao istorijska referenca.*
+*Živi dokument. v2.1 — 08.08.2026. (ažuriran status: Garage v1.57/Driver v1.39 LIVE, APK distribucija Plan B aktiviran, Vozila vertikala 50 modela LIVE, Hetzner VPS + SSL, subdomeni ažurirani)*
+*Prethodna verzija: v2.0 (20.07.2026) • v1.0 (10.07.2026)*
 *Sledeća revizija: kada Faza 1 pređe u Fazu 2, ili kad nastupi krupna arhitekturalna promena.*
