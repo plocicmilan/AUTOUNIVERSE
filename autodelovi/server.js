@@ -91,9 +91,14 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Pravne i info stranice
-  const staticPages = ['/o-nama', '/uslovi-koristenja', '/politika-privatnosti', '/kontakt', '/pomoc'];
+  const staticPages = ['/o-nama', '/uslovi-koristenja', '/politika-privatnosti', '/kontakt', '/pomoc', '/vodic'];
   if (staticPages.includes(pathname)) {
     return serveStatic(res, path.join(__dirname, 'public', pathname.slice(1) + '.html'));
+  }
+
+  // Guide slike
+  if (pathname.startsWith('/guide/')) {
+    return serveStatic(res, path.join(__dirname, 'public', pathname));
   }
 
   // Service worker i manifest

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vodič sa slikama — Autodelovi.autouniverse.rs</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', system-ui, sans-serif; background: #080B10; color: #DDE1EC; min-height: 100vh; }
+.header { background: #0D1118; border-bottom: 1px solid rgba(255,255,255,0.07); padding: 16px 20px; display: flex; gap: 16px; align-items: center; }
+.header a { color: #0EA5E9; text-decoration: none; font-size: .9rem; }
+.header a:hover { text-decoration: underline; }
+.container { max-width: 760px; margin: 0 auto; padding: 36px 20px 60px; }
+h1 { font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.subtitle { color: #5A6070; margin-bottom: 40px; font-size: .95rem; }
+
+.section { margin-bottom: 52px; }
+.section-label {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: #0EA5E9; margin-bottom: 10px;
+}
+h2 { font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.section-desc { font-size: .93rem; line-height: 1.7; color: #A0A8BC; margin-bottom: 20px; }
+
+.guide-img {
+  display: block; width: 100%; max-width: 390px;
+  margin: 0 auto 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.img-caption {
+  text-align: center; font-size: .8rem; color: #5A6070; margin-bottom: 0;
+}
+
+/* dva screenshota jedan pored drugog na sirokim ekranima */
+.two-up { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+.two-up .img-wrap { flex: 1; min-width: 260px; max-width: 390px; }
+.two-up .guide-img { width: 100%; max-width: none; margin-bottom: 8px; }
+
+.legend { margin-top: 18px; }
+.legend-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.legend-num {
+  width: 28px; height: 28px; background: #EAB308; color: #000;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .85rem; flex-shrink: 0;
+}
+.legend-text { font-size: .9rem; color: #DDE1EC; line-height: 1.5; padding-top: 4px; }
+.legend-text strong { color: #fff; }
+
+.divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 48px 0; }
+
+.tip {
+  background: rgba(14,165,233,0.07); border: 1px solid rgba(14,165,233,0.18);
+  border-left: 3px solid #0EA5E9;
+  border-radius: 8px; padding: 14px 16px; margin: 18px 0;
+  font-size: .88rem; line-height: 1.65; color: #DDE1EC;
+}
+.tip strong { color: #38BDF8; }
+
+a { color: #0EA5E9; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/pomoc">← Pomoć</a>
+  <a href="/delovi">Svi oglasi</a>
+</div>
+
+<div class="container">
+  <h1>Vodič sa slikama</h1>
+  <p class="subtitle">Korak po korak — kako koristiti Autodelovi.autouniverse.rs</p>
+
+  <!-- ===== DEO 1: PRETRAGA ===== -->
+  <div class="section">
+    <div class="section-label">Korak 1</div>
+    <h2>Pronađi deo koji tražiš</h2>
+    <p class="section-desc">Otvori sajt i koristite traku za pretragu ili klikni na kategoriju. Nema registracije — sve je odmah vidljivo.</p>
+
+    <img src="/guide/guide-01-lista.png" class="guide-img" alt="Pretraga oglasa">
+    <p class="img-caption">Glavna stranica — pretraga i kategorije</p>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-num">1</div>
+        <div class="legend-text"><strong>Polje za pretragu</strong> — ukucaj naziv dela, marku ili model vozila. Možeš uneti i grad da nađeš prodavce blizu tebe.</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">2</div>
+        <div class="legend-text"><strong>Kategorije</strong> — klikni na chip (Motor, Kočnice, Elektrika...) da filtriraš samo tu vrstu delova.</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">3</div>
+        <div class="legend-text"><strong>Oglas kartica</strong> — klikni na bilo koji oglas da otvoriš detalje sa opisom i kontaktom prodavca.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ===== DEO 2: DETALJ ===== -->
+  <div class="section">
+    <div class="section-label">Korak 2</div>
+    <h2>Kontaktiraj prodavca</h2>
+    <p class="section-desc">Klikni na oglas — otvara se panel sa svim detaljima. Broj telefona je skriven i prikazuje se tek na klik, tako da je zaštićen od botova.</p>
+
+    <img src="/guide/guide-04-detalj.png" class="guide-img" alt="Detalj oglasa">
+    <p class="img-caption">Panel sa detaljima oglasa</p>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-num" style="background:#0EA5E9;color:#fff">✓</div>
+        <div class="legend-text"><strong>Naziv, cena i stanje</strong> prikazani su na vrhu. Bedževi pokazuju kategoriju i grad prodavca.</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num" style="background:#0EA5E9;color:#fff">✓</div>
+        <div class="legend-text"><strong>Prikaži broj</strong> — klikni na plavo dugme da otkrijеš telefonski broj. Direktno pozovi ili pošalji SMS prodavcu.</div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>Savet:</strong> Uvek proverite da li deo odgovara vašem godištu i šifri motora pre nego što kontaktirate prodavca. Dogovorite lično preuzimanje i plaćajte tek nakon fizičke provere dela.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ===== DEO 3: POSTAVLJANJE OGLASA ===== -->
+  <div class="section">
+    <div class="section-label">Korak 3 — za prodavce</div>
+    <h2>Postavi oglas besplatno</h2>
+    <p class="section-desc">Klikni na <strong>➕ Prodaj</strong> u navigaciji. Forma ima dva dela — osnovni podaci i kontakt. Što više popuniš, više kupaca će naći tvoj oglas.</p>
+
+    <div class="two-up">
+      <div class="img-wrap">
+        <img src="/guide/guide-02-forma-vrh.png" class="guide-img" alt="Forma za oglas — gornji deo">
+        <p class="img-caption">Deo 1: podaci o delu</p>
+      </div>
+      <div class="img-wrap">
+        <img src="/guide/guide-03-forma-dno.png" class="guide-img" alt="Forma za oglas — donji deo">
+        <p class="img-caption">Deo 2: detalji i kontakt</p>
+      </div>
+    </div>
+
+    <div class="legend" style="margin-top:24px">
+      <div class="legend-item">
+        <div class="legend-num">1</div>
+        <div class="legend-text"><strong>Naziv dela</strong> — budi konkretan: "Disk kočnice zadnji BMW E46" bolje od "kočnice". Kupci pretražuju po ključnim rečima.</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">2</div>
+        <div class="legend-text"><strong>Kategorija</strong> — izaberi odgovarajuću grupu (Motor, Kočnice, Elektrika...).</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">3</div>
+        <div class="legend-text"><strong>Stanje</strong> — Polovan / Nov / Renoviran / Neispravan (za delove).</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">4–6</div>
+        <div class="legend-text"><strong>Marka, model i godište</strong> — za koje vozilo je deo. Precizniji opsig godišta = manje lažnih upita od kupaca sa pogrešnim vozilom.</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">7</div>
+        <div class="legend-text"><strong>Kataloški / OE broj</strong> — opciono, ali znatno pomaže kupcima da potvrde kompatibilnost bez poziva.</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">8</div>
+        <div class="legend-text"><strong>Cena</strong> — unesi u EUR. Ostavi prazno za "Cena na upit" ako želiš da pregovaraš.</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">10</div>
+        <div class="legend-text"><strong>Dostava i zamena</strong> — označi ako šalješ poštom ili prihvataš zamenu za drugi deo.</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">11</div>
+        <div class="legend-text"><strong>Opis</strong> — napiši stanje, istoriju dela i za šta još odgovara. Ovo je tvoj prodajni tekst.</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">12</div>
+        <div class="legend-text"><strong>Fotografije</strong> — do 5 slika. Jasne fotografije iz više uglova uvelike povećavaju odziv kupaca.</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">13–14</div>
+        <div class="legend-text"><strong>Ime i telefon</strong> — tvoji kontakt podaci. Telefon je skriven od pretraživača i prikazuje se samo kupcima koji kliknu na dugme.</div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>Primer popunjenog oglasa:</strong><br>
+      Naziv: <em>Prednji diskovi Golf 6 — Zimmermann</em> · Kategorija: Kočioni sistem · Stanje: Polovan<br>
+      Marka: Volkswagen · Model: Golf 6 · Godište: 2009–2012 · Motor: CAYC (1.6 TDI)<br>
+      KM dela: 30.000 · Kataloški broj: ZIM-100.3307.20 · Cena: 45 EUR · Dostava: ✓
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <p style="font-size:.88rem;color:#5A6070">
+    Još pitanja? → <a href="/pomoc">Pomoć / FAQ</a> ·
+    <a href="/kontakt">Kontakt</a> ·
+    <a href="/delovi">Nazad na oglase</a>
+  </p>
+</div>
+</body>
+</html>
