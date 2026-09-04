@@ -33,6 +33,7 @@ function migrate(db) {
       city           TEXT,
       contact_name   TEXT    NOT NULL,
       contact_phone  TEXT    NOT NULL,
+      contact_email  TEXT,
       contact_method TEXT    NOT NULL DEFAULT 'phone_call',
       status         TEXT    NOT NULL DEFAULT 'active',
       history_token  TEXT,
@@ -59,6 +60,8 @@ function migrate(db) {
       created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
     );
   `);
+  // Dodaj kolone koje su mogle biti dodate posle inicijalne migracije
+  try { db.exec(`ALTER TABLE listings ADD COLUMN contact_email TEXT`); } catch {}
 }
 
 module.exports = { getDb };

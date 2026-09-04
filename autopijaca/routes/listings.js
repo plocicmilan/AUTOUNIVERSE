@@ -1,5 +1,10 @@
 const crypto = require('crypto');
+const fs     = require('fs');
+const path   = require('path');
 const { getDb } = require('../db');
+const { send, tplSellerToken } = require('../email');
+
+const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
 
 function genToken() {
   return crypto.randomBytes(16).toString('hex');
@@ -26,7 +31,7 @@ module.exports = function (router) {
   router.post('/listings', async (req, res, body) => {
     const { make, model, year, mileage_km, fuel, gearbox, vin,
             price, currency, description, city,
-            contact_name, contact_phone, contact_method,
+            contact_name, contact_phone, contact_email, contact_method,
             history_token, photos } = body;
 
     if (!make || !model || !price || !contact_name || !contact_phone) {
@@ -41,14 +46,14 @@ module.exports = function (router) {
       INSERT INTO listings
         (seller_token, make, model, year, mileage_km, fuel, gearbox, vin,
          price, currency, description, city, contact_name, contact_phone,
-         contact_method, history_token)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         contact_email, contact_method, history_token)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       seller_token, make, model, year ?? null, mileage_km ?? null,
       fuel ?? null, gearbox ?? null, vin ?? null,
       price, currency ?? 'EUR', description ?? null, city ?? null,
-      contact_name, contact_phone, contact_method ?? 'phone_call',
-      history_token ?? null
+      contact_name, contact_phone, contact_email ?? null,
+      contact_method ?? 'phone_call', history_token ?? null
     );
 
     const listing_id = result.lastInsertRowid;
@@ -56,6 +61,14 @@ module.exports = function (router) {
     if (Array.isArray(photos) && photos.length > 0) {
       const ins = db.prepare(`INSERT INTO listing_photos (listing_id, url, sort_order) VALUES (?, ?, ?)`);
       photos.forEach((url, i) => ins.run(listing_id, url, i));
+    }
+
+    if (contact_email) {
+      send({
+        to: contact_email,
+        subject: `Oglas objavljen: ${make} ${model} (ID: ${listing_id})`,
+        html: tplSellerToken(listing_id, seller_token, make, model),
+      }).catch(err => console.error('[listings] email greška:', err));
     }
 
     res.json(201, {
@@ -160,6 +173,12 @@ module.exports = function (router) {
     const listing = db.prepare(`SELECT * FROM listings WHERE id = ?`).get(params.id);
     if (!listing) { const e = new Error('Oglas ne postoji'); e.status = 404; throw e; }
     if (listing.seller_token !== token) { const e = new Error('Unauthorized'); e.status = 403; throw e; }
+
+    const photos = db.prepare(`SELECT url FROM listing_photos WHERE listing_id = ?`).all(params.id);
+    photos.forEach(p => {
+      const filename = path.basename(p.url);
+      try { fs.unlinkSync(path.join(UPLOADS_DIR, filename)); } catch {}
+    });
 
     db.prepare(`DELETE FROM listings WHERE id = ?`).run(params.id);
     res.json(200, { ok: true });

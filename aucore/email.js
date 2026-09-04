@@ -53,7 +53,7 @@ function tplWelcome(name, verifyUrl) {
     <p style="font-size:13px;color:#888">Ili kopiraj link u browser:<br>${verifyUrl}</p>
     <p>Ako nisi registrovan/a, ignoriši ovaj mejl.</p>
   </div>
-  <div class="footer">AutoUniverse · Kruševac · <a href="https://plocicmilan.github.io/AUTOUNIVERSE/" style="color:#888">autouniverse</a></div>
+  <div class="footer">AutoUniverse · Kruševac · <a href="https://hub.autouniverse.rs/" style="color:#888">hub.autouniverse.rs</a></div>
 </div>
 </body></html>`;
 }
@@ -89,9 +89,9 @@ function tplAutopijaca(name) {
     <p>1. U Driver Toolbox uključi <b>"Ovo vozilo je za prodaju"</b><br>
        2. Klikni <b>"Objavi oglas"</b><br>
        3. Oglas ide na javnu stranicu — kupci te kontaktiraju direktno</p>
-    <a class="btn" href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/">Otvori Driver Toolbox</a>
+    <a class="btn" href="https://hub.autouniverse.rs/">Otvori AutoUniverse Hub</a>
   </div>
-  <div class="footer">AutoUniverse · Kruševac · <a href="https://plocicmilan.github.io/AUTOUNIVERSE/" style="color:#888">autouniverse</a></div>
+  <div class="footer">AutoUniverse · Kruševac · <a href="https://hub.autouniverse.rs/" style="color:#888">hub.autouniverse.rs</a></div>
 </div>
 </body></html>`;
 }
@@ -131,13 +131,79 @@ function tplAutodelovi(name) {
       <span class="cat">Auspuh</span><span class="cat">Klimatizacija</span><span class="cat">Svetla</span>
     </div>
     <p>Dodaj deo za manje od 60 sekundi direktno iz Garage Toolbox aplikacije.</p>
-    <a class="btn" href="https://plocicmilan.github.io/AUTOUNIVERSE/garage/">Otvori Garage Toolbox</a>
+    <a class="btn" href="https://hub.autouniverse.rs/">Otvori AutoUniverse Hub</a>
   </div>
-  <div class="footer">AutoUniverse · Kruševac · <a href="https://plocicmilan.github.io/AUTOUNIVERSE/" style="color:#888">autouniverse</a></div>
+  <div class="footer">AutoUniverse · Kruševac · <a href="https://hub.autouniverse.rs/" style="color:#888">hub.autouniverse.rs</a></div>
+</div>
+</body></html>`;
+}
+
+function tplGrantAccess(granteeName, grantorName, vehicleName, role) {
+  const roleLabel = role === 'read' ? 'čitanje servisne istorije' : role === 'write' ? 'unos servisnih zapisa' : role;
+  return `<!DOCTYPE html>
+<html lang="sr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Novi pristup vozilu — AutoUniverse</title>
+<style>
+  body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px}
+  .wrap{max-width:560px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden}
+  .header{background:#111;padding:24px;text-align:center}
+  .header h1{color:#fff;margin:0;font-size:22px;letter-spacing:1px}
+  .header span{color:#e53935;font-size:28px}
+  .body{padding:28px 24px}
+  .body p{color:#333;line-height:1.6;margin:0 0 16px}
+  .box{background:#f5f5f5;border-left:4px solid #e53935;padding:12px 16px;border-radius:4px;margin:16px 0}
+  .btn{display:block;width:fit-content;margin:20px auto;background:#e53935;color:#fff;
+       text-decoration:none;padding:14px 32px;border-radius:6px;font-size:16px;font-weight:bold}
+  .footer{background:#f0f0f0;padding:14px;text-align:center;font-size:12px;color:#888}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="header"><span>🚗</span><h1>AutoUniverse</h1></div>
+  <div class="body">
+    <p>Zdravo${granteeName ? ' <b>' + esc(granteeName) + '</b>' : ''},</p>
+    <p><b>${esc(grantorName)}</b> ti je dodelio/la pristup vozilu <b>${esc(vehicleName)}</b>.</p>
+    <div class="box">
+      Tvoja uloga: <b>${esc(roleLabel)}</b>
+    </div>
+    <p>Prijavi se u AutoUniverse Hub da vidiš vozilo i servisnu istoriju.</p>
+    <a class="btn" href="https://hub.autouniverse.rs/">Otvori AutoUniverse Hub</a>
+  </div>
+  <div class="footer">AutoUniverse · Kruševac · <a href="https://hub.autouniverse.rs/" style="color:#888">hub.autouniverse.rs</a></div>
+</div>
+</body></html>`;
+}
+
+function tplWelcomeReady(name) {
+  return `<!DOCTYPE html>
+<html lang="sr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nalog aktivan — AutoUniverse</title>
+<style>
+  body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px}
+  .wrap{max-width:560px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden}
+  .header{background:#111;padding:24px;text-align:center}
+  .header h1{color:#fff;margin:0;font-size:22px;letter-spacing:1px}
+  .header span{color:#e53935;font-size:28px}
+  .body{padding:28px 24px}
+  .body p{color:#333;line-height:1.6;margin:0 0 16px}
+  .btn{display:block;width:fit-content;margin:20px auto;background:#e53935;color:#fff;
+       text-decoration:none;padding:14px 32px;border-radius:6px;font-size:16px;font-weight:bold}
+  .footer{background:#f0f0f0;padding:14px;text-align:center;font-size:12px;color:#888}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="header"><span>🚗</span><h1>AutoUniverse</h1></div>
+  <div class="body">
+    <p>Zdravo${name ? ' <b>' + esc(name) + '</b>' : ''},</p>
+    <p>Nalog je kreiran i aktivan. Možeš se odmah prijaviti u aplikaciji.</p>
+    <p>Ako si instalirao <b>Garage Toolbox</b> ili <b>Driver Toolbox</b>, idi na <b>Podešavanja → AU Core</b> i prijavi se.</p>
+    <a class="btn" href="https://hub.autouniverse.rs/">Otvori AutoUniverse Hub</a>
+    <p style="font-size:13px;color:#888">Ako nisi napravio/la ovaj nalog, ignoriši ovaj mejl.</p>
+  </div>
+  <div class="footer">AutoUniverse · Kruševac · <a href="https://hub.autouniverse.rs/" style="color:#888">hub.autouniverse.rs</a></div>
 </div>
 </body></html>`;
 }
 
 function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-module.exports = { send, tplWelcome, tplAutopijaca, tplAutodelovi };
+module.exports = { send, tplWelcome, tplWelcomeReady, tplAutopijaca, tplAutodelovi, tplGrantAccess };

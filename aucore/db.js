@@ -220,7 +220,10 @@ function migrate(db) {
 
   // Vehicles — updated_at za last-write-wins sync (Faza 5)
   const vehCols = db.pragma('table_info(vehicles)').map(c => c.name);
-  if (!vehCols.includes('updated_at')) db.exec("ALTER TABLE vehicles ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))");
+  if (!vehCols.includes('updated_at')) {
+    db.exec("ALTER TABLE vehicles ADD COLUMN updated_at TEXT");
+    db.exec("UPDATE vehicles SET updated_at = created_at WHERE updated_at IS NULL");
+  }
   if (!vehCols.includes('status'))                   db.exec("ALTER TABLE vehicles ADD COLUMN status TEXT NOT NULL DEFAULT 'active'");
   if (!vehCols.includes('sold_at'))                  db.exec("ALTER TABLE vehicles ADD COLUMN sold_at TEXT");
   if (!vehCols.includes('for_sale'))                 db.exec("ALTER TABLE vehicles ADD COLUMN for_sale INTEGER NOT NULL DEFAULT 0");

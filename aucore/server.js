@@ -1,6 +1,7 @@
 const http = require('http');
 const path = require('path');
 const fs   = require('fs');
+const { parseMultipart } = require('./lib/multipart');
 
 const PORT = process.env.PORT || 3000;
 
@@ -44,11 +45,27 @@ function makeRes(res) {
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', chunk => { data += chunk; if (data.length > 1e6) reject(new Error('Body too large')); });
+    const chunks = [];
+    const ct = req.headers['content-type'] || '';
+    const isMultipart = ct.includes('multipart/form-data');
+    const limit = isMultipart ? 20e6 : 1e6;
+
+    req.on('data', chunk => {
+      chunks.push(chunk);
+      const total = chunks.reduce((s, c) => s + c.length, 0);
+      if (total > limit) reject(new Error('Body too large'));
+    });
     req.on('end', () => {
-      try { resolve(data ? JSON.parse(data) : {}); }
-      catch { resolve({}); }
+      const buf = Buffer.concat(chunks);
+      if (isMultipart) {
+        const boundary = ct.match(/boundary=([^\s;]+)/)?.[1];
+        if (!boundary) { resolve({}); return; }
+        try { resolve({ _multipart: parseMultipart(buf, boundary) }); }
+        catch { resolve({}); }
+      } else {
+        try { resolve(buf.length ? JSON.parse(buf.toString()) : {}); }
+        catch { resolve({}); }
+      }
     });
     req.on('error', reject);
   });
@@ -78,6 +95,8 @@ require('./routes/public')(router);
 require('./routes/admin')(router);
 require('./routes/notes')(router);
 require('./routes/reminders')(router);
+require('./routes/autopijaca')(router);
+require('./routes/uploads')(router);
 
 // Health check — bez auth, za monitoring/uptime alate
 router.get('/health', (req, res) => {
@@ -123,6 +142,11 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const pathname = url.pathname.replace(/\/$/, '') || '/';
 
+  // Hub user-facing interface (root)
+  if (pathname === '/' || pathname === '/hub') {
+    return serveStatic(res, path.join(__dirname, 'hub/index.html'));
+  }
+
   // Admin static files
   if (pathname === '/admin' || pathname.startsWith('/admin/') && pathname.includes('.')) {
     const rel = pathname === '/admin' ? '/admin/index.html' : pathname;
@@ -163,6 +187,7 @@ function isApiPath(p) {
          p.startsWith('/admin') || p.startsWith('/events') || p.startsWith('/share') ||
          p.startsWith('/public') || p.startsWith('/accounts') || p.startsWith('/notifications') ||
          p.startsWith('/stats') || p.startsWith('/health') || p.startsWith('/reminders');
+  // /vehicles/:id/photos and /vehicles/:id/documents covered by /vehicles above
 }
 
 if (require.main === module) {

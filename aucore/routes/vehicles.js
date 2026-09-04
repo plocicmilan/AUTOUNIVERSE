@@ -12,7 +12,8 @@ module.exports = function vehicleRoutes(router) {
       SELECT v.*,
         (SELECT COUNT(*) FROM events WHERE vehicle_id=v.id) AS event_count,
         (SELECT MAX(event_date) FROM events WHERE vehicle_id=v.id) AS last_event_date,
-        (SELECT COUNT(*) FROM reminders WHERE vehicle_id=v.id AND done=0) AS active_reminders_count
+        (SELECT COUNT(*) FROM reminders WHERE vehicle_id=v.id AND done=0) AS active_reminders_count,
+        (SELECT id FROM vehicle_photos WHERE vehicle_id=v.id ORDER BY created_at LIMIT 1) AS cover_photo_id
       FROM vehicles v WHERE owner_id=?
     `).all(user.id);
 
@@ -20,7 +21,8 @@ module.exports = function vehicleRoutes(router) {
       SELECT v.*, g.role AS my_role,
         (SELECT COUNT(*) FROM events WHERE vehicle_id=v.id) AS event_count,
         (SELECT MAX(event_date) FROM events WHERE vehicle_id=v.id) AS last_event_date,
-        (SELECT COUNT(*) FROM reminders WHERE vehicle_id=v.id AND done=0) AS active_reminders_count
+        (SELECT COUNT(*) FROM reminders WHERE vehicle_id=v.id AND done=0) AS active_reminders_count,
+        (SELECT id FROM vehicle_photos WHERE vehicle_id=v.id ORDER BY created_at LIMIT 1) AS cover_photo_id
       FROM vehicles v
       JOIN grants g ON g.vehicle_id = v.id
       WHERE g.grantee_id=? AND (g.expires_at IS NULL OR g.expires_at > ?)
@@ -209,6 +211,87 @@ module.exports = function vehicleRoutes(router) {
       detail: { mechanics_notified: mechanics.length, sold_at } });
 
     res.json(200, { ok: true, vehicle_status: 'sold', mechanics_notified: mechanics.length });
+  });
+
+  /* ─── Batch sync (Faza 5b) ───
+     POST /vehicles/sync
+     Body: { vehicles: [{local_id, server_id?, make, model, year, plate, vin, status, updated_at}], last_pull? }
+     Radi za sve tier-ove; Free korisnici sync-uju samo 1 vozilo (isti limit kao POST /vehicles)
+  */
+  router.post('/vehicles/sync', (req, res, body) => {
+    const user = requireAuth(req);
+    const db   = getDb();
+    const limits  = getTierLimits(user.subscription_tier);
+    const now     = new Date().toISOString();
+    const syncAt  = now;
+
+    const incoming = Array.isArray(body.vehicles) ? body.vehicles : [];
+    const lastPull = body.last_pull || null;
+
+    const insertVehicle = db.prepare(`
+      INSERT INTO vehicles (owner_id, make, model, year, plate, vin, status, updated_at)
+      VALUES (?,?,?,?,?,?,?,?)
+    `);
+    const updateVehicle = db.prepare(`
+      UPDATE vehicles SET make=?, model=?, year=?, plate=?, vin=?, status=?, updated_at=?
+      WHERE id=? AND owner_id=?
+    `);
+    const findByVin    = db.prepare('SELECT * FROM vehicles WHERE vin=? AND owner_id=?');
+    const findById     = db.prepare('SELECT * FROM vehicles WHERE id=? AND owner_id=?');
+    const countOwned   = () => db.prepare("SELECT COUNT(*) AS n FROM vehicles WHERE owner_id=? AND status != 'deleted'").get(user.id).n;
+
+    const merged = [];
+
+    for (const v of incoming) {
+      const localId    = v.local_id || null;
+      const clientDate = v.updated_at || now;
+      const make  = (v.make  || '').trim() || '?';
+      const model = (v.model || '').trim() || '?';
+      const year  = v.year   ? Number(v.year)  : null;
+      const plate = v.plate  ? String(v.plate).trim() : null;
+      const vin   = v.vin    ? String(v.vin).trim().toUpperCase() : null;
+      const status = v.status || 'active';
+
+      let existing = null;
+
+      // 1. Traži po server_id ako je dat
+      if (v.server_id) {
+        existing = findById.get(Number(v.server_id));
+      }
+      // 2. Fallback: traži po VIN ako postoji
+      if (!existing && vin) {
+        existing = findByVin.get(vin, user.id);
+      }
+
+      if (existing) {
+        // Last-write-wins: ažuriraj samo ako je klijent noviji
+        if (clientDate > (existing.updated_at || '')) {
+          updateVehicle.run(make, model, year, plate, vin, status, clientDate, existing.id, user.id);
+          merged.push({ local_id: localId, server_id: existing.id, action: 'updated', updated_at: clientDate });
+        } else {
+          merged.push({ local_id: localId, server_id: existing.id, action: 'skipped', updated_at: existing.updated_at });
+        }
+      } else {
+        // Novo vozilo — provjeri tier limit
+        if (countOwned() >= limits.vehicles) {
+          merged.push({
+            local_id: localId, server_id: null, action: 'rejected',
+            reason: 'tier_limit', vehicle_limit: limits.vehicles,
+          });
+          continue;
+        }
+        const result = insertVehicle.run(user.id, make, model, year, plate, vin, status, clientDate);
+        audit('vehicle.sync_create', { userId: user.id, entity: 'vehicle', entityId: result.lastInsertRowid, detail: { make, model } });
+        merged.push({ local_id: localId, server_id: result.lastInsertRowid, action: 'created', updated_at: clientDate });
+      }
+    }
+
+    // Vozila sa servera koja klijent treba (novija od last_pull, ili sva ako last_pull null)
+    const fromServer = lastPull
+      ? db.prepare("SELECT * FROM vehicles WHERE owner_id=? AND updated_at > ? AND status != 'deleted'").all(user.id, lastPull)
+      : db.prepare("SELECT * FROM vehicles WHERE owner_id=? AND status != 'deleted'").all(user.id);
+
+    res.json(200, { merged, from_server: fromServer, sync_at: syncAt });
   });
 
   router.delete('/vehicles/:id', (req, res, _, params) => {

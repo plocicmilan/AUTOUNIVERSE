@@ -4,10 +4,23 @@ const path   = require('path');
 
 const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
 
+const uploadLog  = new Map();
+const RATE_LIMIT = 10;
+const RATE_WINDOW = 60_000;
+
 module.exports = function (router) {
 
   // POST /photos — prima base64 sliku, čuva na disk, vraća {url}
   router.post('/photos', async (req, res, body) => {
+    const ip  = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const log = (uploadLog.get(ip) || []).filter(t => now - t < RATE_WINDOW);
+    if (log.length >= RATE_LIMIT) {
+      const e = new Error('Previše zahteva. Pokušajte za minut.'); e.status = 429; throw e;
+    }
+    log.push(now);
+    uploadLog.set(ip, log);
+
     const { data } = body;
     if (!data || typeof data !== 'string') {
       const e = new Error('data polje sa base64 slikom je obavezno'); e.status = 400; throw e;

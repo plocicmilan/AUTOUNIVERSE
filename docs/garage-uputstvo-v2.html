@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<title>Garage Toolbox — Uputstvo v2</title>
+<style>
+@page { size: A4; margin: 18mm 16mm 16mm 16mm; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --red: #D5281B;
+  --red-light: #fff0f0;
+  --navy: #0f1d35;
+  --dark: #1C1F24;
+  --mid: #3A3F4A;
+  --muted: #6B7280;
+  --line: #E5E7EB;
+  --bg: #F8F7F3;
+}
+
+body {
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.55;
+  color: var(--dark);
+  background: #fff;
+}
+
+/* ─── COVER ─────────────────────────────────── */
+.cover {
+  background: var(--navy);
+  color: #fff;
+  padding: 54px 40px 48px;
+  margin: -18mm -16mm 0 -16mm;
+  page-break-after: always;
+}
+.cover-brand {
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: #fc8181;
+  margin-bottom: 20px;
+}
+.cover h1 {
+  font-size: 34pt;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.cover-sub {
+  font-size: 11pt;
+  color: #94a3b8;
+  margin-bottom: 28px;
+  max-width: 420px;
+}
+.cover-tag {
+  display: inline-block;
+  background: var(--red);
+  color: #fff;
+  font-size: 9pt;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 20px;
+  margin-bottom: 40px;
+}
+.cover-note {
+  font-size: 8.5pt;
+  color: #64748b;
+  border-top: 1px solid rgba(255,255,255,.1);
+  padding-top: 16px;
+}
+
+/* ─── TYPOGRAPHY ─────────────────────────────── */
+h2 {
+  font-size: 15pt;
+  font-weight: 800;
+  color: var(--navy);
+  margin: 28px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--red);
+  page-break-after: avoid;
+}
+h3 {
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 16px 0 6px;
+}
+p { margin-bottom: 8px; color: var(--mid); }
+ul, ol { padding-left: 18px; margin-bottom: 8px; color: var(--mid); }
+li { margin-bottom: 3px; }
+strong { color: var(--dark); }
+code {
+  background: #f1f3f5;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 9pt;
+  font-family: "Courier New", monospace;
+  color: var(--red);
+}
+
+/* ─── STEP BADGE ─────────────────────────────── */
+.step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.step-num {
+  background: var(--red);
+  color: #fff;
+  font-weight: 800;
+  font-size: 9pt;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.step-body-text { flex: 1; color: var(--mid); }
+
+/* ─── CALLOUTS ───────────────────────────────── */
+.tip {
+  background: var(--red-light);
+  border-left: 3px solid var(--red);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 9pt;
+  color: var(--mid);
+}
+.tip strong { color: var(--red); }
+
+.note {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 9pt;
+  color: var(--mid);
+}
+.new-badge {
+  display: inline-block;
+  background: #059669;
+  color: #fff;
+  font-size: 7pt;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ─── TABLE ──────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 9pt;
+}
+th {
+  background: var(--navy);
+  color: #fff;
+  padding: 7px 10px;
+  text-align: left;
+  font-weight: 700;
+}
+td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--mid);
+  vertical-align: top;
+}
+tr:nth-child(even) td { background: #fafafa; }
+.free { color: #059669; font-weight: 700; }
+.kod  { color: var(--red); font-weight: 700; }
+.novo { color: #0369a1; font-weight: 700; }
+
+/* ─── CHECKLIST ──────────────────────────────── */
+.check-section { margin-bottom: 16px; page-break-inside: avoid; }
+.check-section h3 {
+  background: var(--navy);
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 9pt;
+  margin-bottom: 8px;
+}
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 9pt;
+  color: var(--mid);
+}
+.check-box {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #9ca3af;
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ─── FOOTER ─────────────────────────────────── */
+.footer {
+  margin-top: 30px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 8pt;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ─── PAGE BREAK HELPERS ─────────────────────── */
+.pb { page-break-after: always; }
+.pba { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-brand">Garage Toolbox</div>
+  <h1>Uputstvo<br>za korišćenje</h1>
+  <div class="cover-sub">Digitalni alat za automehaničare — radni nalozi, karton vozila, PDF računi, cloud sync.</div>
+  <div class="cover-tag">Za: Marko</div>
+  <div class="cover-note">Garage Toolbox v1.60 &nbsp;·&nbsp; AutoUniverse &nbsp;·&nbsp; autouniverse.rs/garage</div>
+</div>
+
+<!-- UVOD -->
+<p style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:4px;font-size:9.5pt">
+<strong>Šta je ovo?</strong> Aplikacija koja zamenjuje svesku i Viber haos. Uneseš vozilo i mušteriju jednom — posle za svaki posao dobiješ gotov PDF nalog za par klikova koji odmah šalješ Viber-om ili mejlom. <strong>Radi bez interneta.</strong> Sa nalogom: zapisi automatski stižu do vlasnika vozila koji koristi Driver Toolbox.
+</p>
+
+<!-- 1. INSTALACIJA -->
+<h2>1. Instalacija (prvi i jedini put)</h2>
+<div class="step"><div class="step-num">1</div><div class="step-body-text">Otvori link koji ti je stigao u <strong>Chrome</strong> pregledaču (Android).</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-body-text">Klikni meni <strong>(tri tačkice ⋮)</strong> gore desno → <strong>„Dodaj na početni ekran"</strong>.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-body-text">Pojavi se ikona <strong>(crveni zupčanik)</strong> na ekranu kao prava aplikacija. Od sada je otvaraš odatle.</div></div>
+<div class="tip"><strong>iPhone?</strong> Mora preko Safari pregledača (ne Chrome). Share dugme (kvadrat sa strelicom) → „Add to Home Screen".</div>
+
+<!-- 2. PODEŠAVANJE -->
+<h2>2. Podešavanje pre prvog posla</h2>
+<p>Otvori aplikaciju i idi na <strong>Podešavanja</strong> (zupčanik dole desno):</p>
+<div class="step"><div class="step-num">1</div><div class="step-body-text"><strong>Profil:</strong> upiši svoje ime / naziv radnje i telefon. Ovo se štampa na svakom PDF nalogu.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-body-text"><strong>Nalog</strong> <span class="new-badge">NOVO</span> — preporučeno: otvori besplatan nalog na <strong>hub.autouniverse.rs</strong>. Sa nalogom zapisi automatski stižu do vlasnika vozila koji koristi Driver Toolbox.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-body-text"><strong>Licenca:</strong> unesi kod <code>TEST-UNLOCK</code> → Aktiviraj. Otključava sve opcije i skida vodeni žig sa PDF-a.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-body-text"><strong>Valuta:</strong> izaberi RSD ili EUR. Svaka stavka i dalje može biti u svojoj valuti.</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-body-text"><strong>Potpis mušterije:</strong> uključi samo ako ti treba potpis na nalogu (podrazumevano isključeno).</div></div>
+
+<!-- 3. EKRANI -->
+<h2>3. Ekrani — šta je gde</h2>
+<table>
+<tr><th>Ekran (dole)</th><th>Čemu služi</th></tr>
+<tr><td><strong>Početna</strong></td><td>Pregled: termini danas, poslednji poslovi, stat tile-ovi, dugme za novi posao.</td></tr>
+<tr><td><strong>Vozila</strong></td><td>Sva vozila sortirana po poslednjoj aktivnosti. Pretraga po tablici, modelu, vlasniku.</td></tr>
+<tr><td><strong>+ Novi posao</strong></td><td>Glavno dugme (crveni krug). Vodi kroz posao korak po korak (WO Snap).</td></tr>
+<tr><td><strong>Kontakti</strong></td><td>Mušterije i dobavljači. Klik na ☎ = direktno zoveš. Istorija prihoda po kontaktu.</td></tr>
+<tr><td><strong>Dnevnik</strong></td><td>Termini i zakazivanje. Toggle Lista|Nedelja — nedeljni kalendar za pregled. <span class="new-badge">NOVO</span></td></tr>
+<tr><td><strong>Podešavanja</strong></td><td>Profil, nalog, valuta, jezik, licenca, backup.</td></tr>
+</table>
+
+<!-- 4. WO SNAP -->
+<h2>4. Kako se pravi posao (WO Snap — 7 koraka)</h2>
+<p>Pritisni <strong>+ Novi posao</strong>. Prolaziš kroz 7 koraka. Svaki korak možeš da preskočiš.</p>
+<div class="step"><div class="step-num">1</div><div class="step-body-text"><strong>Vozilo</strong> — izaberi postojeće ili dodaj novo (marka i model dovoljno). Upiši kilometražu.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-body-text"><strong>Klijent</strong> — izaberi iz imenika ili dodaj novog (ime + telefon dovoljno).</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-body-text"><strong>Opis rada</strong> — šta si radio. Možeš kucati ili diktirati glasom. Biraš tip: radni nalog / faktura / ponuda.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-body-text"><strong>Slike</strong> — slikaj pre/posle ili dodaj iz galerije. Sažimaju se automatski.</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-body-text"><strong>Stavke</strong> — delovi i rad: naziv, količina, cena, valuta. Zbir se računa uživo dok kucaš.</div></div>
+<div class="step"><div class="step-num">6</div><div class="step-body-text"><strong>Potpis</strong> — mušterija i ti potpišete prstom (pojavi se samo ako si uključio potpis u podešavanjima).</div></div>
+<div class="step"><div class="step-num">7</div><div class="step-body-text"><strong>PDF</strong> — pregled → Podeli (Viber/SMS/mejl) ili Sačuvaj. Gotovo!</div></div>
+<div class="note"><strong>Automatski:</strong> svaki završen posao se sam upiše u karton vozila. Sledeći put kad otvoriš to vozilo, vidiš celu istoriju. Ako vlasnik ima Driver Toolbox i nalog, zapis mu stigne automatski.</div>
+
+<div class="tip"><strong>Zbir po valutama:</strong> cene se sabiraju po valuti bez preračunavanja kursa. Dinari + evri = dva odvojena zbira na PDF-u. Tačno kako i naplaćuješ.</div>
+
+<!-- 5. KARTON VOZILA -->
+<h2>5. Karton vozila</h2>
+<p>Klik na vozilo u listi otvara njegov karton:</p>
+<ul>
+  <li><strong>Vlasnik</strong> — klik zove telefonom direktno.</li>
+  <li><strong>Tehnička kartica</strong> — ulje, filteri, akumulator, gume. Upišeš jednom, ne pitaš više.</li>
+  <li><strong>Istorija</strong> — svi prošli poslovi hronološki, sa cenama i slikama.</li>
+  <li><strong>Dugmad:</strong> novi posao, podsetnik, izmena podataka, <strong>Prodaj deo</strong> (📦).</li>
+</ul>
+
+<!-- 6. PRODAJ DEO -->
+<h2>6. Prodaj deo na Autodelovi <span class="new-badge">NOVO</span></h2>
+<p>U kartonu vozila ili u stavkama radnog naloga, pritisni dugme <strong>📦 Prodaj deo</strong>. Forma se auto-popunjava sa podacima o vozilu. Dodaš cenu i fotografiju — oglas ide direktno na <strong>autodelovi.autouniverse.rs</strong>.</p>
+<div class="note">Pregled tvojih objavljenih oglasa: tab <strong>Moji delovi</strong> u Autodelovi ekranu (u aplikaciji).</div>
+
+<!-- 7. PODSETNICI -->
+<h2>7. Podsetnici</h2>
+<p>Podsetnik može da se okine <strong>po datumu ili po kilometraži</strong> — šta pre stigne. Npr. „sledeći servis: 01.03.2027. ili na 195.000 km". Na Početnoj: crveno = stiglo, narandžasto = uskoro.</p>
+
+<!-- 8. CLOUD SYNC -->
+<h2>8. Cloud sync — zapisi stižu do vlasnika <span class="new-badge">NOVO</span></h2>
+<p>Ako i ti i vlasnik vozila imate AutoUniverse naloge i vlasnik ti <strong>da pristup svom vozilu</strong>:</p>
+<ul>
+  <li>Svaki radni nalog koji završiš automatski stiže u Driver Toolbox tog vlasnika.</li>
+  <li>Vlasnik vidi zapis sa ikonom <strong>Mehaničar</strong> — najviši nivo poverenja.</li>
+  <li>Nema ručnog slanja — radi u pozadini kad god imaš internet.</li>
+</ul>
+<div class="tip"><strong>Kako se aktivira:</strong> vlasnik ide na hub.autouniverse.rs → vozilo → Deli → unosi tvoj email. Ti prihvataš poziv. Od tada: automatski sync.</div>
+
+<!-- 9. NOTIFICATION BELL -->
+<h2>9. Obaveštenja (zvonce) <span class="new-badge">NOVO</span></h2>
+<p>Zvonce 🔔 u zaglavlju aplikacije pokazuje nepročitana obaveštenja. Klik otvara listu — npr. kad vlasnik prihvati ili odbije pristup. Crveni broj = ima novih poruka.</p>
+
+<!-- 10. BACKUP -->
+<h2>10. Backup — uradi povremeno!</h2>
+<p><strong>Podešavanja → „Izvezi sve podatke"</strong> pravi jedan fajl sa svime. Sačuvaj ga na Viber sebi ili u Google Drive. Ako promeniš telefon — „Uvezi backup" vraća sve.</p>
+<div class="tip"><strong>iPhone:</strong> radi backup češće — Safari ume sam da obriše podatke aplikacije ako je ne otvaraš dugo.</div>
+
+<!-- 11. FEATURE TABELA -->
+<h2>11. Sve funkcije — spisak</h2>
+<table>
+<tr><th>Funkcija</th><th>Nivo</th></tr>
+<tr><td>Vozila + tehnička kartica</td><td class="free">Besplatno</td></tr>
+<tr><td>Radni nalog + PDF</td><td class="free">Besplatno</td></tr>
+<tr><td>Faktura / Ponuda PDF</td><td class="free">Besplatno</td></tr>
+<tr><td>Slike (pre/posle)</td><td class="free">Besplatno</td></tr>
+<tr><td>Kontakti (mušterije/dobavljači)</td><td class="free">Besplatno</td></tr>
+<tr><td>Backup / izvoz podataka</td><td class="free">Besplatno</td></tr>
+<tr><td>Dnevnik i zakazivanje</td><td class="free">Besplatno</td></tr>
+<tr><td>Nedeljni kalendar</td><td class="free">Besplatno</td></tr>
+<tr><td>Prodaj deo → Autodelovi</td><td class="free">Besplatno</td></tr>
+<tr><td>Cloud sync sa Driver Toolbox-om</td><td class="novo">Nalog</td></tr>
+<tr><td>Obaveštenja (zvonce)</td><td class="novo">Nalog</td></tr>
+<tr><td>Ponuda (predračun)</td><td class="kod">Kod</td></tr>
+<tr><td>Podsetnici (servis, rokovi)</td><td class="kod">Kod</td></tr>
+<tr><td>Kalkulatori (rad, marža, PDV)</td><td class="kod">Kod</td></tr>
+<tr><td>DVI inspekcija (6×29 tačaka)</td><td class="kod">Kod</td></tr>
+<tr><td>Check liste (prijem, put, zima)</td><td class="kod">Kod</td></tr>
+<tr><td>Gume modul</td><td class="kod">Kod</td></tr>
+<tr><td>PDF bez vodenog žiga + statistike</td><td class="kod">Kod</td></tr>
+</table>
+<p style="font-size:8.5pt;color:var(--muted);margin-top:6px">Ti sa kodom <code>TEST-UNLOCK</code> imaš sve otključano. Nalog = besplatno na hub.autouniverse.rs.</p>
+
+<!-- CHECKLIST -->
+<div class="pb"></div>
+<h2>✔ Checklist — šta da proveriš prvog dana</h2>
+<p style="font-size:8.5pt;color:var(--muted);margin-bottom:12px">Prođi kroz ovo redom. Ako nešto ne radi, zapiši šta tačno i javi.</p>
+
+<div class="check-section">
+<h3>Instalacija i podešavanje</h3>
+<div class="check-item"><div class="check-box"></div><span><strong>Ikona na ekranu</strong> — aplikacija se otvara sa početnog ekrana telefona (ne iz pregledača).</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Profil upisan</strong> — tvoje ime i telefon su u Podešavanjima.</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Kod aktiviran</strong> — uneo si <code>TEST-UNLOCK</code>, piše da je licencirano.</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Valuta</strong> — podešena podrazumevana valuta (RSD ili EUR).</span></div>
+</div>
+
+<div class="check-section">
+<h3>Rad bez interneta (najvažnije za teren)</h3>
+<div class="check-item"><div class="check-box"></div><span><strong>Avion mod test</strong> — uključi avion mod, otvori aplikaciju. Sve mora da radi osim aktivacije koda i cloud sync-a.</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Novi posao offline</strong> — napravi probni nalog bez interneta, PDF mora da izađe.</span></div>
+</div>
+
+<div class="check-section">
+<h3>Napravi probni posao</h3>
+<div class="check-item"><div class="check-box"></div><span><strong>Dodao vozilo</strong> — sa markom, modelom, tablicom i tehničkom karticom (ulje, filteri).</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Dodao mušteriju</strong> — ime i telefon; proveri da ☎ zaista zove.</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Prošao svih 7 koraka</strong> — opis, slika, bar 2 stavke, PDF na kraju.</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>PDF ispravan</strong> — na njemu piše tvoje ime, vozilo, stavke i tačan zbir.</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Naša slova</strong> — š, ć, č, ž, đ ispravno izgledaju na PDF-u (npr. „Škoda", „kvačilo").</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Zbir po valutama</strong> — stavka u RSD + stavka u EUR → dva odvojena zbira na PDF-u.</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Podela radi</strong> — PDF si uspešno poslao sebi na Viber ili mejl.</span></div>
+</div>
+
+<div class="check-section">
+<h3>Istorija i podsetnici</h3>
+<div class="check-item"><div class="check-box"></div><span><strong>Karton pamti</strong> — završeni posao se pojavio u istoriji tog vozila.</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Podsetnik</strong> — napravio probni podsetnik (po datumu ili km) i vidiš ga na Početnoj.</span></div>
+</div>
+
+<div class="check-section">
+<h3>Sigurnost podataka</h3>
+<div class="check-item"><div class="check-box"></div><span><strong>Backup</strong> — izvezao si podatke u fajl i sačuvao ga (Viber sebi / Drive).</span></div>
+<div class="check-item"><div class="check-box"></div><span><strong>Uvoz radi</strong> — probaj „Uvezi backup" da vidiš da vraća podatke.</span></div>
+</div>
+
+<div class="tip" style="margin-top:16px">
+<strong>Na šta posebno obratiti pažnju:</strong><br>
+• <strong>iPhone:</strong> radi backup češće — Safari ume sam da obriše podatke ako dugo ne koristiš app.<br>
+• <strong>Ne brini o grešci</strong> — ništa ne možeš da „pokvariš". Ako nešto zapne, zatvori i otvori aplikaciju.<br>
+• <strong>Feedback:</strong> zapisuj šta ti fali ili smeta dok radiš — to je zlata vredno za sledeću verziju.
+</div>
+
+<div class="footer">
+  <span>Garage Toolbox v1.60 — testna verzija. Hvala što testiraš!</span>
+  <span>autouniverse.rs/garage</span>
+</div>
+
+</body>
+</html>

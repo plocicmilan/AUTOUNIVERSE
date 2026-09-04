@@ -37,7 +37,7 @@ function register(email, password, name, phone = null, role = 'user') {
   const count = db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
   const isFirst = count === 0;
   const actualRole   = isFirst ? 'owner' : role;
-  const actualStatus = isFirst ? 'active' : 'pending';
+  const actualStatus = 'active'; // self-registration, bez admin odobrenja
   const result = db.prepare(
     'INSERT INTO users (email, password, name, phone, role, status) VALUES (?,?,?,?,?,?)'
   ).run(email.toLowerCase().trim(), hash, name.trim(), phone || null, actualRole, actualStatus);

@@ -1,6 +1,7 @@
 const { requireAuth } = require('../auth');
 const { getDb } = require('../db');
 const { grant, revoke, getGrants, hasAccess, ROLES } = require('../permissions');
+const email = require('../email');
 
 module.exports = function grantRoutes(router) {
   router.post('/grants', (req, res, body) => {
@@ -22,11 +23,12 @@ module.exports = function grantRoutes(router) {
 
     const id = grant(user.id, grantee.id, Number(vehicle_id), role, expiresAt);
 
-    // Notifikuj grantee-a
+    // Notifikuj grantee-a (in-app + email)
     try {
-      const veh    = db.prepare('SELECT make, model FROM vehicles WHERE id=?').get(Number(vehicle_id));
+      const veh     = db.prepare('SELECT make, model FROM vehicles WHERE id=?').get(Number(vehicle_id));
       const grantor = db.prepare('SELECT name FROM users WHERE id=?').get(user.id);
-      const vName  = veh ? `${veh.make} ${veh.model}` : 'vozilo';
+      const granteeUser = db.prepare('SELECT name, email AS grantee_email FROM users WHERE id=?').get(grantee.id);
+      const vName   = veh ? `${veh.make} ${veh.model}` : 'vozilo';
       const roleLabel = role === 'read' ? 'čitanje istorije' : role === 'write' ? 'unos zapisa' : role;
       db.prepare(`
         INSERT INTO notifications (recipient_user_id, category, priority, title, body)
@@ -35,6 +37,13 @@ module.exports = function grantRoutes(router) {
         'Novi pristup vozilu',
         `${grantor.name} ti je dodelio/la pristup (${roleLabel}) na vozilu ${vName}.`
       );
+      if (granteeUser && granteeUser.grantee_email) {
+        email.send({
+          to: granteeUser.grantee_email,
+          subject: `Pristup vozilu ${vName} — AutoUniverse`,
+          html: email.tplGrantAccess(granteeUser.name, grantor.name, vName, role),
+        }).catch(e => console.error('[grants] email fail:', e.message));
+      }
     } catch (_) {}
 
     res.json(201, { id });
