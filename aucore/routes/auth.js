@@ -1,15 +1,20 @@
 const { register, login, logout, requireAuth, requestMagicLink, verifyMagicLink, resetPassword, changePassword, deleteAccount, MAGIC_LINK_MINUTES } = require('../auth');
-const email = require('../email');
+const emailMod = require('../email');
 const cfg = require('../config');
 
 module.exports = function authRoutes(router) {
-  router.post('/auth/register', (req, res, body) => {
+  router.post('/auth/register', async (req, res, body) => {
     const { email, password, name, phone } = body;
     if (!email || !password || !name) return res.json(400, { error: 'email, password, name obavezni' });
     try {
       const result = register(email, password, name, phone);
-      const status = result.status === 'pending' ? 202 : 201;
-      res.json(status, { id: result.id, status: result.status });
+      // Šalje welcome email (fire-and-forget, ne blokira odgovor)
+      emailMod.send({
+        to: email,
+        subject: 'Nalog aktivan — AutoUniverse',
+        html: emailMod.tplWelcomeReady(name),
+      }).catch(e => console.error('[register] welcome email fail:', e.message));
+      res.json(201, { id: result.id, status: result.status });
     } catch (e) {
       if (e.message.includes('UNIQUE')) return res.json(409, { error: 'Email već postoji' });
       throw e;
@@ -76,7 +81,7 @@ module.exports = function authRoutes(router) {
       const { token, expiresAt } = requestMagicLink(emailAddr, purpose);
       const verifyUrl = `${cfg.HUB_BASE_URL}/auth/verify?token=${token}`;
       // Salji email (async, ali ne cekamo — anti-timing)
-      email.send({
+      emailMod.send({
         to: emailAddr,
         subject: 'AutoUniverse — prijava',
         html: tplMagicLink(verifyUrl, purpose, MAGIC_LINK_MINUTES)
@@ -99,7 +104,7 @@ module.exports = function authRoutes(router) {
     try {
       const { token, expiresAt } = requestMagicLink(emailAddr, 'password_reset');
       const resetUrl = `${cfg.HUB_BASE_URL}/auth/reset?token=${token}`;
-      email.send({
+      emailMod.send({
         to: emailAddr,
         subject: 'AutoUniverse — resetuj lozinku',
         html: tplPasswordReset(resetUrl, MAGIC_LINK_MINUTES)
@@ -199,6 +204,7 @@ module.exports = function authRoutes(router) {
   });
 
   // Verifikuj token i kreiraj sesiju — GET /auth/verify?token=...
+  // Setuje cookie i redirectuje na hub root (ne vraća JSON — browser flow)
   router.get('/auth/verify', (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     const token = url.searchParams.get('token');
@@ -209,10 +215,11 @@ module.exports = function authRoutes(router) {
         req.headers['user-agent']
       );
       res.setHeader('Set-Cookie', `session=${result.sessionId}; HttpOnly; Path=/; Max-Age=${72 * 3600}`);
-      res.json(200, { ok: true, user: result.user, session: result.sessionId });
+      res.writeHead(302, { Location: '/' });
+      res.end();
     } catch (e) {
-      const status = e.status || 401;
-      res.json(status, { error: e.message });
+      res.writeHead(302, { Location: '/?auth_err=invalid_token' });
+      res.end();
     }
   });
 };
