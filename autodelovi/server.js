@@ -90,6 +90,12 @@ const server = http.createServer(async (req, res) => {
     return serveStatic(res, path.join(__dirname, 'public', 'index.html'));
   }
 
+  // Pravne stranice
+  const legalPages = ['/o-nama', '/uslovi-koristenja', '/politika-privatnosti', '/kontakt'];
+  if (legalPages.includes(pathname)) {
+    return serveStatic(res, path.join(__dirname, 'public', pathname.slice(1) + '.html'));
+  }
+
   // Service worker i manifest
   if (pathname === '/sw.js' || pathname === '/manifest.json') {
     return serveStatic(res, path.join(__dirname, 'public', pathname));

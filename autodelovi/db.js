@@ -31,6 +31,7 @@ function migrate(db) {
       city           TEXT,
       contact_name   TEXT    NOT NULL,
       contact_phone  TEXT    NOT NULL,
+      contact_email  TEXT,
       contact_method TEXT    NOT NULL DEFAULT 'phone_call',
       status         TEXT    NOT NULL DEFAULT 'active',
       views          INTEGER NOT NULL DEFAULT 0,
@@ -56,6 +57,22 @@ function migrate(db) {
       created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
     );
   `);
+  // v1 migration
+  try { db.exec(`ALTER TABLE parts ADD COLUMN contact_email TEXT`); } catch {}
+  // v2 migration — nova polja
+  const v2cols = [
+    `ALTER TABLE parts ADD COLUMN make TEXT`,
+    `ALTER TABLE parts ADD COLUMN model TEXT`,
+    `ALTER TABLE parts ADD COLUMN year_from INTEGER`,
+    `ALTER TABLE parts ADD COLUMN year_to INTEGER`,
+    `ALTER TABLE parts ADD COLUMN engine_code TEXT`,
+    `ALTER TABLE parts ADD COLUMN km_driven INTEGER`,
+    `ALTER TABLE parts ADD COLUMN also_fits TEXT DEFAULT '[]'`,
+    `ALTER TABLE parts ADD COLUMN catalog_number TEXT`,
+    `ALTER TABLE parts ADD COLUMN delivery INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE parts ADD COLUMN exchange INTEGER NOT NULL DEFAULT 0`,
+  ];
+  for (const sql of v2cols) { try { db.exec(sql); } catch {} }
 }
 
 module.exports = { getDb };
