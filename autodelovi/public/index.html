@@ -653,6 +653,21 @@ header {
   letter-spacing: .04em; transition: opacity .15s; margin-right: 6px;
 }
 .seller-status-btn:hover { opacity: .8; }
+
+/* ── Auth gate / User bar ─────────────────────────────────── */
+.auth-gate {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 14px; padding: 30px 24px; text-align: center; margin-bottom: 20px;
+}
+.ag-icon { font-size: 2.2rem; margin-bottom: 12px; }
+.ag-title { font-family: var(--font-h); font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.ag-sub { font-size: .88rem; color: var(--muted); margin-bottom: 4px; }
+.user-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+  font-size: .88rem; color: #10B981;
+}
 </style>
 </head>
 <body>
@@ -829,6 +844,11 @@ header {
   <div class="page-container">
     <div class="page-section">
       <div class="page-h">Moj oglas — Poruke</div>
+      <div id="mine-section" style="display:none">
+        <div class="page-h" style="font-size:1.1rem;margin-bottom:14px">Vaši oglasi</div>
+        <div id="mine-list"></div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
+      </div>
       <div class="seller-box">
         <label>ID oglasa</label>
         <input type="number" id="sl-id" placeholder="npr. 5">
@@ -871,7 +891,31 @@ header {
   <div class="page-container">
     <div class="page-section">
       <div class="page-h">Postavi oglas</div>
-      <div id="sell-form-wrap">
+      <div id="sell-auth-gate">
+        <div class="auth-gate">
+          <div class="ag-icon">🔐</div>
+          <div class="ag-title">Prijavite se da biste postavili oglas</div>
+          <div class="ag-sub">Oglas se objavljuje uz vaš AutoUniverse nalog.</div>
+          <div class="form-section" style="margin-top:16px;text-align:left">
+            <label class="form-label">Email</label>
+            <input class="form-input" id="ag-email" type="email" placeholder="vas@email.com" autocomplete="email">
+          </div>
+          <div class="form-section" style="text-align:left">
+            <label class="form-label">Lozinka</label>
+            <input class="form-input" id="ag-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')auLogin()">
+          </div>
+          <div id="ag-err" class="form-error" style="display:none;text-align:left"></div>
+          <button class="btn-primary" id="ag-btn" onclick="auLogin()">PRIJAVI SE</button>
+          <p style="font-size:.78rem;color:var(--muted);margin-top:14px">
+            Nemate nalog? <a href="https://hub.autouniverse.rs/register" style="color:var(--accent)" target="_blank">Registrujte se</a>
+          </p>
+        </div>
+      </div>
+      <div id="sell-user-bar" class="user-bar" style="display:none">
+        <span id="sell-user-name"></span>
+        <button onclick="auLogout()" style="background:none;border:1px solid rgba(16,185,129,0.3);color:#10B981;padding:5px 12px;border-radius:6px;font-size:.78rem;cursor:pointer;font-family:var(--font-b)">Odjavi se</button>
+      </div>
+      <div id="sell-form-wrap" style="display:none">
         <div class="form-section">
           <label class="form-label">Naziv dela *</label>
           <input class="form-input" id="sf-title" placeholder="npr. Motor 1.9 TDI BLS, Disk kočnice zadnji...">
@@ -1018,7 +1062,9 @@ header {
 </footer>
 
 <script>
-  const API = '';
+  const API    = '';
+  const AU_HUB = 'https://hub.autouniverse.rs';
+  let auSession    = null;
   let currentPartId = null;
   let activeCategory = '';
   let galPhotos = [];
@@ -1052,6 +1098,8 @@ header {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
     document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+    if (name === 'sell')   renderSellTab();
+    if (name === 'seller') renderMineSection();
   }
 
   function sendFeedback() {
@@ -1321,10 +1369,126 @@ header {
     if (btn) btn.outerHTML = `<a class="btn-call" href="tel:${phone}">📞 ${phone}</a>`;
   }
 
+  // ── AU Core session ─────────────────────────────────────────
+
+  async function checkAuSession() {
+    const token = localStorage.getItem('au_token');
+    if (!token) { renderSellTab(); renderMineSection(); return; }
+    try {
+      const res = await fetch(`${AU_HUB}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) { auSession = await res.json(); }
+      else { localStorage.removeItem('au_token'); auSession = null; }
+    } catch { auSession = null; }
+    renderSellTab();
+    renderMineSection();
+  }
+
+  function renderSellTab() {
+    const gate   = document.getElementById('sell-auth-gate');
+    const form   = document.getElementById('sell-form-wrap');
+    const bar    = document.getElementById('sell-user-bar');
+    const nameEl = document.getElementById('sell-user-name');
+    if (!gate) return;
+    if (auSession) {
+      gate.style.display = 'none';
+      form.style.display = 'block';
+      bar.style.display  = 'flex';
+      if (nameEl) nameEl.textContent = `Prijavljeni ste kao ${auSession.name || auSession.email}`;
+      const nameInp = document.getElementById('sf-name');
+      if (nameInp && !nameInp.value && auSession.name) nameInp.value = auSession.name;
+    } else {
+      gate.style.display = 'block';
+      form.style.display = 'none';
+      bar.style.display  = 'none';
+    }
+  }
+
+  async function auLogin() {
+    const email = document.getElementById('ag-email').value.trim();
+    const pass  = document.getElementById('ag-pass').value;
+    const errEl = document.getElementById('ag-err');
+    const btn   = document.getElementById('ag-btn');
+    errEl.style.display = 'none';
+    if (!email || !pass) { errEl.textContent = 'Email i lozinka su obavezni.'; errEl.style.display = 'block'; return; }
+    btn.disabled = true; btn.textContent = 'Prijavujem...';
+    try {
+      const res = await fetch(`${AU_HUB}/auth/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass })
+      });
+      const data = await res.json();
+      if (!res.ok) { errEl.textContent = data.error || 'Pogrešni podaci.'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'PRIJAVI SE'; return; }
+      localStorage.setItem('au_token', data.sessionId || data.token);
+      await checkAuSession();
+    } catch { errEl.textContent = 'Greška pri prijavi.'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'PRIJAVI SE'; }
+  }
+
+  function auLogout() {
+    localStorage.removeItem('au_token');
+    auSession = null;
+    renderSellTab();
+    renderMineSection();
+  }
+
+  function renderMineSection() {
+    const sec = document.getElementById('mine-section');
+    if (!sec) return;
+    if (auSession) { sec.style.display = 'block'; loadMyParts(); }
+    else sec.style.display = 'none';
+  }
+
+  async function loadMyParts() {
+    const list  = document.getElementById('mine-list');
+    const token = localStorage.getItem('au_token');
+    if (!list || !token) return;
+    list.innerHTML = '<div class="loading">Učitavanje</div>';
+    try {
+      const res = await fetch('/parts/mine', { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) { list.innerHTML = '<div class="empty" style="padding:20px 0"><p>Greška pri učitavanju.</p></div>'; return; }
+      const parts = await res.json();
+      if (!parts.length) { list.innerHTML = '<div class="empty" style="padding:20px 0"><div class="ei">📭</div><p>Još nemate oglasa.</p></div>'; return; }
+      const statusLabel = { active: '🟢 Aktivan', paused: '⏸ Pauziran', sold: '✅ Prodato' };
+      const statusColor = { active: '#4ade80', paused: '#fbbf24', sold: '#93c5fd' };
+      list.innerHTML = parts.map(p => `
+        <div class="seller-listing-info" style="margin-bottom:10px">
+          <div class="sli-title">${p.title}</div>
+          <div class="sli-price">${fmtPrice(p)}</div>
+          <div class="sli-meta">${p.category ? (CAT_LABEL[p.category] || p.category) + ' · ' : ''}<span style="color:${statusColor[p.status]||'#aaa'}">${statusLabel[p.status]||p.status}</span> · 👁 ${p.views}</div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <button class="seller-status-btn" style="background:#166534;color:#4ade80" onclick="myPartSetStatus(${p.id},'active')">Aktiviraj</button>
+            <button class="seller-status-btn" style="background:#78350f;color:#fbbf24" onclick="myPartSetStatus(${p.id},'paused')">Pauziraj</button>
+            <button class="seller-status-btn" style="background:#1e3a5f;color:#93c5fd" onclick="myPartSetStatus(${p.id},'sold')">Prodato</button>
+            <button class="seller-status-btn" style="background:#3f1010;color:#f87171" onclick="myPartDelete(${p.id})">Obriši</button>
+          </div>
+        </div>`).join('');
+    } catch { list.innerHTML = '<div class="empty" style="padding:20px 0"><p>Greška pri učitavanju.</p></div>'; }
+  }
+
+  async function myPartSetStatus(id, status) {
+    const token = localStorage.getItem('au_token');
+    if (!token) return;
+    await fetch(`/parts/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status })
+    });
+    loadMyParts();
+  }
+
+  async function myPartDelete(id) {
+    if (!confirm('Trajno brisanje oglasa?')) return;
+    const token = localStorage.getItem('au_token');
+    if (!token) return;
+    const res = await fetch(`/parts/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) loadMyParts();
+    else alert('Greška pri brisanju.');
+  }
+
   // ── Postavi oglas ───────────────────────────────────────────
   let sfPhotos = []; // [{base64, url}]
 
   document.addEventListener('DOMContentLoaded', function() {
+    checkAuSession();
     const inp = document.getElementById('sf-photos');
     if (!inp) return;
     inp.addEventListener('change', function() {
@@ -1394,7 +1558,12 @@ header {
         photos:        photoUrls,
       };
 
-      const res = await fetch('/parts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const auToken = localStorage.getItem('au_token');
+      const res = await fetch('/parts', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', ...(auToken ? { Authorization: `Bearer ${auToken}` } : {}) },
+        body: JSON.stringify(body)
+      });
       const data = await res.json();
 
       if (!res.ok) { errEl.textContent = data.error || 'Greška. Pokušajte ponovo.'; errEl.style.display='block'; btn.disabled=false; btn.textContent='OBJAVI OGLAS'; return; }

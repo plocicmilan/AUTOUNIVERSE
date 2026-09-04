@@ -1,8 +1,37 @@
 const crypto = require('crypto');
 const fs     = require('fs');
 const path   = require('path');
+const http   = require('http');
 const { getDb } = require('../db');
 const { send, tplSellerToken } = require('../email');
+
+const AU_CORE = 'http://localhost:3000';
+
+function validateAuSession(req) {
+  return new Promise((resolve) => {
+    const auth = req.headers['authorization'] || '';
+    if (!auth.startsWith('Bearer ')) return resolve(null);
+    const token = auth.slice(7);
+    const opts = {
+      hostname: 'localhost', port: 3000,
+      path: '/auth/me', method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    };
+    const r = http.request(opts, res2 => {
+      let data = '';
+      res2.on('data', c => { data += c; });
+      res2.on('end', () => {
+        if (res2.statusCode === 200) {
+          try { resolve(JSON.parse(data)); } catch { resolve(null); }
+        } else {
+          resolve(null);
+        }
+      });
+    });
+    r.on('error', () => resolve(null));
+    r.end();
+  });
+}
 
 const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
 
@@ -34,6 +63,32 @@ module.exports = function (router) {
     res.json(200, { active, sold, total, by_category: byCat, recent });
   });
 
+  // GET /parts/mine — oglasi ulogovanog korisnika
+  router.get('/parts/mine', async (req, res) => {
+    const user = await validateAuSession(req);
+    if (!user) { const e = new Error('Prijavite se da biste videli vaše oglase'); e.status = 401; throw e; }
+
+    const db = getDb();
+    const parts = db.prepare(`
+      SELECT p.*, GROUP_CONCAT(ph.url ORDER BY ph.sort_order) as photos
+      FROM parts p
+      LEFT JOIN part_photos ph ON ph.part_id = p.id
+      WHERE p.user_id = ?
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+    `).all(user.id);
+
+    res.json(200, parts.map(r => ({
+      ...r,
+      seller_token: undefined,
+      compatible: JSON.parse(r.compatible || '[]'),
+      also_fits:  JSON.parse(r.also_fits  || '[]'),
+      photos: r.photos ? r.photos.split(',') : [],
+      delivery: !!r.delivery,
+      exchange: !!r.exchange,
+    })));
+  });
+
   // POST /parts — objavi oglas
   router.post('/parts', async (req, res, body) => {
     const {
@@ -46,6 +101,11 @@ module.exports = function (router) {
       km_driven, also_fits, catalog_number, delivery, exchange,
     } = body;
 
+    const auUser = await validateAuSession(req);
+    if (!auUser) {
+      const e = new Error('Prijavite se da biste objavili oglas'); e.status = 401; throw e;
+    }
+
     if (!title || !contact_name || !contact_phone) {
       const e = new Error('title, contact_name, contact_phone su obavezni');
       e.status = 400; throw e;
@@ -56,14 +116,15 @@ module.exports = function (router) {
 
     const result = db.prepare(`
       INSERT INTO parts
-        (seller_token, title, category, condition, part_number, compatible,
+        (seller_token, user_id, title, category, condition, part_number, compatible,
          price, currency, description, city, contact_name, contact_phone,
          contact_email, contact_method,
          make, model, year_from, year_to, engine_code,
          km_driven, also_fits, catalog_number, delivery, exchange)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       seller_token,
+      auUser.id,
       title,
       CATEGORIES.includes(category) ? category : 'ostalo',
       ['nov', 'polovan', 'renoviran', 'neispravan'].includes(condition) ? condition : 'polovan',
@@ -174,13 +235,17 @@ module.exports = function (router) {
 
   // PUT /parts/:id — prodavac menja status ili podatke
   router.put('/parts/:id', async (req, res, body, params) => {
-    const token = req.headers['x-seller-token'];
-    if (!token) { const e = new Error('x-seller-token header obavezan'); e.status = 401; throw e; }
-
     const db = getDb();
     const part = db.prepare(`SELECT * FROM parts WHERE id = ?`).get(params.id);
     if (!part) { const e = new Error('Oglas ne postoji'); e.status = 404; throw e; }
-    if (part.seller_token !== token) { const e = new Error('Unauthorized'); e.status = 403; throw e; }
+
+    const auUser = await validateAuSession(req);
+    const token  = req.headers['x-seller-token'];
+    const okViaSession = auUser && part.user_id === auUser.id;
+    const okViaToken   = token && part.seller_token === token;
+    if (!okViaSession && !okViaToken) {
+      const e = new Error('Unauthorized'); e.status = 403; throw e;
+    }
 
     const allowed = ['status', 'price', 'description', 'city', 'contact_phone', 'contact_method'];
     const sets = [];
@@ -204,13 +269,18 @@ module.exports = function (router) {
 
   // DELETE /parts/:id
   router.delete('/parts/:id', async (req, res, body, params) => {
-    const token = req.headers['x-seller-token'];
-    if (!token) { const e = new Error('x-seller-token header obavezan'); e.status = 401; throw e; }
-
     const db = getDb();
     const part = db.prepare(`SELECT * FROM parts WHERE id = ?`).get(params.id);
     if (!part) { const e = new Error('Oglas ne postoji'); e.status = 404; throw e; }
-    if (part.seller_token !== token) { const e = new Error('Unauthorized'); e.status = 403; throw e; }
+
+    // Dozvoli via AU Core session ILI seller_token (backward compat)
+    const auUser = await validateAuSession(req);
+    const token  = req.headers['x-seller-token'];
+    const okViaSession = auUser && part.user_id === auUser.id;
+    const okViaToken   = token && part.seller_token === token;
+    if (!okViaSession && !okViaToken) {
+      const e = new Error('Unauthorized'); e.status = 403; throw e;
+    }
 
     const photos = db.prepare(`SELECT url FROM part_photos WHERE part_id = ?`).all(params.id);
     photos.forEach(p => {

@@ -73,6 +73,8 @@ function migrate(db) {
     `ALTER TABLE parts ADD COLUMN exchange INTEGER NOT NULL DEFAULT 0`,
   ];
   for (const sql of v2cols) { try { db.exec(sql); } catch {} }
+  // v3 migration — AU Core integracija
+  try { db.exec(`ALTER TABLE parts ADD COLUMN user_id INTEGER`); } catch {}
 }
 
 module.exports = { getDb };
