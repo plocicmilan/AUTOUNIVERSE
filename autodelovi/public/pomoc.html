@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pomoć i često postavljana pitanja — Autodelovi.autouniverse.rs</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', system-ui, sans-serif; background: #080B10; color: #DDE1EC; min-height: 100vh; }
+.header { background: #0D1118; border-bottom: 1px solid rgba(255,255,255,0.07); padding: 16px 20px; }
+.header a { color: #0EA5E9; text-decoration: none; font-size: .9rem; }
+.header a:hover { text-decoration: underline; }
+.container { max-width: 720px; margin: 0 auto; padding: 36px 20px 60px; }
+h1 { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.subtitle { color: #5A6070; margin-bottom: 32px; font-size: .95rem; }
+h2 { font-size: 1rem; font-weight: 700; color: #fff; margin: 0; }
+p, li { font-size: .93rem; line-height: 1.7; color: #DDE1EC; }
+ul { margin: 10px 0 0 18px; }
+ul li { margin-bottom: 4px; }
+a { color: #0EA5E9; }
+
+.section-title {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: #5A6070; margin: 36px 0 12px;
+}
+.section-title:first-of-type { margin-top: 0; }
+
+.faq-item {
+  background: #111520;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.faq-q {
+  width: 100%; text-align: left; background: none; border: none;
+  cursor: pointer; padding: 16px 18px; display: flex; justify-content: space-between;
+  align-items: center; gap: 12px; color: #fff; font-family: inherit;
+  font-size: .95rem; font-weight: 700;
+}
+.faq-q:hover { background: rgba(255,255,255,0.03); }
+.faq-icon { font-size: 1.1rem; color: #5A6070; flex-shrink: 0; transition: transform .2s; }
+.faq-item.open .faq-icon { transform: rotate(45deg); }
+.faq-a {
+  display: none; padding: 0 18px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: .93rem; line-height: 1.7; color: #DDE1EC;
+}
+.faq-a.show { display: block; }
+
+.step {
+  display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px;
+}
+.step-num {
+  width: 28px; height: 28px; background: #0EA5E9; color: #fff;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .85rem; flex-shrink: 0; margin-top: 2px;
+}
+.step-body { flex: 1; }
+.step-title { font-weight: 700; color: #fff; margin-bottom: 2px; font-size: .93rem; }
+.step-desc { font-size: .88rem; color: #A0A8BC; line-height: 1.6; }
+
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 6px;
+  font-size: .78rem; font-weight: 700;
+}
+.badge-free { background: rgba(14,165,233,0.12); color: #38BDF8; border: 1px solid rgba(14,165,233,0.25); }
+.badge-tip { background: rgba(34,197,94,0.1); color: #4ADE80; border: 1px solid rgba(34,197,94,0.2); }
+
+.contact-box {
+  background: #111520; border: 1px solid rgba(14,165,233,0.2);
+  border-left: 3px solid #0EA5E9;
+  border-radius: 10px; padding: 18px 20px; margin-top: 32px;
+}
+.contact-box p { margin-bottom: 6px; }
+.btn-mail {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #0EA5E9; color: #fff; padding: 10px 20px;
+  border-radius: 8px; text-decoration: none;
+  font-weight: 700; font-size: .9rem; margin-top: 10px;
+  transition: opacity .15s;
+}
+.btn-mail:hover { opacity: .85; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/delovi">← Nazad na oglase</a>
+</div>
+<div class="container">
+  <h1>Pomoć</h1>
+  <p class="subtitle">Često postavljana pitanja — Autodelovi.autouniverse.rs</p>
+
+  <!-- KAO KUPAC -->
+  <div class="section-title">Kao kupac</div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Kako pronađem deo koji tražim?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Koristite traku za pretragu pri vrhu stranice — ukucajte naziv dela, marku vozila ili kategoriju. Možete filtrirati po kategoriji (Motor, Kočnice, Elektrika...) klikom na chip-ove ispod pretrage. Svi oglasi su odmah vidljivi, bez registracije.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Kako kontaktiram prodavca?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Kliknite na oglas da otvorite detalje. Broj telefona prodavca je skriven — kliknite dugme <strong>"Prikaži broj"</strong> da ga otkrijete, a zatim pozovite ili pošaljite SMS direktno. Platforma ne posreduje u komunikaciji.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Da li je kupovina sigurna?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Autodelovi.autouniverse.rs je <strong>oglasna tabla</strong> — ne odgovara za tačnost sadržaja oglasa niti za kvalitet delova. Preporučujemo:
+      <ul>
+        <li>Uvek tražite kataloški broj i proverite kompatibilnost pre kupovine</li>
+        <li>Dogovorite lično preuzimanje i proveru dela pre plaćanja</li>
+        <li>Plaćajte tek kad fizički proverite deo</li>
+        <li>Sumnjive oglase prijavite na <a href="/kontakt">stranici za kontakt</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Šta znači "Cena na upit"?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Prodavac nije naveo fiksnu cenu. Kontaktirajte ga direktno (telefon ili email iz oglasa) i dogovorite cenu.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Šta znači "Dostava" i "Zamena" na oglasu?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      <strong>Dostava</strong> — prodavac je spreman da pošalje deo poštom ili kurirskom službom. Dogovorite troškove i način dostave direktno sa prodavcem.<br><br>
+      <strong>Zamena</strong> — prodavac je zainteresovan za zamenu dela za nešto drugo. Kontaktirajte ga i predložite šta nudite.
+    </div>
+  </div>
+
+  <!-- KAO PRODAVAC -->
+  <div class="section-title">Kao prodavac</div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Kako postavim oglas? <span class="badge badge-free" style="margin-left:6px">Besplatno</span>
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Otvorite tab "Prodaj"</div>
+          <div class="step-desc">Kliknite na dugme <strong>➕ Prodaj</strong> u navigaciji pri dnu ekrana.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Unesite podatke o delu</div>
+          <div class="step-desc">Naziv dela, kategorija i stanje su obavezna polja. Što više popunite (marka vozila, godište, šifra motora, km), oglas je vidljiviji u pretrazi.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Dodajte fotografije</div>
+          <div class="step-desc">Do 3 fotografije. Jasne slike iz više uglova znatno povećavaju odziv kupaca.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Unesite kontakt podatke i kliknite "Objavi oglas"</div>
+          <div class="step-desc">Oglas je odmah vidljiv svim posetiocima. Broj telefona je prikazan samo kupacima koji kliknu "Prikaži broj".</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Da li je postavljanje oglasa besplatno?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Da, potpuno besplatno. Platforma ne naplaćuje postavljanje oglasa niti uzima proviziju od prodaje.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Koliko dugo oglas ostaje aktivan?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Oglasi ostaju aktivni <strong>12 meseci</strong> od poslednje aktivnosti. Nakon isteka, oglas se automatski arhivira. Ako prodate deo pre isteka, pišite nam na <a href="mailto:hello@autouniverse.rs">hello@autouniverse.rs</a> sa ID-jem oglasa i uklonićemo ga u roku od 72 sata.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Kako uredim ili obrišem oglas?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Trenutno nije moguće urediti oglas direktno kroz sajt. Pošaljite email na <a href="mailto:hello@autouniverse.rs">hello@autouniverse.rs</a> sa:
+      <ul>
+        <li>ID-jem oglasa (broj u URL-u)</li>
+        <li>Šta želite da promenite ili da se oglas obriše</li>
+      </ul>
+      Zahtev se obrađuje u roku od 48 sati.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Šta su zabranjeni oglasi?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Zabranjeno je oglašavati:
+      <ul>
+        <li>Ukradenu robu ili delove nepoznatog porekla</li>
+        <li>Delove koji su predmet aktivnih pravnih sporova</li>
+        <li>Lažne ili obmanjujuće informacije o stanju, kompatibilnosti ili ceni</li>
+        <li>Uvredljiv ili diskriminatorski sadržaj</li>
+      </ul>
+      Platforma zadržava pravo da bez prethodne najave obriše svaki oglas koji krši ova pravila. Detalji u <a href="/uslovi-koristenja">Uslovima korišćenja</a>.
+    </div>
+  </div>
+
+  <!-- NALOG -->
+  <div class="section-title">Nalog i privatnost</div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Da li trebam nalog da bih koristio platformu?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Pretraživanje oglasa ne zahteva nalog. Za postavljanje oglasa trenutno nije potrebna registracija — oglas se objavljuje odmah.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Koji podaci se čuvaju o meni?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Čuvaju se samo podaci koje sami unesete pri postavljanju oglasa: ime/naziv, telefon, email (opcionalno), opis i fotografije. Podaci se ne dele sa trećim stranama. Detalji u <a href="/politika-privatnosti">Politici privatnosti</a>.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggle(this)">
+      Kako mogu da zahtevam brisanje mojih podataka?
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-a">
+      Pošaljite email na <a href="mailto:hello@autouniverse.rs">hello@autouniverse.rs</a> sa ID-jem oglasa. Vaši podaci i oglas biće obrisani u roku od 72 sata, u skladu sa GDPR pravilima.
+    </div>
+  </div>
+
+  <!-- KONTAKT -->
+  <div class="contact-box">
+    <p style="font-weight:700;color:#fff;margin-bottom:6px">Niste našli odgovor?</p>
+    <p style="color:#A0A8BC;font-size:.9rem">Pišite nam — odgovaramo u roku od 48 sati.</p>
+    <a href="mailto:hello@autouniverse.rs" class="btn-mail">✉️ hello@autouniverse.rs</a>
+    <p style="margin-top:12px;font-size:.85rem">
+      Za prijavu lažnog oglasa: <a href="/kontakt">Kontakt i prijava zloupotrebe</a>
+    </p>
+  </div>
+
+  <p style="margin-top:32px;font-size:.88rem;color:#5A6070">
+    <a href="/o-nama">O nama</a> ·
+    <a href="/uslovi-koristenja">Uslovi korišćenja</a> ·
+    <a href="/politika-privatnosti">Politika privatnosti</a> ·
+    <a href="/kontakt">Kontakt</a>
+  </p>
+</div>
+
+<script>
+function toggle(btn) {
+  const item = btn.closest('.faq-item');
+  const answer = item.querySelector('.faq-a');
+  const isOpen = item.classList.contains('open');
+  // zatvori sve
+  document.querySelectorAll('.faq-item.open').forEach(el => {
+    el.classList.remove('open');
+    el.querySelector('.faq-a').classList.remove('show');
+  });
+  if (!isOpen) {
+    item.classList.add('open');
+    answer.classList.add('show');
+  }
+}
+</script>
+</body>
+</html>
