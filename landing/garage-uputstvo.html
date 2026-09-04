@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kako koristiti Garage Toolbox — Kompletno uputstvo | AutoUniverse</title>
-<meta name="description" content="Korak po korak uputstvo za Garage Toolbox aplikaciju za auto mehaničare. Radni nalozi, predračuni, kontakti, dnevnik, PDF i izvoz podataka.">
+<title>Kako koristiti Garage Toolbox — Kompletno uputstvo v2 | AutoUniverse</title>
+<meta name="description" content="Korak po korak uputstvo za Garage Toolbox v1.60 — radni nalozi, predračuni, kartoni vozila, prodaj deo, cloud sync sa Driver Toolbox.">
 <link rel="canonical" href="https://autouniverse.rs/garage-uputstvo">
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <style>
@@ -48,6 +48,7 @@ a:hover{text-decoration:underline}
 /* STEP */
 .step-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
 .step-num{width:36px;height:36px;background:var(--red);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;flex-shrink:0}
+.step-num.optional{background:#059669}
 .step-title{font-size:1.5rem;font-weight:800;color:var(--navy)}
 .step-sub{font-size:.9rem;color:var(--muted);margin-top:2px}
 
@@ -59,6 +60,8 @@ a:hover{text-decoration:underline}
 
 .tip{background:#fff5f5;border-left:3px solid var(--red);border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;font-size:.88rem;color:var(--mid)}
 .tip strong{color:var(--red-dark)}
+.tip.green{background:#f0fdf4;border-left-color:#059669}
+.tip.green strong{color:#065f46}
 
 .warn{background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;font-size:.88rem;color:#92400e}
 
@@ -75,6 +78,10 @@ a:hover{text-decoration:underline}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .chip{background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:.3rem .9rem;font-size:.83rem;color:var(--mid);font-weight:600}
 .chip.green{background:#f0fdf4;border-color:#86efac;color:#166534}
+.chip.new{background:#ecfdf5;border-color:#6ee7b7;color:#065f46}
+
+/* NEW BADGE */
+.new-badge{display:inline-block;background:#059669;color:#fff;font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:.15rem .5rem;border-radius:4px;vertical-align:middle;margin-left:6px;position:relative;top:-1px}
 
 /* FOOTER */
 .footer{background:var(--bg);border-top:1px solid var(--line);text-align:center;padding:32px 20px;font-size:.85rem;color:var(--muted)}
@@ -95,7 +102,7 @@ a:hover{text-decoration:underline}
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-badge">📖 Uputstvo za korisnike</div>
+  <div class="hero-badge">📖 Uputstvo za korisnike · v1.60</div>
   <h1>Kako koristiti<br><span>Garage Toolbox</span></h1>
   <p>Korak po korak — od instalacije do prvog sačuvanog radnog naloga. Čita se za 5 minuta.</p>
   <a href="https://garage.autouniverse.rs/" class="hero-btn" target="_blank">Otvori Garage Toolbox</a>
@@ -107,6 +114,7 @@ a:hover{text-decoration:underline}
     <h2>📋 Sadržaj</h2>
     <ol>
       <li><a href="#instalacija">Instalacija na telefon</a></li>
+      <li><a href="#aucore">AU Core nalog (opciono)</a></li>
       <li><a href="#profil">Podešavanja profila radnje</a></li>
       <li><a href="#novi-posao">Novi radni nalog</a></li>
       <li><a href="#predracun">Predračun</a></li>
@@ -114,6 +122,8 @@ a:hover{text-decoration:underline}
       <li><a href="#vozila">Vozila klijenata</a></li>
       <li><a href="#dnevnik">Dnevnik i zakazivanje</a></li>
       <li><a href="#export">Export i PDF</a></li>
+      <li><a href="#prodaj">Prodaj deo <span class="new-badge">novo</span></a></li>
+      <li><a href="#sync">Cloud sync i notifikacije <span class="new-badge">novo</span></a></li>
     </ol>
   </div>
 </div>
@@ -147,10 +157,42 @@ a:hover{text-decoration:underline}
   </div>
 </section>
 
-<!-- 2. PROFIL -->
+<!-- 2. AU CORE NALOG -->
+<section class="section" id="aucore">
+  <div class="step-header">
+    <div class="step-num optional">2</div>
+    <div>
+      <div class="step-title">AU Core nalog <span class="new-badge">novo</span></div>
+      <div class="step-sub">Opciono — otključava cloud backup, sync i prodaju delova</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Garage radi potpuno bez naloga. AU Core nalog je opciona nadgradnja koja otključava:</p>
+      <ul class="steps-list">
+        <li><span class="num">✓</span><span><strong>Cloud backup</strong> — podaci se automatski čuvaju, ne gubite ih promenom telefona</span></li>
+        <li><span class="num">✓</span><span><strong>Sync sa Driver Toolbox</strong> — klijent sa Driver app-om vidi servisnu istoriju u realnom vremenu</span></li>
+        <li><span class="num">✓</span><span><strong>Prodaj deo</strong> — postavljanje oglasa na autodelovi.autouniverse.rs direktno iz Garage app-a</span></li>
+      </ul>
+      <p>Kreiranje naloga:</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span>Otidite na <strong>hub.autouniverse.rs</strong> i registrujte se</span></li>
+        <li><span class="num">2</span><span>U Garage app → Podešavanja → <strong>Prijavi se</strong> → unesite email i lozinku</span></li>
+        <li><span class="num">3</span><span>Zelena traka "Prijavljeni ste kao [ime]" potvrđuje uspešnu prijavu</span></li>
+      </ul>
+      <div class="tip green"><strong>Savet:</strong> Nalog je besplatan. Ako ne planirate sync ili prodaju delova, možete koristiti app bez naloga — sve osnovne funkcije rade lokalno.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/07-podesavanja.png" alt="Podešavanja — prijava AU Core">
+      <div class="img-caption">Prijava AU Core naloga u Podešavanjima</div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. PROFIL -->
 <section class="section" id="profil">
   <div class="step-header">
-    <div class="step-num">2</div>
+    <div class="step-num">3</div>
     <div>
       <div class="step-title">Podešavanja profila radnje</div>
       <div class="step-sub">Podesite podatke radnje — pojavljuju se na svakom PDF-u koji app generiše</div>
@@ -175,10 +217,10 @@ a:hover{text-decoration:underline}
   </div>
 </section>
 
-<!-- 3. NOVI RADNI NALOG -->
+<!-- 4. NOVI RADNI NALOG -->
 <section class="section" id="novi-posao">
   <div class="step-header">
-    <div class="step-num">3</div>
+    <div class="step-num">4</div>
     <div>
       <div class="step-title">Novi radni nalog</div>
       <div class="step-sub">Kreiranje WO-a u 3 koraka — vozilo, radovi, finalizacija</div>
@@ -203,10 +245,10 @@ a:hover{text-decoration:underline}
   </div>
 </section>
 
-<!-- 4. PREDRACUN -->
+<!-- 5. PREDRACUN -->
 <section class="section" id="predracun">
   <div class="step-header">
-    <div class="step-num">4</div>
+    <div class="step-num">5</div>
     <div>
       <div class="step-title">Predračun</div>
       <div class="step-sub">Pošaljite klijentu procenu pre nego što počnete posao</div>
@@ -230,10 +272,10 @@ a:hover{text-decoration:underline}
   </div>
 </section>
 
-<!-- 5. KONTAKTI -->
+<!-- 6. KONTAKTI -->
 <section class="section" id="kontakti">
   <div class="step-header">
-    <div class="step-num">5</div>
+    <div class="step-num">6</div>
     <div>
       <div class="step-title">Kontakti (klijenti)</div>
       <div class="step-sub">Baza klijenata — ime, telefon, vozila, istorija naloga</div>
@@ -258,10 +300,10 @@ a:hover{text-decoration:underline}
   </div>
 </section>
 
-<!-- 6. VOZILA -->
+<!-- 7. VOZILA -->
 <section class="section" id="vozila">
   <div class="step-header">
-    <div class="step-num">6</div>
+    <div class="step-num">7</div>
     <div>
       <div class="step-title">Vozila klijenata</div>
       <div class="step-sub">Evidencija svih vozila koja prolaze kroz vašu radnju</div>
@@ -276,7 +318,7 @@ a:hover{text-decoration:underline}
         <li><span class="num">2</span><span><strong>Uz nalog</strong> — pri kreaciji radnog naloga, opcija "+ Novo vozilo (brzo)" dodaje vozilo i odmah ga vezuje za nalog</span></li>
       </ul>
       <p>Na kartici vozila vidite celu istoriju: svi radni nalozi, šta je rađeno, na kojoj kilometraži — bez gledanja po papirima.</p>
-      <div class="tip"><strong>QR deljenje:</strong> Svako vozilo ima QR kod koji možete podeliti sa vlasnikom. Ako vlasnik ima <a href="/driver">Driver Toolbox</a>, može skenirati i preuzeti podatke direktno u svoju app.</div>
+      <div class="tip"><strong>QR deljenje:</strong> Svako vozilo ima QR kod koji možete podeliti sa vlasnikom. Ako vlasnik ima <a href="/driver">Driver Toolbox</a>, može skenirati i preuzeti podatke direktno u svoju app — servisna istorija se automatski sinhronizuje.</div>
     </div>
     <div class="phone-img">
       <img src="/docs/garage-guide/06-vozila.png" alt="Lista vozila">
@@ -285,10 +327,10 @@ a:hover{text-decoration:underline}
   </div>
 </section>
 
-<!-- 7. DNEVNIK -->
+<!-- 8. DNEVNIK -->
 <section class="section" id="dnevnik">
   <div class="step-header">
-    <div class="step-num">7</div>
+    <div class="step-num">8</div>
     <div>
       <div class="step-title">Dnevnik i zakazivanje</div>
       <div class="step-sub">Pregled aktivnih radova i zakazani termini za nedelju dana</div>
@@ -313,10 +355,10 @@ a:hover{text-decoration:underline}
   </div>
 </section>
 
-<!-- 8. EXPORT I PDF -->
+<!-- 9. EXPORT I PDF -->
 <section class="section" id="export">
   <div class="step-header">
-    <div class="step-num">8</div>
+    <div class="step-num">9</div>
     <div>
       <div class="step-title">Export i PDF</div>
       <div class="step-sub">Pošaljite radni nalog klijentu ili sačuvajte za evidenciju</div>
@@ -340,11 +382,70 @@ a:hover{text-decoration:underline}
         <li><span class="num">✓</span><span>Sačuvajte na telefon — za arhivu ili štampanje</span></li>
       </ul>
       <div class="tip"><strong>Napomena:</strong> Logo koji ste podesili u Podešavanjima pojavljuje se automatski na svakom PDF-u. Ako logo nije postavljen, PDF će imati samo tekstualne podatke radnje.</div>
-      <div class="warn"><strong>Backup podataka:</strong> Svi podaci se čuvaju lokalno na telefonu. Redovno exportujte CSV iz Dnevnika za backup. Podaci se ne čuvaju automatski u cloud-u.</div>
+      <div class="tip green"><strong>Backup:</strong> Sa AU Core nalogom podaci se automatski čuvaju u cloud-u. Bez naloga exportujte CSV iz Dnevnika periodično kao lokalni backup.</div>
     </div>
     <div class="phone-img">
       <img src="/docs/garage-guide/01-pocetni.png" alt="Garage Toolbox pregled">
       <div class="img-caption">Početni ekran sa brojatem naloga</div>
+    </div>
+  </div>
+</section>
+
+<!-- 10. PRODAJ DEO -->
+<section class="section" id="prodaj">
+  <div class="step-header">
+    <div class="step-num optional">10</div>
+    <div>
+      <div class="step-title">Prodaj deo <span class="new-badge">novo</span></div>
+      <div class="step-sub">Postavljanje oglasa na autodelovi.autouniverse.rs direktno iz app-a</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Karton vozila → dugme <strong>Prodaj deo</strong>. Ova funkcija zahteva AU Core nalog (korak 2).</p>
+      <p>Forma se pre-filluje podacima vozila (marka, model, godište) — unesite samo:</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span><strong>Naziv dela</strong> — npr. "Prednji desni amortizer"</span></li>
+        <li><span class="num">2</span><span><strong>Kategorija</strong> — izaberite iz liste (Vešanje, Kočnice, Motor...)</span></li>
+        <li><span class="num">3</span><span><strong>Stanje</strong> — Novo, Polovno ispravno, Neispravan</span></li>
+        <li><span class="num">4</span><span><strong>Cena</strong> — unesite iznos ili ostavite "Cena na upit"</span></li>
+        <li><span class="num">5</span><span><strong>Fotografije</strong> — do 3 slike (opciono, ali preporučeno)</span></li>
+      </ul>
+      <p>Oglas se odmah pojavljuje na <a href="https://autodelovi.autouniverse.rs" target="_blank">autodelovi.autouniverse.rs</a> — kupci mogu kontaktirati direktno.</p>
+      <div class="tip"><strong>Savet:</strong> Vaši aktivni oglasi vidljivi su u sekciji "Moji oglasi" na Autodelovi platformi — možete ih pauzirati, aktivirati ili označiti kao prodato.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/06-vozila.png" alt="Karton vozila — dugme Prodaj deo">
+      <div class="img-caption">Karton vozila sa opcijom prodaje</div>
+    </div>
+  </div>
+</section>
+
+<!-- 11. CLOUD SYNC I NOTIFIKACIJE -->
+<section class="section" id="sync">
+  <div class="step-header">
+    <div class="step-num optional">11</div>
+    <div>
+      <div class="step-title">Cloud sync i notifikacije <span class="new-badge">novo</span></div>
+      <div class="step-sub">Povežite Garage sa Driver Toolbox klijenta — servisna istorija u realnom vremenu</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p><strong>Sync sa Driver Toolbox:</strong></p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span>Otvorite karton vozila u Garage-u</span></li>
+        <li><span class="num">2</span><span>Dodirnite <strong>QR kod</strong> — prikazuje se QR za vozilo</span></li>
+        <li><span class="num">3</span><span>Klijent skenira QR u svojoj Driver Toolbox app</span></li>
+        <li><span class="num">4</span><span>Od tog trenutka: svaki završen radni nalog u Garage-u → automatski vidljiv klijentu u Driver-u</span></li>
+      </ul>
+      <p><strong>Zvono (🔔) notifikacije:</strong></p>
+      <p>Ikonica zvona u gornjem desnom uglu prikazuje broj novih događaja — završeni nalozi koje nije pregledao, zakazani termini koji se bliže, sync potvrde od klijenata.</p>
+      <div class="tip green"><strong>Kako funkcioniše:</strong> Sync je jednosmeran iz Garage → Driver. Klijent vidi šta ste uradili, ne može menjati vaše naloge. AU Core nalog potreban na obe strane za automatski sync.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/garage-guide/06-vozila.png" alt="QR kod za sync sa Driver">
+      <div class="img-caption">QR kod za deljenje servisne istorije</div>
     </div>
   </div>
 </section>
@@ -359,7 +460,7 @@ a:hover{text-decoration:underline}
 
 <footer class="footer">
   <p>© 2026 <a href="/">AutoUniverse</a> · Belora Ventures Studio · Kruševac, Srbija ·
-  <a href="/driver">Driver Toolbox</a> · <a href="/garage">Garage Toolbox</a></p>
+  <a href="/driver-uputstvo">Driver Toolbox uputstvo</a> · <a href="/garage">Garage Toolbox</a></p>
 </footer>
 
 <script data-goatcounter="https://analytics.autouniverse.rs/count" async src="//analytics.autouniverse.rs/count.js"></script>
