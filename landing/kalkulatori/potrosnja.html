@@ -71,6 +71,29 @@ footer a{color:var(--ac)}
 </head>
 <body>
 
+
+<!-- D.3: AU calc-nav (sekundarna traka kalkulatora) -->
+<style>
+.au-calc-nav{background:#0d1218;border-bottom:1px solid rgba(255,255,255,.08);padding:8px 20px;overflow-x:auto;scrollbar-width:none}
+.au-calc-nav::-webkit-scrollbar{display:none}
+.au-calc-nav-inner{display:flex;gap:4px;max-width:1200px;margin:0 auto}
+.au-calc-nav-item{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;font-size:.82rem;font-weight:500;color:#8B92A5;text-decoration:none;border-radius:6px;white-space:nowrap;transition:color .15s,background .15s}
+.au-calc-nav-item:hover{color:#DDE1EC;background:rgba(255,255,255,.04)}
+.au-calc-nav-item.active{color:#0EA5E9;background:rgba(14,165,233,.1)}
+.au-calc-nav-icon{font-size:1rem}
+</style>
+<div class="au-calc-nav">
+  <div class="au-calc-nav-inner">
+      <a href="/kalkulatori/registracije.html" class="au-calc-nav-item"><span class="au-calc-nav-icon">🚙</span>Registracija</a>
+      <a href="/kalkulatori/uvoza.html" class="au-calc-nav-item"><span class="au-calc-nav-icon">🛃</span>Uvoz</a>
+      <a href="/kalkulatori/kredit.html" class="au-calc-nav-item"><span class="au-calc-nav-icon">💰</span>Kredit</a>
+      <a href="/kalkulatori/osiguranje.html" class="au-calc-nav-item"><span class="au-calc-nav-icon">🛡️</span>Osiguranje</a>
+      <a href="/kalkulatori/tco.html" class="au-calc-nav-item"><span class="au-calc-nav-icon">📊</span>TCO ukupno</a>
+      <a href="/kalkulatori/potrosnja.html" class="au-calc-nav-item active"><span class="au-calc-nav-icon">⛽</span>Potrošnja</a>
+      <a href="/kalkulatori/vin.html" class="au-calc-nav-item"><span class="au-calc-nav-icon">🔍</span>VIN skener</a>
+  </div>
+</div>
+
 <nav class="nav">
   <a href="/" class="nav-logo"><span class="dot"></span>AutoUniverse</a>
   <a href="/" class="nav-back">← Nazad na sajt</a>

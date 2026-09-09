@@ -568,6 +568,33 @@ header {
 </head>
 <body>
 
+<!-- AU Topbar (unified cross-property nav) -->
+<style>
+.au-topbar{background:#0a0e17;border-bottom:1px solid rgba(255,255,255,0.08);position:sticky;top:0;z-index:100}
+.au-topbar-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:44px;gap:16px}
+.au-topbar-logo{display:flex;align-items:center;gap:8px;color:#DDE1EC;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.95rem;letter-spacing:.3px;flex-shrink:0}
+.au-topbar-au{background:#0EA5E9;color:#000;padding:2px 6px;border-radius:4px;font-weight:900;font-size:.75rem}
+.au-topbar-nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.au-topbar-nav::-webkit-scrollbar{display:none}
+.au-topbar-nav a{color:#8B92A5;text-decoration:none;font-size:.82rem;font-weight:500;padding:8px 12px;border-radius:6px;white-space:nowrap;transition:color .15s,background .15s}
+.au-topbar-nav a:hover{color:#DDE1EC;background:rgba(255,255,255,0.04)}
+.au-topbar-nav a.active{color:#0EA5E9;background:rgba(14,165,233,0.1)}
+@media(max-width:640px){.au-topbar-logo span:last-child{display:none}.au-topbar-nav a{padding:8px 8px;font-size:.78rem}}
+</style>
+<div class="au-topbar">
+  <div class="au-topbar-inner">
+    <a href="https://autouniverse.rs" class="au-topbar-logo"><span class="au-topbar-au">AU</span><span>AutoUniverse</span></a>
+    <nav class="au-topbar-nav">
+      <a href="https://autouniverse.rs">Početna</a>
+      <a href="https://vozila.autouniverse.rs/">Vozila</a>
+      <a href="https://autopijaca.autouniverse.rs" class="active">Autopijaca</a>
+      <a href="https://autodelovi.autouniverse.rs">Autodelovi</a>
+      <a href="https://autouniverse.rs/kalkulatori">Kalkulatori</a>
+      <a href="https://hub.autouniverse.rs">Nalog</a>
+    </nav>
+  </div>
+</div>
+
 <div class="wm-bg">
   <svg viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
     <path d="M30,140 L70,75 Q90,45 130,42 L370,42 Q410,45 430,75 L470,140 Q480,155 470,165 L30,165 Q20,155 30,140 Z"/>
@@ -1077,6 +1104,17 @@ header {
 
   const match = location.pathname.match(/\/prodaja\/(\d+)/);
   if (match && !new URLSearchParams(location.search).get('seller_token')) openListing(match[1]);
+
+  // D.4: pre-fill filtera iz URL query params (dolazak iz Vozila cross-property linka)
+  (function preFillFromQuery(){
+    var qp = new URLSearchParams(location.search);
+    var map = {make:'f-make', model:'f-model', city:'f-city', max_price:'f-max-price', fuel:'f-fuel', min_year:'f-min-year', max_year:'f-max-year', q:'f-q'};
+    Object.keys(map).forEach(function(k){
+      var v = qp.get(k);
+      if (v) { var el = document.getElementById(map[k]); if (el) el.value = v; }
+    });
+  })();
+
   loadListings();
 
   if ('serviceWorker' in navigator) {
@@ -1084,5 +1122,52 @@ header {
   }
 </script>
 <script data-goatcounter="https://analytics.autouniverse.rs/count" async src="//analytics.autouniverse.rs/count.js"></script>
+
+<!-- AU Unified footer (D.2) -->
+<style>
+.au-footer{background:#0a0e17;border-top:1px solid rgba(255,255,255,0.08);padding:32px 20px 20px;margin-top:48px;color:#8B92A5;font-size:.85rem}
+.au-footer-inner{max-width:1200px;margin:0 auto}
+.au-footer-disclaimer{margin-bottom:20px;font-size:.8rem;color:#5A6070;line-height:1.5}
+.au-footer-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.au-footer-col h4{color:#DDE1EC;font-size:.85rem;font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.au-footer-col a{display:block;color:#8B92A5;text-decoration:none;padding:4px 0;font-size:.85rem;transition:color .15s}
+.au-footer-col a:hover{color:#0EA5E9}
+.au-footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:.78rem;color:#5A6070}
+.au-footer-bottom .au-footer-brand{color:#DDE1EC;font-family:'Barlow Condensed',sans-serif;font-weight:700}
+.au-footer-bottom .au-footer-brand span{color:#0EA5E9}
+</style>
+<footer class="au-footer">
+  <div class="au-footer-inner">
+    <p class="au-footer-disclaimer">Autopijaca.autouniverse.rs je oglasna tabla — nije strana u kupoprodaji, ne naplaćuje proviziju i ne odgovara za tačnost sadržaja oglasa. Tačnost podataka je isključivo odgovornost lica koje je postavilo oglas.</p>
+    <div class="au-footer-cols">
+      <div class="au-footer-col">
+        <h4>Ekosistem</h4>
+        <a href="https://autouniverse.rs">Početna</a>
+        <a href="https://vozila.autouniverse.rs/">Vozila</a>
+        <a href="https://autopijaca.autouniverse.rs">Autopijaca</a>
+        <a href="https://autodelovi.autouniverse.rs">Autodelovi</a>
+      </div>
+      <div class="au-footer-col">
+        <h4>Alati</h4>
+        <a href="https://autouniverse.rs/kalkulatori">Kalkulatori</a>
+        <a href="https://autouniverse.rs/driver">Driver Toolbox</a>
+        <a href="https://autouniverse.rs/garage">Garage Toolbox</a>
+        <a href="https://hub.autouniverse.rs">AU Core nalog</a>
+      </div>
+      <div class="au-footer-col">
+        <h4>Pravno</h4>
+        <a href="/o-nama">O nama</a>
+        <a href="/uslovi-koristenja">Uslovi korišćenja</a>
+        <a href="/politika-privatnosti">Politika privatnosti</a>
+        <a href="/kontakt">Kontakt i prijava</a>
+      </div>
+    </div>
+    <div class="au-footer-bottom">
+      <span class="au-footer-brand">Auto<span>Universe</span> · Kruševac</span>
+      <span>© <span id="au-footer-year"></span> AutoUniverse. Sva prava zadržana. · <a href="mailto:hello@autouniverse.rs" style="color:#8B92A5">hello@autouniverse.rs</a></span>
+    </div>
+  </div>
+</footer>
+<script>document.getElementById('au-footer-year').textContent=new Date().getFullYear();</script>
 </body>
 </html>

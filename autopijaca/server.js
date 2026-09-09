@@ -283,6 +283,12 @@ const server = http.createServer(async (req, res) => {
     return serveStatic(res, path.join(__dirname, 'public', 'index.html'));
   }
 
+  // D.6: pravne / info stranice
+  const staticPages = ['/o-nama', '/uslovi-koristenja', '/politika-privatnosti', '/kontakt'];
+  if (staticPages.includes(pathname)) {
+    return serveStatic(res, path.join(__dirname, 'public', pathname.slice(1) + '.html'));
+  }
+
   // Service worker i manifest — iz public/ ali serviran sa root
   if (pathname === '/sw.js' || pathname === '/manifest.json') {
     return serveStatic(res, path.join(__dirname, 'public', pathname));
