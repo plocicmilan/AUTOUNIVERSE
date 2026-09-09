@@ -267,16 +267,20 @@ footer a { color: var(--red); }
 
     <div class="grid2">
       <div class="field">
-        <label for="rc_kw">Snaga motora (kW)</label>
-        <input type="number" id="rc_kw" placeholder="npr. 85" min="1" max="999" oninput="calc()">
+        <label for="rc_ccm">Zapremina motora (ccm)</label>
+        <input type="number" id="rc_ccm" placeholder="npr. 1598" min="1" max="9999" oninput="calc()">
       </div>
       <div class="field">
-        <label for="rc_year">Godina vozila</label>
-        <input type="number" id="rc_year" placeholder="npr. 2015" min="1970" max="2026" oninput="calc()">
+        <label for="rc_kw">Snaga motora (kW) — za AO</label>
+        <input type="number" id="rc_kw" placeholder="npr. 85" min="1" max="999" oninput="calc()">
       </div>
     </div>
 
     <div class="grid2">
+      <div class="field">
+        <label for="rc_year">Godina vozila</label>
+        <input type="number" id="rc_year" placeholder="npr. 2015" min="1970" max="2026" oninput="calc()">
+      </div>
       <div class="field">
         <label for="rc_fuel">Gorivo</label>
         <select id="rc_fuel" onchange="calc()">
@@ -284,6 +288,19 @@ footer a { color: var(--red); }
           <option value="dizel">Dizel</option>
           <option value="gas">Gas (LPG/CNG)</option>
           <option value="struja">Električno</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="rc_euro">Euro ekološka klasa</label>
+        <select id="rc_euro" onchange="calc()">
+          <option value="euro6">Euro 6 (2015+)</option>
+          <option value="euro5">Euro 5 (2009–2014)</option>
+          <option value="euro4">Euro 4 (2005–2009)</option>
+          <option value="euro3">Euro 3 (2000–2005)</option>
+          <option value="euro2">Euro 2 (pre 2000)</option>
         </select>
       </div>
       <div class="field">
@@ -319,7 +336,7 @@ footer a { color: var(--red); }
   <div class="cta-box">
     <h3>Pratite sve troškove vozila</h3>
     <p>Driver Toolbox — besplatna aplikacija za praćenje servisa, troškova i istorije svakog vašeg vozila.</p>
-    <a href="https://plocicmilan.github.io/AUTOUNIVERSE/driver/" class="cta-btn">Otvori Driver →</a>
+    <a href="https://driver.autouniverse.rs/" class="cta-btn">Otvori Driver →</a>
   </div>
 
 </div>
@@ -330,43 +347,61 @@ footer a { color: var(--red); }
 
 <script>
 function calc() {
+  var ccm  = parseFloat(document.getElementById('rc_ccm').value)  || 0;
   var kw   = parseFloat(document.getElementById('rc_kw').value)   || 0;
   var year = parseInt(document.getElementById('rc_year').value, 10) || 0;
   var fuel = document.getElementById('rc_fuel').value;
+  var euro = document.getElementById('rc_euro').value;
   var cat  = document.getElementById('rc_cat').value;
   var res  = document.getElementById('result');
 
-  if (!kw || !year) { res.classList.remove('show'); return; }
+  if (!ccm || !kw || !year) { res.classList.remove('show'); return; }
+
+  var age = 2026 - year;
+  var fmt = function(n) { return Math.round(n).toLocaleString('sr-RS'); };
 
   // Tehnički pregled (JKP Putevi Srbije 2026)
   var teh = cat === 'M1' ? 3700 : 4800;
 
-  // AO osiguranje — procena (osnova kW × 580 + fiksno)
-  var ao = Math.round(kw * 580 + 8000);
-  if (fuel === 'dizel') ao = Math.round(ao * 1.10);
-  if (fuel === 'struja') ao = Math.round(ao * 0.70);
-  if (fuel === 'gas') ao = Math.round(ao * 0.95);
-  var age = 2026 - year;
+  // Porez na upotrebu motornih vozila (Zakon o porezima na upotrebu RS, tarife 2026)
+  var pBase = 0;
+  if      (ccm <= 1150) pBase = 1910;
+  else if (ccm <= 1300) pBase = 4200;
+  else if (ccm <= 1600) pBase = 7500;
+  else if (ccm <= 2000) pBase = 14500;
+  else if (ccm <= 2500) pBase = 45000;
+  else if (ccm <= 3000) pBase = 90000;
+  else                  pBase = 180000;
+  var ageFactor = age >= 20 ? 0.30 : age >= 16 ? 0.30 : age >= 11 ? 0.50 : age >= 6 ? 0.80 : 1.0;
+  var porez = fuel === 'struja' ? 0 : Math.round(pBase * ageFactor);
+  if (cat === 'N1') porez = Math.round(porez * 1.20);
+
+  // AO osiguranje (minimalna premija po kW, bonus-malus 0)
+  var aoTiers = [
+    {max:40,p:6500},{max:55,p:8500},{max:66,p:10500},
+    {max:80,p:12500},{max:100,p:15000},{max:120,p:18000},
+    {max:150,p:22000},{max:200,p:28000},{max:9999,p:35000}
+  ];
+  var ao = (aoTiers.find(function(t){return kw<=t.max;})||{p:35000}).p;
   if (age > 15) ao = Math.round(ao * 0.90);
   else if (age > 10) ao = Math.round(ao * 0.95);
 
-  // Republička administrativna taksa (MUP 2026)
-  var taksa = 0;
-  if (kw <= 55)       taksa = 3680;
-  else if (kw <= 75)  taksa = 5670;
-  else if (kw <= 100) taksa = 7350;
-  else if (kw <= 130) taksa = 10350;
-  else if (kw <= 160) taksa = 13800;
-  else                taksa = 18200;
-  if (cat === 'N1') taksa = Math.round(taksa * 1.15);
+  // Ekološka naknada po Euro klasi
+  var ekoMap = {struja:0, euro6:500, euro5:700, euro4:1000, euro3:1500, euro2:2500};
+  var eko = fuel === 'struja' ? 0 : (ekoMap[euro] !== undefined ? ekoMap[euro] : 700);
 
-  var total = teh + ao + taksa;
-  var fmt = function(n) { return Math.round(n).toLocaleString('sr-RS'); };
+  // Admin. takse (republička + nalepnica)
+  var taksa = 3290;
+
+  var total = teh + porez + ao + eko + taksa;
+  var porezNote = fuel === 'struja' ? ' (oslobođeno)' : '';
 
   var rows = [
     { l: 'Tehnički pregled', v: fmt(teh) + ' RSD', s: cat === 'M1' ? 'M1 kategorija' : 'N1 kategorija' },
-    { l: 'AO osiguranje', v: fmt(ao) + ' RSD', s: 'procena bez bonus/malus · ' + fuel + (age > 0 ? ' · ' + age + ' god. vozilo' : '') },
-    { l: 'Republička taksa', v: fmt(taksa) + ' RSD', s: kw + ' kW' + (cat === 'N1' ? ' · N1 +15%' : '') },
+    { l: 'Porez na upotrebu' + porezNote, v: fmt(porez) + ' RSD', s: ccm + ' ccm · ' + age + ' god. starosti' },
+    { l: 'AO osiguranje', v: fmt(ao) + ' RSD', s: 'procena, bonus/malus 0 · ' + kw + ' kW' },
+    { l: 'Ekološka naknada', v: fmt(eko) + ' RSD', s: euro.toUpperCase() },
+    { l: 'Admin. takse + nalepnica', v: fmt(taksa) + ' RSD', s: 'fiksno' },
   ];
 
   document.getElementById('result_rows').innerHTML = rows.map(function(r) {
