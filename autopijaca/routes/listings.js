@@ -2,15 +2,46 @@ const crypto = require('crypto');
 const fs     = require('fs');
 const path   = require('path');
 const { getDb } = require('../db');
-const { send, tplSellerToken } = require('../email');
+const { send, tplSellerToken, tplRecoverTokens } = require('../email');
 
 const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
+
+// Rate limit: 1 recovery request per email per hour
+const recoveryRateLimit = new Map();
 
 function genToken() {
   return crypto.randomBytes(16).toString('hex');
 }
 
 module.exports = function (router) {
+
+  // POST /listings/recover-token — pošalji sve tokene za oglase pod datim email-om
+  router.post('/listings/recover-token', async (req, res, body) => {
+    const email = String(body.email || '').trim().toLowerCase();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      const e = new Error('Nevažeći email'); e.status = 400; throw e;
+    }
+    const now = Date.now();
+    const last = recoveryRateLimit.get(email);
+    if (last && (now - last) < 60 * 60 * 1000) {
+      const e = new Error('Već je poslat email. Pokušaj za sat vremena.'); e.status = 429; throw e;
+    }
+    recoveryRateLimit.set(email, now);
+
+    const items = getDb().prepare(
+      `SELECT id, make, model, year, seller_token, status FROM listings WHERE LOWER(contact_email) = ? ORDER BY created_at DESC`
+    ).all(email);
+
+    if (items.length > 0) {
+      send({
+        to: email,
+        subject: `Povraćaj tokena za ${items.length} oglas${items.length === 1 ? '' : 'a'} — Autopijaca`,
+        html: tplRecoverTokens(items),
+      }).catch(err => console.error('[listings/recover-token]', err));
+    }
+
+    res.json(200, { ok: true, message: 'Ako email postoji u bazi, poslata je poruka sa linkovima.' });
+  });
 
   // GET /stats — javna statistika tržišta
   router.get('/stats', async (req, res) => {

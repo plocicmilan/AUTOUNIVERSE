@@ -3,7 +3,10 @@ const fs     = require('fs');
 const path   = require('path');
 const http   = require('http');
 const { getDb } = require('../db');
-const { send, tplSellerToken } = require('../email');
+const { send, tplSellerToken, tplRecoverTokens } = require('../email');
+
+// Rate limit: 1 recovery request per email per hour
+const recoveryRateLimit = new Map();
 
 const AU_CORE = 'http://localhost:3000';
 
@@ -61,6 +64,36 @@ module.exports = function (router) {
     const byCat  = db.prepare("SELECT category, COUNT(*) AS n FROM parts WHERE status='active' GROUP BY category ORDER BY n DESC").all();
     const recent = db.prepare("SELECT title, category, price, currency, city FROM parts WHERE status='active' ORDER BY created_at DESC LIMIT 5").all();
     res.json(200, { active, sold, total, by_category: byCat, recent });
+  });
+
+  // POST /parts/recover-token — pošalji sve tokene za oglase pod datim email-om
+  router.post('/parts/recover-token', async (req, res, body) => {
+    const email = String(body.email || '').trim().toLowerCase();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      const e = new Error('Nevažeći email'); e.status = 400; throw e;
+    }
+    // Rate limit: 1x per hour per email
+    const now = Date.now();
+    const last = recoveryRateLimit.get(email);
+    if (last && (now - last) < 60 * 60 * 1000) {
+      const e = new Error('Već je poslat email. Pokušaj za sat vremena.'); e.status = 429; throw e;
+    }
+    recoveryRateLimit.set(email, now);
+
+    const items = getDb().prepare(
+      `SELECT id, title, seller_token, status FROM parts WHERE LOWER(contact_email) = ? ORDER BY created_at DESC`
+    ).all(email);
+
+    // Uvek vrati OK (ne otkrivaj da li email postoji — anti enumeration)
+    if (items.length > 0) {
+      send({
+        to: email,
+        subject: `Povraćaj tokena za ${items.length} oglas${items.length === 1 ? '' : 'a'} — Autodelovi`,
+        html: tplRecoverTokens(items),
+      }).catch(err => console.error('[parts/recover-token]', err));
+    }
+
+    res.json(200, { ok: true, message: 'Ako email postoji u bazi, poslata je poruka sa linkovima.' });
   });
 
   // GET /parts/mine — oglasi ulogovanog korisnika

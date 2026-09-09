@@ -67,4 +67,42 @@ function tplSellerToken(listing_id, seller_token, make, model) {
 </body></html>`;
 }
 
-module.exports = { send, tplSellerToken };
+function tplRecoverTokens(items) {
+  const rows = items.map(it => {
+    const panelUrl = `https://autopijaca.autouniverse.rs/?listing=${it.id}&seller_token=${encodeURIComponent(it.seller_token)}`;
+    const title = `${it.make} ${it.model}${it.year ? ' ' + it.year : ''}`;
+    return `<tr>
+      <td style="padding:12px;border-bottom:1px solid #eee">
+        <div style="font-weight:bold;color:#333">${esc(title)}</div>
+        <div style="font-size:12px;color:#888">ID: ${it.id} · Status: ${esc(it.status)}</div>
+        <a href="${panelUrl}" style="display:inline-block;margin-top:8px;background:#0EA5E9;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;font-size:13px">Otvori panel →</a>
+      </td>
+    </tr>`;
+  }).join('');
+  return `<!DOCTYPE html>
+<html lang="sr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Povraćaj tokena — Autopijaca</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px}
+.wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden}
+.header{background:#0EA5E9;padding:24px;text-align:center}
+.header h1{color:#fff;margin:0;font-size:22px;letter-spacing:1px}
+.body{padding:28px 24px}
+.body p{color:#333;line-height:1.6;margin:0 0 16px}
+table{width:100%;border-collapse:collapse;margin:16px 0}
+.footer{background:#f0f0f0;padding:14px;text-align:center;font-size:12px;color:#888}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="header"><h1>🚗 AUTOPIJACA</h1></div>
+  <div class="body">
+    <p>Zatraženo je povraćaj tokena za oglase pod ovim email-om. Ispod je lista svih tvojih oglasa i direktni linkovi za upravljanje:</p>
+    <table>${rows}</table>
+    <p style="font-size:12px;color:#888">Ako nisi ti zatražio ovo — ignoriši email. Ništa se nije promenilo.</p>
+  </div>
+  <div class="footer">AutoUniverse · Kruševac · <a href="https://autopijaca.autouniverse.rs/" style="color:#888">autopijaca.autouniverse.rs</a></div>
+</div>
+</body></html>`;
+}
+
+module.exports = { send, tplSellerToken, tplRecoverTokens };

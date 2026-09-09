@@ -68,8 +68,29 @@ a { color: #0EA5E9; }
   <div class="card">
     <div class="card-icon">🔑</div>
     <div class="card-title">Izgubljen seller token</div>
-    <div class="card-body">Ako ste izgubili token za upravljanje oglasom, pošaljite email sa ID-jem oglasa i email adresom kojom je oglas postavljen — pomažemo u restauraciji.</div>
+    <div class="card-body">
+      <p style="margin-bottom:12px">Ako ste izgubili token, unesite email kojim ste postavili oglas — poslaćemo vam sve linkove za upravljanje.</p>
+      <form onsubmit="recoverTokens(event)" style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="email" id="recover-email" placeholder="vaš@email.com" required style="flex:1;min-width:200px;padding:10px 12px;background:#0a0e17;border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#DDE1EC;font-size:.9rem">
+        <button type="submit" style="padding:10px 20px;background:#0EA5E9;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer">Pošalji</button>
+      </form>
+      <div id="recover-msg" style="margin-top:10px;font-size:.85rem;color:#8B92A5"></div>
+    </div>
   </div>
+  <script>
+  async function recoverTokens(e) {
+    e.preventDefault();
+    var email = document.getElementById('recover-email').value.trim();
+    var msg = document.getElementById('recover-msg');
+    msg.textContent = 'Slanje...';
+    try {
+      var r = await fetch('/listings/recover-token', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:email})});
+      var d = await r.json();
+      if (r.ok) { msg.style.color='#10B981'; msg.textContent = d.message; }
+      else { msg.style.color='#EF4444'; msg.textContent = d.error || 'Greška'; }
+    } catch(err) { msg.style.color='#EF4444'; msg.textContent = 'Greška pri slanju: ' + err.message; }
+  }
+  </script>
   <div class="card">
     <div class="card-icon">💡</div>
     <div class="card-title">Predlozi i feedback</div>

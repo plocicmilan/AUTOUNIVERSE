@@ -87,7 +87,7 @@ PWA ekosistem za auto industriju. Filozofija: vozilo je centralni entitet. Sve p
 |---|---|
 | **Billing jedinica** | Per nalog (flat fee) — VPS trošak je fiksan |
 | **Pricing** | Free / Basic ~3€/mes / Pro ~8€/mes |
-| **Free limit** | 1 vozilo — blokira unos, stari podaci vidljivi |
+| **Free limit** | 1 vozilo na AU Core nalogu (cloud). APK offline nema limit — Free korisnik može imati N vozila lokalno bez registracije. Enforcement u `aucore/routes/vehicles.js:44`, config `aucore/lib/tiers.js`. |
 | **Conflict resolution** | Last-write-wins (timestamp) |
 | **Trial** | Nema — Free je permanentan |
 | **Storage model** | Hybrid C: Free = lokalno only, Basic/Pro = lokalno + cloud sync |
