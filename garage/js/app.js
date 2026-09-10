@@ -1749,6 +1749,9 @@
             '<input id="sp_cname" class="field" type="text" value="' + esc(profile.name || "") + '"></label>' +
           '<label style="margin-top:.6rem">Telefon<br>' +
             '<input id="sp_cphone" class="field" type="tel" value="' + esc(profile.phone || "") + '" placeholder="+381..."></label>' +
+          '<label style="margin-top:.6rem">Email <span style="font-size:.8rem;color:var(--c-accent,#0EA5E9);font-weight:normal">(preporučeno)</span><br>' +
+            '<input id="sp_cemail" class="field" type="email" value="' + esc(profile.email || "") + '" placeholder="npr. ime@gmail.com"></label>' +
+          '<p style="font-size:.78rem;color:#888;margin:.3rem 0 0">Potrebno za povraćaj tokena i obaveštenja o upitima</p>' +
           '<label style="margin-top:.6rem">Kontakt metod<br>' +
             '<select id="sp_cmethod" class="field">' +
               '<option value="phone_call">📞 Poziv</option>' +
@@ -3134,8 +3137,9 @@
       var title  = val("sp_title");
       var price  = parseFloat(val("sp_price"));
       var cname  = val("sp_cname");
-      var cphone = val("sp_cphone");
-      var errEl  = el("sp_err");
+      var cphone  = val("sp_cphone");
+      var cemail  = val("sp_cemail");
+      var errEl   = el("sp_err");
 
       if (!title || !price || !cname || !cphone) {
         errEl.textContent = "Naziv, cena, ime i telefon su obavezni.";
@@ -3164,6 +3168,7 @@
         city:           val("sp_city") || null,
         contact_name:   cname,
         contact_phone:  cphone,
+        contact_email:  cemail || null,
         contact_method: el("sp_cmethod").value,
       };
 

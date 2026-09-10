@@ -3,7 +3,7 @@ const fs     = require('fs');
 const path   = require('path');
 const http   = require('http');
 const { getDb } = require('../db');
-const { send, tplSellerToken, tplRecoverTokens } = require('../email');
+const { send, tplSellerToken, tplRecoverTokens, tplWelcome } = require('../email');
 
 // Rate limit: 1 recovery request per email per hour
 const recoveryRateLimit = new Map();
@@ -144,6 +144,10 @@ module.exports = function (router) {
     const db = getDb();
     const seller_token = genToken();
 
+    const isFirstListing = contact_email
+      ? (db.prepare(`SELECT COUNT(*) AS n FROM parts WHERE LOWER(contact_email) = ?`).get(contact_email.toLowerCase())?.n || 0) === 0
+      : false;
+
     const result = db.prepare(`
       INSERT INTO parts
         (seller_token, user_id, title, category, condition, part_number, compatible,
@@ -193,6 +197,14 @@ module.exports = function (router) {
         subject: `Oglas objavljen: ${title} (ID: ${part_id})`,
         html: tplSellerToken(part_id, seller_token, title),
       }).catch(err => console.error('[parts] email greška:', err));
+
+      if (isFirstListing) {
+        send({
+          to: contact_email,
+          subject: 'Dobrodošao na Autodelovi — 3 saveta za brzu prodaju',
+          html: tplWelcome(part_id, seller_token, title),
+        }).catch(err => console.error('[parts] welcome email greška:', err));
+      }
     }
 
     res.json(201, {

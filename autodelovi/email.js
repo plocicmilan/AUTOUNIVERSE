@@ -104,4 +104,60 @@ table{width:100%;border-collapse:collapse;margin:16px 0}
 </body></html>`;
 }
 
-module.exports = { send, tplSellerToken, tplRecoverTokens };
+function tplWelcome(part_id, seller_token, title) {
+  const panelUrl = `https://autodelovi.autouniverse.rs/?part=${part_id}&seller_token=${encodeURIComponent(seller_token)}`;
+  return `<!DOCTYPE html>
+<html lang="sr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dobrodošao na Autodelovi</title>
+<style>
+  body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px}
+  .wrap{max-width:560px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden}
+  .header{background:#0EA5E9;padding:24px;text-align:center}
+  .header h1{color:#fff;margin:0;font-size:22px;letter-spacing:1px}
+  .header p{color:#e0f2fe;margin:6px 0 0;font-size:14px}
+  .body{padding:28px 24px}
+  .body p{color:#333;line-height:1.6;margin:0 0 14px}
+  .tip{background:#f8f9fa;border-left:3px solid #0EA5E9;padding:12px 16px;border-radius:0 6px 6px 0;margin:8px 0;font-size:14px;color:#444}
+  .apps{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+  .app{flex:1;min-width:140px;background:#e0f2fe;border-radius:8px;padding:14px;text-align:center;text-decoration:none}
+  .app .icon{font-size:24px;display:block;margin-bottom:6px}
+  .app .name{font-size:13px;font-weight:bold;color:#0369a1}
+  .app .desc{font-size:11px;color:#666;margin-top:3px}
+  .btn{display:block;width:fit-content;margin:20px auto;background:#0EA5E9;color:#fff;text-decoration:none;padding:12px 28px;border-radius:6px;font-size:15px;font-weight:bold}
+  .footer{background:#f0f0f0;padding:14px;text-align:center;font-size:12px;color:#888}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="header"><h1>⚙️ AUTODELOVI</h1><p>Deo AutoUniverse ekosistema</p></div>
+  <div class="body">
+    <p>Zdravo! Tvoj oglas za <b>${esc(title)}</b> je objavljen — sada ga mogu videti kupci širom Srbije.</p>
+    <p><b>3 saveta za brzu prodaju:</b></p>
+    <div class="tip">📸 <b>Dodaj fotografije</b> — oglasi sa slikama dobijaju 5× više upita</div>
+    <div class="tip">💬 <b>Budi precizan u opisu</b> — navedi za koji motor i godište odgovara deo</div>
+    <div class="tip">💰 <b>Realna cena</b> — pogledaj slične oglase i cenu prilagodi stanju dela</div>
+    <a class="btn" href="${panelUrl}">Otvori moj oglas →</a>
+    <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+    <p style="font-size:13px"><b>Još nisi isprobao ostatak AutoUniverse-a?</b></p>
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="padding:8px;text-align:center;background:#e0f2fe;border-radius:8px;width:48%">
+        <div style="font-size:22px">🚗</div>
+        <div style="font-weight:bold;font-size:13px;color:#0369a1">Autopijaca</div>
+        <div style="font-size:11px;color:#666">Prodaj celo vozilo</div>
+        <a href="https://autopijaca.autouniverse.rs/" style="font-size:11px;color:#0EA5E9">autopijaca.autouniverse.rs</a>
+      </td>
+      <td width="4%"></td>
+      <td style="padding:8px;text-align:center;background:#e0f2fe;border-radius:8px;width:48%">
+        <div style="font-size:22px">🔧</div>
+        <div style="font-weight:bold;font-size:13px;color:#0369a1">Garage Toolbox</div>
+        <div style="font-size:11px;color:#666">Za majstore</div>
+        <a href="https://autouniverse.rs/garage" style="font-size:11px;color:#0EA5E9">autouniverse.rs/garage</a>
+      </td>
+    </tr></table>
+    <p style="font-size:12px;color:#888;margin-top:16px">Pitanja? Piši nam na <a href="mailto:hello@autouniverse.rs" style="color:#0EA5E9">hello@autouniverse.rs</a></p>
+  </div>
+  <div class="footer">AutoUniverse · Kruševac · <a href="https://autouniverse.rs" style="color:#888">autouniverse.rs</a></div>
+</div>
+</body></html>`;
+}
+
+module.exports = { send, tplSellerToken, tplRecoverTokens, tplWelcome };

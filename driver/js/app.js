@@ -1456,7 +1456,7 @@
         '<p style="color:#64748b;font-size:.83rem;padding:0 0 16px">Proceni troškove pre nego što platite.</p>' +
         '<div class="card" style="padding:0;overflow:hidden">' +
           [
-            ['reg_calc',   '📋', 'Kalkulator registracije', 'Tehnički pregled + AO + taksa → RSD procena'],
+            ['reg_calc',   '📋', 'Kalkulator registracije', 'Kubikaža, godište, gorivo → AO + tehnički + porez RSD'],
             ['fuel_calc',  '⛽', 'Potrošnja goriva',        'Koliko litara i dinara potrošiš mesečno/godišnje'],
             ['cost_calc',  '💰', 'Troškovi vlasništva',     'Ukupni godišnji troškovi posedovanja auta'],
             ['uvoz_calc',  '🚢', 'Kalkulator uvoza',        'Carina + PDV + homologacija → ukupan uvozni trošak'],
