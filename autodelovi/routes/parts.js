@@ -135,9 +135,6 @@ module.exports = function (router) {
     } = body;
 
     const auUser = await validateAuSession(req);
-    if (!auUser) {
-      const e = new Error('Prijavite se da biste objavili oglas'); e.status = 401; throw e;
-    }
 
     if (!title || !contact_name || !contact_phone) {
       const e = new Error('title, contact_name, contact_phone su obavezni');
@@ -157,7 +154,7 @@ module.exports = function (router) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       seller_token,
-      auUser.id,
+      auUser?.id ?? null,
       title,
       CATEGORIES.includes(category) ? category : 'ostalo',
       ['nov', 'polovan', 'renoviran', 'neispravan'].includes(condition) ? condition : 'polovan',
