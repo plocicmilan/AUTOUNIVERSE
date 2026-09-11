@@ -1,5 +1,5 @@
 # AutoUniverse Blog — Registry & Plan
-**Ažurirano:** 2026-09-10
+**Ažurirano:** 2026-09-11
 **URL:** https://autouniverse.rs/blog
 **Fajlovi:** `autouniverse/landing/blog/*.html` + `landing/blog.html` (listing)
 
@@ -12,10 +12,10 @@ Ažuriraj status kad god post ide live.
 
 | | Broj |
 |---|---|
-| Ukupno live | 98 |
-| Model istorijati | 51 |
-| Vodiči / saveti | 47 |
-| Planirano (ovaj dokument) | 50 |
+| Ukupno live | 148 |
+| Model istorijati | 71 (51 stari + 20 novi) |
+| Vodiči / saveti | 77 (47 stari + 30 novi) |
+| Planirano (ovaj dokument) | 0 — sve objavljeno 2026-09-11 |
 
 ---
 
@@ -167,7 +167,7 @@ Ažuriraj status kad god post ide live.
 
 ---
 
-## PLAN — 50 novih blog postova
+## LIVE — 50 novih blog postova (objavljeno 2026-09-11)
 
 ### Tier 1 — Model istorijati: najtraženije marke u Srbiji (20 postova)
 
