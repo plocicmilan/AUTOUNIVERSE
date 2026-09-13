@@ -50,6 +50,7 @@
     "oil_change",
     "brake_service",
     "belt_service",
+    "coolant_service",
     "repair",
     "tires",
     "battery",

@@ -172,6 +172,7 @@
   "d.documents_soon": "Dokumenta (saobraćajna, polise, računi) stižu u sledećoj verziji.",
   "d.need_vehicle": "Prvo dodaj vozilo.",
   "d.need_make": "Marka ili model je obavezan.",
+  "d.type_coolant_service": "Rashladna tečnost",
   "d.type_belt_service": "Kaiš / lanac",
   "d.type_brake_service": "Kočnice",
   "d.type_oil_change": "Zamena ulja",

@@ -358,6 +358,7 @@
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'oil_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1500">🛢️ Istorija zamene ulja</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'brake_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a0a0a">🛑 Istorija kočnica</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'belt_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#0a1a0a">⚙️ Istorija kaišа/lanca</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'coolant_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#0a1020">🌡️ Istorija rashladne tečnosti</button>' +
             (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
@@ -515,6 +516,21 @@
               '<input type="file" accept="image/*" multiple onchange="DR.pickEventPhotos(this)" hidden></label>' +
             '<div id="evtPreview">' + eventPhotoPreviewHTML() + '</div>' +
             retroBox +
+          '</div>' +
+          '<div id="coolantFields"' + (e.type === "coolant_service" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
+            '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🌡️ Detalji rashladne tečnosti (opciono)</div>' +
+            '<div class="row2">' +
+              '<label class="field"><span>Tip (G11/G12/G13…)</span>' +
+                '<input id="e_clt_type" type="text" placeholder="G12+, G13…" value="' + esc((e.coolant_data && e.coolant_data.coolant_type) || "") + '"></label>' +
+              '<label class="field"><span>Koncentracija (%)</span>' +
+                '<input id="e_clt_conc" type="number" min="30" max="70" placeholder="npr. 50" value="' + esc((e.coolant_data && e.coolant_data.concentration_pct != null) ? e.coolant_data.concentration_pct : "") + '"></label>' +
+            '</div>' +
+            '<label class="field"><span>Sledeća zamena za (god.)</span>' +
+              '<input id="e_clt_years" type="number" min="1" max="10" placeholder="npr. 3" value="' + esc((e.coolant_data && e.coolant_data.interval_years != null) ? e.coolant_data.interval_years : "") + '"></label>' +
+            '<div style="margin-top:8px">' +
+              '<label class="chk"><input type="checkbox" id="e_clt_therm"' + (e.coolant_data && e.coolant_data.thermostat_changed ? " checked" : "") + '> Zamenjen termostat</label>' +
+              '<label class="chk mt8"><input type="checkbox" id="e_clt_hoses"' + (e.coolant_data && e.coolant_data.hoses_checked ? " checked" : "") + '> Pregledane cevi i spojevi</label>' +
+            '</div>' +
           '</div>' +
           '<div id="beltFields"' + (e.type === "belt_service" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
             '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">⚙️ Detalji kaišа / lanca (opciono)</div>' +
@@ -1712,6 +1728,92 @@
           });
 
           html += '<button class="btn btn-secondary mt8" onclick="DR.go(\'expense_form\')" style="font-size:.85rem">+ Dodaj punjenje</button>';
+          return html;
+        });
+    },
+
+    /* ===== COOLANT TRACKER ===== */
+    coolant_log: function (params) {
+      var vehId = (params && params.vehicle_id) || App.activeVehicleId;
+      return Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
+        .then(function (res) {
+          var v = res[0], events = res[1];
+          if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+
+          var coolantEvents = events
+            .filter(function (e) { return e.type === "coolant_service"; })
+            .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+          var vLabel = esc((v.make || "") + " " + (v.model || "") + (v.plate ? " • " + v.plate : ""));
+          var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+            '<h1>🌡️ Istorija rashladne tečnosti</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 8px">' + vLabel + '</p>';
+
+          var latest = coolantEvents[0];
+          if (latest) {
+            var cd = latest.coolant_data || {};
+            var installDate = (latest.date || "").slice(0, 10);
+            var ageMs = installDate ? (new Date() - new Date(installDate)) : null;
+            var ageMonths = ageMs ? Math.floor(ageMs / (1000 * 60 * 60 * 24 * 30.5)) : null;
+            var interval = (cd.interval_years || 3) * 12; // meseci, default 3 god
+            var pct = ageMonths != null ? ageMonths / interval : null;
+            var ageColor = pct == null ? "#94a3b8" : pct < 0.7 ? "#4ade80" : pct < 0.9 ? "#fbbf24" : "#f87171";
+            var ageStr = ageMonths != null
+              ? (ageMonths >= 12 ? Math.floor(ageMonths / 12) + " god. " + (ageMonths % 12 ? ageMonths % 12 + " mes." : "") : ageMonths + " mes.")
+              : "—";
+
+            html += '<div class="card" style="margin-bottom:.6rem;background:#101520">' +
+              '<div style="font-weight:600;font-size:.88rem;margin-bottom:8px">Poslednja zamena</div>' +
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+                '<div><div style="color:#64748b;font-size:.75rem">Starost</div>' +
+                  '<div style="font-weight:700;font-size:1.1rem;color:' + ageColor + '">' + ageStr + '</div></div>' +
+                '<div><div style="color:#64748b;font-size:.75rem">Interval</div>' +
+                  '<div style="font-weight:600;font-size:.95rem">' + (cd.interval_years || 3) + ' god.</div></div>' +
+                ((cd.coolant_type || cd.concentration_pct != null) ?
+                  '<div style="grid-column:span 2"><div style="color:#64748b;font-size:.75rem">Tečnost</div>' +
+                    '<div style="font-size:.9rem">' +
+                      [cd.coolant_type, cd.concentration_pct != null ? cd.concentration_pct + '% konc.' : ''].filter(Boolean).join(' • ') +
+                    '</div></div>' : '') +
+                ((cd.thermostat_changed || cd.hoses_checked) ?
+                  '<div style="grid-column:span 2;font-size:.78rem;color:#94a3b8">' +
+                    [cd.thermostat_changed ? '✓ termostat' : '', cd.hoses_checked ? '✓ cevi pregledane' : ''].filter(Boolean).join(' • ') +
+                  '</div>' : '') +
+              '</div>' +
+              (pct != null && pct >= 0.9
+                ? '<div style="background:#172554;color:#93c5fd;padding:6px 8px;border-radius:6px;font-size:.8rem;margin-top:8px">⚠️ Blizu roka zamene rashladne tečnosti</div>' : '') +
+              '<div style="color:#64748b;font-size:.78rem;margin-top:6px">' + installDate +
+                (latest.mileage_km ? ' • ' + latest.mileage_km.toLocaleString("sr") + ' km' : '') + '</div>' +
+            '</div>';
+          }
+
+          if (!coolantEvents.length) {
+            html += '<div class="card"><p class="empty">Nema evidentiranih zamena rashladne tečnosti. Dodaj događaj tipa "Rashladna tečnost".</p></div>';
+          } else {
+            html += '<div style="font-weight:600;font-size:.85rem;margin:12px 0 6px">Istorija zamena</div>';
+            coolantEvents.forEach(function (e) {
+              var cd = e.coolant_data || {};
+              html += '<div class="card" style="margin-bottom:.4rem;padding:10px 14px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+                  '<div>' +
+                    (cd.coolant_type ? '<span style="font-weight:600">' + esc(cd.coolant_type) + '</span> ' : '<span style="color:#64748b">Rashladna tečnost</span> ') +
+                    (cd.concentration_pct != null ? '<span style="color:#94a3b8;font-size:.82rem">' + cd.concentration_pct + '%</span>' : '') +
+                    ((cd.thermostat_changed || cd.hoses_checked)
+                      ? '<div style="color:#94a3b8;font-size:.76rem;margin-top:2px">' +
+                          [cd.thermostat_changed ? '✓ termostat' : '', cd.hoses_checked ? '✓ cevi' : ''].filter(Boolean).join(' • ') +
+                        '</div>' : '') +
+                  '</div>' +
+                  (e.mileage_km ? '<span style="color:#64748b;font-size:.8rem">' + e.mileage_km.toLocaleString("sr") + ' km</span>' : '') +
+                '</div>' +
+                '<div style="color:#64748b;font-size:.78rem;margin-top:3px;display:flex;gap:10px">' +
+                  '<span>' + (e.date || "").slice(0, 10) + '</span>' +
+                  (e.shop_name ? '<span>' + esc(e.shop_name) + '</span>' : '') +
+                  (e.cost && e.cost.total ? '<span>' + Math.round(e.cost.total).toLocaleString("sr") + ' ' + (e.cost.currency || "RSD") + '</span>' : '') +
+                '</div>' +
+              '</div>';
+            });
+          }
+
+          html += '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vehId) + '\',false)" style="font-size:.85rem">+ Dodaj zamenu rashladne tečnosti</button>';
           return html;
         });
     },
@@ -3023,6 +3125,19 @@
       base.title = val("e_title");
       base.description = val("e_desc");
       base.shop_name = val("e_shop") || null;
+      if (base.type === "coolant_service") {
+        var cType  = val("e_clt_type");
+        var cConc  = val("e_clt_conc")  ? parseFloat(val("e_clt_conc"))  : null;
+        var cYears = val("e_clt_years") ? parseInt(val("e_clt_years"), 10) : null;
+        var cTherm = checked("e_clt_therm");
+        var cHoses = checked("e_clt_hoses");
+        base.coolant_data = (cType || cConc != null || cYears || cTherm || cHoses)
+          ? { coolant_type: cType || null, concentration_pct: cConc,
+              interval_years: cYears, thermostat_changed: cTherm, hoses_checked: cHoses }
+          : null;
+      } else {
+        base.coolant_data = null;
+      }
       if (base.type === "belt_service") {
         var blType  = el("e_blt_type")     ? el("e_blt_type").value              : "";
         var blIntvl = val("e_blt_interval") ? parseInt(val("e_blt_interval"), 10) : null;
@@ -4017,6 +4132,8 @@
       if (bkf) bkf.hidden = v !== "brake_service";
       var blf = document.getElementById("beltFields");
       if (blf) blf.hidden = v !== "belt_service";
+      var clf = document.getElementById("coolantFields");
+      if (clf) clf.hidden = v !== "coolant_service";
     },
 
     onExpTypeChange: function (sel) {
