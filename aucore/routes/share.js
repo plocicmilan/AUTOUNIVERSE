@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const { getDb } = require('../db');
 
 const EXPIRE_DAYS  = 30;
-const DRIVER_BASE  = 'https://plocicmilan.github.io/AUTOUNIVERSE/driver/';
+const DRIVER_BASE  = 'https://driver.autouniverse.rs/';
 
 module.exports = function shareRoutes(router) {
 
