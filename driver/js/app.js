@@ -357,6 +357,7 @@
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'battery_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1a10">🔋 Istorija akumulatora</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'oil_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1500">🛢️ Istorija zamene ulja</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'brake_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a0a0a">🛑 Istorija kočnica</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'belt_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#0a1a0a">⚙️ Istorija kaišа/lanca</button>' +
             (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
@@ -514,6 +515,23 @@
               '<input type="file" accept="image/*" multiple onchange="DR.pickEventPhotos(this)" hidden></label>' +
             '<div id="evtPreview">' + eventPhotoPreviewHTML() + '</div>' +
             retroBox +
+          '</div>' +
+          '<div id="beltFields"' + (e.type === "belt_service" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
+            '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">⚙️ Detalji kaišа / lanca (opciono)</div>' +
+            '<label class="field"><span>Tip</span>' +
+              '<select id="e_blt_type">' +
+                ['', 'timing-belt', 'timing-chain', 'accessory-belt'].map(function (t_) {
+                  var labels = { '': '— izaberi —', 'timing-belt': 'Zupčasti kaiš (razvodni)', 'timing-chain': 'Lanac razvoda', 'accessory-belt': 'Klinasti kaiš (alternator/klima)' };
+                  return '<option value="' + t_ + '"' + (e.belt_data && e.belt_data.belt_type === t_ ? " selected" : "") + '>' + labels[t_] + '</option>';
+                }).join("") +
+              '</select></label>' +
+            '<label class="field"><span>Interval zamene (km, npr. 90000)</span>' +
+              '<input id="e_blt_interval" type="number" step="1000" placeholder="npr. 90000" value="' + esc((e.belt_data && e.belt_data.interval_km) ? e.belt_data.interval_km : "") + '"></label>' +
+            '<div style="margin-top:8px">' +
+              '<label class="chk"><input type="checkbox" id="e_blt_wp"' + (e.belt_data && e.belt_data.water_pump_changed ? " checked" : "") + '> Zamenjena vodena pumpa</label>' +
+              '<label class="chk mt8"><input type="checkbox" id="e_blt_tens"' + (e.belt_data && e.belt_data.tensioner_changed ? " checked" : "") + '> Zamenjen zatezač</label>' +
+              '<label class="chk mt8"><input type="checkbox" id="e_blt_roller"' + (e.belt_data && e.belt_data.roller_changed ? " checked" : "") + '> Zamenjena remenica</label>' +
+            '</div>' +
           '</div>' +
           '<div id="brakeFields"' + (e.type === "brake_service" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
             '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🛑 Detalji kočnica (opciono)</div>' +
@@ -1694,6 +1712,94 @@
           });
 
           html += '<button class="btn btn-secondary mt8" onclick="DR.go(\'expense_form\')" style="font-size:.85rem">+ Dodaj punjenje</button>';
+          return html;
+        });
+    },
+
+    /* ===== BELT / CHAIN TRACKER ===== */
+    belt_log: function (params) {
+      var vehId = (params && params.vehicle_id) || App.activeVehicleId;
+      return Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
+        .then(function (res) {
+          var v = res[0], events = res[1];
+          if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+
+          var beltEvents = events
+            .filter(function (e) { return e.type === "belt_service"; })
+            .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+          var typeLabel = { 'timing-belt': 'Zupčasti kaiš', 'timing-chain': 'Lanac razvoda', 'accessory-belt': 'Klinasti kaiš' };
+
+          var vLabel = esc((v.make || "") + " " + (v.model || "") + (v.plate ? " • " + v.plate : ""));
+          var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+            '<h1>⚙️ Istorija kaišа / lanca</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 8px">' + vLabel + '</p>';
+
+          var latest = beltEvents[0];
+          if (latest) {
+            var bd = latest.belt_data || {};
+            // Km od zamene
+            var installDate = (latest.date || "").slice(0, 10);
+            var allKmEvents = events.filter(function (e) { return e.mileage_km && (e.date || "") >= installDate; });
+            var maxKm = allKmEvents.reduce(function (m, e) { return Math.max(m, e.mileage_km); }, latest.mileage_km || 0);
+            var kmSince = latest.mileage_km && maxKm > latest.mileage_km ? maxKm - latest.mileage_km : null;
+            var interval = bd.interval_km || 90000; // default 90k za timing belt
+            var pct = kmSince != null ? kmSince / interval : null;
+            var kmColor = pct == null ? "#94a3b8" : pct < 0.7 ? "#4ade80" : pct < 0.9 ? "#fbbf24" : "#f87171";
+            var warn = pct != null && pct >= 0.9;
+
+            html += '<div class="card" style="margin-bottom:.6rem;background:#101a10">' +
+              '<div style="font-weight:600;font-size:.88rem;margin-bottom:8px">' +
+                (bd.belt_type ? esc(typeLabel[bd.belt_type] || bd.belt_type) : 'Poslednja zamena') +
+              '</div>' +
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+                (kmSince != null ? '<div><div style="color:#64748b;font-size:.75rem">Km od zamene</div>' +
+                  '<div style="font-weight:700;font-size:1.1rem;color:' + kmColor + '">' + kmSince.toLocaleString("sr") + ' km</div></div>' : '<div></div>') +
+                '<div><div style="color:#64748b;font-size:.75rem">Interval</div>' +
+                  '<div style="font-weight:600;font-size:.95rem">' + interval.toLocaleString("sr") + ' km</div></div>' +
+                ((bd.water_pump_changed || bd.tensioner_changed || bd.roller_changed) ?
+                  '<div style="grid-column:span 2;font-size:.78rem;color:#94a3b8">' +
+                    [bd.water_pump_changed ? '✓ vodena pumpa' : '',
+                     bd.tensioner_changed  ? '✓ zatezač'      : '',
+                     bd.roller_changed     ? '✓ remenica'     : ''].filter(Boolean).join(' • ') +
+                  '</div>' : '') +
+              '</div>' +
+              (warn ? '<div style="background:#14532d;color:#86efac;padding:6px 8px;border-radius:6px;font-size:.8rem;margin-top:8px">⚠️ Blizu intervala zamene — planirati servis</div>' : '') +
+              '<div style="color:#64748b;font-size:.78rem;margin-top:6px">' + installDate +
+                (latest.mileage_km ? ' • ' + latest.mileage_km.toLocaleString("sr") + ' km' : '') + '</div>' +
+            '</div>';
+          }
+
+          if (!beltEvents.length) {
+            html += '<div class="card"><p class="empty">Nema evidentiranih zamena kaišа/lanca. Dodaj događaj tipa "Kaiš / lanac".</p></div>';
+          } else {
+            html += '<div style="font-weight:600;font-size:.85rem;margin:12px 0 6px">Istorija zamena</div>';
+            beltEvents.forEach(function (e) {
+              var bd = e.belt_data || {};
+              html += '<div class="card" style="margin-bottom:.4rem;padding:10px 14px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+                  '<div>' +
+                    '<span style="font-weight:600">' + esc(typeLabel[bd.belt_type] || bd.belt_type || 'Zamena') + '</span>' +
+                    (bd.interval_km ? '<span style="color:#94a3b8;font-size:.8rem;margin-left:6px">interval: ' + bd.interval_km.toLocaleString("sr") + ' km</span>' : '') +
+                    ((bd.water_pump_changed || bd.tensioner_changed || bd.roller_changed)
+                      ? '<div style="color:#94a3b8;font-size:.76rem;margin-top:2px">' +
+                          [bd.water_pump_changed ? '✓ vodena pumpa' : '',
+                           bd.tensioner_changed  ? '✓ zatezač'      : '',
+                           bd.roller_changed     ? '✓ remenica'     : ''].filter(Boolean).join(' • ') +
+                        '</div>' : '') +
+                  '</div>' +
+                  (e.mileage_km ? '<span style="color:#64748b;font-size:.8rem">' + e.mileage_km.toLocaleString("sr") + ' km</span>' : '') +
+                '</div>' +
+                '<div style="color:#64748b;font-size:.78rem;margin-top:3px;display:flex;gap:10px">' +
+                  '<span>' + (e.date || "").slice(0, 10) + '</span>' +
+                  (e.shop_name ? '<span>' + esc(e.shop_name) + '</span>' : '') +
+                  (e.cost && e.cost.total ? '<span>' + Math.round(e.cost.total).toLocaleString("sr") + ' ' + (e.cost.currency || "RSD") + '</span>' : '') +
+                '</div>' +
+              '</div>';
+            });
+          }
+
+          html += '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vehId) + '\',false)" style="font-size:.85rem">+ Dodaj zamenu kaišа/lanca</button>';
           return html;
         });
     },
@@ -2917,6 +3023,19 @@
       base.title = val("e_title");
       base.description = val("e_desc");
       base.shop_name = val("e_shop") || null;
+      if (base.type === "belt_service") {
+        var blType  = el("e_blt_type")     ? el("e_blt_type").value              : "";
+        var blIntvl = val("e_blt_interval") ? parseInt(val("e_blt_interval"), 10) : null;
+        var blWP    = checked("e_blt_wp");
+        var blTens  = checked("e_blt_tens");
+        var blRoll  = checked("e_blt_roller");
+        base.belt_data = (blType || blIntvl || blWP || blTens || blRoll)
+          ? { belt_type: blType || null, interval_km: blIntvl,
+              water_pump_changed: blWP, tensioner_changed: blTens, roller_changed: blRoll }
+          : null;
+      } else {
+        base.belt_data = null;
+      }
       if (base.type === "brake_service") {
         var bFP  = val("e_brk_fp") ? parseFloat(val("e_brk_fp")) : null;
         var bRP  = val("e_brk_rp") ? parseFloat(val("e_brk_rp")) : null;
@@ -3896,6 +4015,8 @@
       if (of_) of_.hidden = v !== "oil_change";
       var bkf = document.getElementById("brakeFields");
       if (bkf) bkf.hidden = v !== "brake_service";
+      var blf = document.getElementById("beltFields");
+      if (blf) blf.hidden = v !== "belt_service";
     },
 
     onExpTypeChange: function (sel) {

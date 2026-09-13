@@ -49,6 +49,7 @@
     "service",
     "oil_change",
     "brake_service",
+    "belt_service",
     "repair",
     "tires",
     "battery",
