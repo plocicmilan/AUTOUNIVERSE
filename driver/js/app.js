@@ -769,6 +769,7 @@
           (totalStr ? '<div class="card exptotal"><b>' + t("common.total") + ': ' + totalStr + '</b></div>' : '') +
           list +
           '<button class="btn btn-primary" onclick="DR.go(\'expense_form\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.add_event"></button>' +
+          '<button class="btn btn-secondary mt8" onclick="DR.go(\'fuel_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a2020">⛽ Evidencija goriva</button>' +
           '<button class="btn btn-secondary mt8" onclick="DR.exportExpensesCSV()">📥 Export troškovi (CSV)</button>';
       });
     },
@@ -795,13 +796,21 @@
         var curOpts = ["RSD","EUR"].map(function (c) {
           return '<option value="' + c + '"' + (cost.currency === c ? " selected" : "") + '>' + c + '</option>';
         }).join("");
+        var isFuel = defType === "expense_fuel";
         return '<button class="linkback" onclick="DR.go(\'expenses\')" data-i18n="common.back"></button>' +
           '<h1>' + (id ? t("common.edit") : t("d.add_event")) + '</h1>' +
           '<div class="card">' +
             '<label class="field"><span>' + t("d.nav_vehicle") + '</span><select id="exp_vehicle">' + vehOpts + '</select></label>' +
-            '<label class="field"><span>' + t("d.event_type") + '</span><select id="exp_type">' + typeOpts + '</select></label>' +
+            '<label class="field"><span>' + t("d.event_type") + '</span><select id="exp_type" onchange="DR.onExpTypeChange(this)">' + typeOpts + '</select></label>' +
             field("exp_title", "d.event_title", (e && e.title) || "") +
             field("exp_date", "common.date", (e && e.date) || todayISO(), "date") +
+            field("exp_km", "common.mileage", (e && e.mileage_km != null ? e.mileage_km : ""), "number") +
+            '<div id="fuelFields"' + (isFuel ? "" : ' hidden') + '>' +
+              '<div class="row2">' +
+                '<label class="field"><span>Litara</span><input id="exp_liters" type="number" step="0.01" placeholder="npr. 45.5" value="' + esc((e && e.fuel_liters) ? e.fuel_liters : "") + '" oninput="DR.calcFuelTotal()"></label>' +
+                '<label class="field"><span>Cena/l</span><input id="exp_ppl" type="number" step="0.01" placeholder="RSD/l" value="' + esc((e && e.fuel_ppl) ? e.fuel_ppl : "") + '" oninput="DR.calcFuelTotal()"></label>' +
+              '</div>' +
+            '</div>' +
             '<div class="row2">' +
               field("exp_amount", "d.expense_amount", cost.total !== "" ? cost.total : "", "number") +
               '<label class="field"><span>&nbsp;</span><select id="exp_currency">' + curOpts + '</select></label>' +
@@ -1519,6 +1528,106 @@
         '<button class="btn btn-secondary mt8" onclick="DR.resetCarCheck()" style="font-size:.85rem">↩ Resetuj sve</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'vin_check\')" style="font-size:.85rem">🔢 Provjeri VIN broj</button>';
       return html;
+    },
+
+    /* ===== FUEL LOG ===== */
+    fuel_log: function (params) {
+      var vehId = (params && params.vehicle_id) || App.activeVehicleId;
+      return Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
+        .then(function (res) {
+          var v = res[0], events = res[1];
+          if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+
+          var fills = events
+            .filter(function (e) { return e.type === "expense_fuel" && e.fuel_liters; })
+            .sort(function (a, b) { return (a.date || "").localeCompare(b.date || ""); });
+
+          var vLabel = esc((v.make || "") + " " + (v.model || "") + (v.plate ? " • " + v.plate : ""));
+          var html = '<button class="linkback" onclick="DR.go(\'expenses\')" data-i18n="common.back"></button>' +
+            '<h1>⛽ Evidencija goriva</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 8px">' + vLabel + '</p>';
+
+          if (!fills.length) {
+            html += '<div class="card"><p class="empty">Nema evidentiranih punjenja. Dodaj trošak goriva i unesi litare.</p></div>';
+            html += '<button class="btn btn-secondary mt8" onclick="DR.go(\'expense_form\')" style="font-size:.85rem">+ Dodaj punjenje</button>';
+            return html;
+          }
+
+          // Statistike
+          var totalLiters = 0, totalCostRSD = 0, totalCostEUR = 0, totalKm = 0;
+          fills.forEach(function (e) { totalLiters += (parseFloat(e.fuel_liters) || 0); });
+          fills.forEach(function (e) {
+            if (e.cost && e.cost.total) {
+              if ((e.cost.currency || "RSD").toUpperCase() === "EUR") totalCostEUR += parseFloat(e.cost.total) || 0;
+              else totalCostRSD += parseFloat(e.cost.total) || 0;
+            }
+          });
+          // L/100km — od prve do poslednje stavke sa km podacima
+          var withKm = fills.filter(function (e) { return e.mileage_km; });
+          var avgCons = null;
+          if (withKm.length >= 2) {
+            var firstKm = withKm[0].mileage_km, lastKm = withKm[withKm.length - 1].mileage_km;
+            var litersInRange = 0;
+            for (var i = 1; i < withKm.length; i++) litersInRange += parseFloat(withKm[i].fuel_liters) || 0;
+            var dist = lastKm - firstKm;
+            if (dist > 0) avgCons = (litersInRange / dist * 100);
+          }
+
+          var costStr = [];
+          if (totalCostRSD) costStr.push(Math.round(totalCostRSD).toLocaleString("sr") + " RSD");
+          if (totalCostEUR) costStr.push(totalCostEUR.toFixed(2) + " EUR");
+
+          html += '<div class="card" style="margin-bottom:.6rem;background:#1a2010">' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+              '<div><div style="color:#64748b;font-size:.75rem">Ukupno litara</div>' +
+                '<div style="font-weight:700;font-size:1.1rem;color:#4ade80">' + totalLiters.toFixed(1) + ' L</div></div>' +
+              '<div><div style="color:#64748b;font-size:.75rem">Avg potrošnja</div>' +
+                '<div style="font-weight:700;font-size:1.1rem;color:#fbbf24">' + (avgCons ? avgCons.toFixed(1) + ' L/100km' : '—') + '</div></div>' +
+              '<div style="grid-column:span 2"><div style="color:#64748b;font-size:.75rem">Ukupno potrošeno</div>' +
+                '<div style="font-weight:600;font-size:.95rem">' + (costStr.join(" + ") || "bez cene") + '</div></div>' +
+            '</div>' +
+          '</div>';
+
+          // Lista punjenja (od najnovijeg)
+          var fillsDesc = fills.slice().reverse();
+          fillsDesc.forEach(function (e, idx) {
+            var origIdx = fills.length - 1 - idx;
+            var cons = null;
+            if (e.mileage_km && origIdx > 0) {
+              var prev = null;
+              for (var i = origIdx - 1; i >= 0; i--) {
+                if (fills[i].mileage_km) { prev = fills[i]; break; }
+              }
+              if (prev) {
+                var dist = e.mileage_km - prev.mileage_km;
+                if (dist > 0) cons = (parseFloat(e.fuel_liters) / dist * 100);
+              }
+            }
+            var costLine = e.cost && e.cost.total
+              ? Math.round(e.cost.total).toLocaleString("sr") + " " + (e.cost.currency || "RSD")
+              : "";
+            var consColor = cons ? (cons < 7 ? "#4ade80" : cons < 10 ? "#fbbf24" : "#f87171") : "#64748b";
+            html += '<div class="card" style="margin-bottom:.4rem;padding:10px 14px">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center">' +
+                '<div>' +
+                  '<span style="font-weight:600">' + parseFloat(e.fuel_liters).toFixed(1) + ' L</span>' +
+                  (e.mileage_km ? '<span style="color:#64748b;font-size:.8rem;margin-left:8px">@ ' + e.mileage_km.toLocaleString("sr") + ' km</span>' : '') +
+                '</div>' +
+                '<span style="font-weight:700;font-size:.95rem;color:' + consColor + '">' +
+                  (cons ? cons.toFixed(1) + ' L/100km' : '') +
+                '</span>' +
+              '</div>' +
+              '<div style="color:#64748b;font-size:.78rem;margin-top:4px;display:flex;gap:10px">' +
+                '<span>' + (e.date || "").slice(0, 10) + '</span>' +
+                (costLine ? '<span>' + costLine + '</span>' : '') +
+                (e.fuel_ppl ? '<span>' + parseFloat(e.fuel_ppl).toFixed(1) + ' RSD/l</span>' : '') +
+              '</div>' +
+            '</div>';
+          });
+
+          html += '<button class="btn btn-secondary mt8" onclick="DR.go(\'expense_form\')" style="font-size:.85rem">+ Dodaj punjenje</button>';
+          return html;
+        });
     },
 
     /* ===== TROŠKOVI PO SERVISU ===== */
@@ -3304,6 +3413,20 @@
     setExpensesVehicle: function (id) { App.expensesVehicleId = id; render("expenses"); },
     setExpensesPeriod: function (p) { App.expensesPeriod = p; render("expenses"); },
 
+    onExpTypeChange: function (sel) {
+      var ff = document.getElementById("fuelFields");
+      if (ff) ff.hidden = sel.value !== "expense_fuel";
+    },
+
+    calcFuelTotal: function () {
+      var liters = parseFloat(document.getElementById("exp_liters") && document.getElementById("exp_liters").value) || 0;
+      var ppl    = parseFloat(document.getElementById("exp_ppl")    && document.getElementById("exp_ppl").value)    || 0;
+      if (liters && ppl) {
+        var amtEl = document.getElementById("exp_amount");
+        if (amtEl) amtEl.value = (liters * ppl).toFixed(0);
+      }
+    },
+
     saveExpense: function () {
       var base = App._editingExpense || Models.createEvent({ app: "driver", source: "owner" });
       base.vehicle_id = el("exp_vehicle") ? el("exp_vehicle").value : null;
@@ -3311,6 +3434,11 @@
       base.title = val("exp_title");
       base.date = val("exp_date") || todayISO();
       base.description = val("exp_desc") || "";
+      base.mileage_km = val("exp_km") ? parseInt(val("exp_km"), 10) : null;
+      var liters = parseFloat(val("exp_liters")) || null;
+      var ppl    = parseFloat(val("exp_ppl"))    || null;
+      base.fuel_liters = liters;
+      base.fuel_ppl    = ppl;
       var amount = parseFloat(val("exp_amount")) || 0;
       var currency = el("exp_currency") ? el("exp_currency").value : "RSD";
       base.cost = Models.createCost({ total: amount, currency: currency, informal: checked("exp_informal") });
