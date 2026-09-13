@@ -354,6 +354,7 @@
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'timeline\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1c2a3a">📅 Timeline događaja</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'mechanic_stats\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1c2030">🔩 Troškovi po servisu</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'tire_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1c20">🔄 Istorija guma</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'battery_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1a10">🔋 Istorija akumulatora</button>' +
             (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
@@ -511,6 +512,24 @@
               '<input type="file" accept="image/*" multiple onchange="DR.pickEventPhotos(this)" hidden></label>' +
             '<div id="evtPreview">' + eventPhotoPreviewHTML() + '</div>' +
             retroBox +
+          '</div>' +
+          '<div id="batteryFields"' + (e.type === "battery" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
+            '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🔋 Detalji akumulatora (opciono)</div>' +
+            '<label class="field"><span>Brend</span>' +
+              '<input id="e_bat_brand" type="text" placeholder="Varta, Bosch, Yuasa…" value="' + esc((e.battery_data && e.battery_data.brand) || "") + '"></label>' +
+            '<div class="row2">' +
+              '<label class="field"><span>Kapacitet (Ah)</span>' +
+                '<input id="e_bat_ah" type="number" placeholder="npr. 60" value="' + esc((e.battery_data && e.battery_data.ah != null) ? e.battery_data.ah : "") + '"></label>' +
+              '<label class="field"><span>Struja (CCA/A)</span>' +
+                '<input id="e_bat_cca" type="number" placeholder="npr. 540" value="' + esc((e.battery_data && e.battery_data.cca != null) ? e.battery_data.cca : "") + '"></label>' +
+            '</div>' +
+            '<label class="field"><span>Stanje</span>' +
+              '<select id="e_bat_cond">' +
+                ['', 'novo', 'polovan-ispravan', 'slab', 'mrtav'].map(function (c) {
+                  return '<option value="' + c + '"' + (e.battery_data && e.battery_data.condition === c ? " selected" : "") + '>' +
+                    (c ? c.charAt(0).toUpperCase() + c.slice(1) : '— izaberi —') + '</option>';
+                }).join("") +
+              '</select></label>' +
           '</div>' +
           '<div id="tireFields"' + (e.type === "tires" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
             '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🔄 Detalji guma (opciono)</div>' +
@@ -1647,6 +1666,95 @@
         });
     },
 
+    /* ===== BATTERY TRACKER ===== */
+    battery_log: function (params) {
+      var vehId = (params && params.vehicle_id) || App.activeVehicleId;
+      return Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
+        .then(function (res) {
+          var v = res[0], events = res[1];
+          if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+
+          var batEvents = events
+            .filter(function (e) { return e.type === "battery"; })
+            .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+          var vLabel = esc((v.make || "") + " " + (v.model || "") + (v.plate ? " • " + v.plate : ""));
+          var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+            '<h1>🔋 Istorija akumulatora</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 8px">' + vLabel + '</p>';
+
+          // Aktuelni akumulator — poslednji event
+          var latest = batEvents[0];
+          if (latest) {
+            var bd = latest.battery_data || {};
+            var installDate = (latest.date || "").slice(0, 10);
+            var ageMs = installDate ? (new Date() - new Date(installDate)) : null;
+            var ageMonths = ageMs ? Math.floor(ageMs / (1000 * 60 * 60 * 24 * 30.5)) : null;
+            var ageYears = ageMonths != null ? (ageMonths / 12) : null;
+            // Tipičan vek 3–5 godina; upozorenje posle 3.5 god
+            var ageColor = ageYears == null ? "#94a3b8"
+              : ageYears < 2 ? "#4ade80"
+              : ageYears < 3.5 ? "#fbbf24"
+              : "#f87171";
+            var ageStr = ageMonths != null
+              ? (ageMonths >= 12
+                  ? Math.floor(ageMonths / 12) + " god. " + (ageMonths % 12 ? (ageMonths % 12) + " mes." : "")
+                  : ageMonths + " mes.")
+              : "—";
+
+            // km od ugradnje
+            var kmEvents = events.filter(function (e) { return e.mileage_km && e.date >= installDate; });
+            var maxKm = kmEvents.reduce(function (m, e) { return Math.max(m, e.mileage_km); }, 0);
+            var kmSince = latest.mileage_km && maxKm > latest.mileage_km ? maxKm - latest.mileage_km : null;
+
+            html += '<div class="card" style="margin-bottom:.6rem;background:#1a1a10">' +
+              '<div style="font-weight:600;font-size:.88rem;margin-bottom:8px">Aktuelni akumulator</div>' +
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+                '<div><div style="color:#64748b;font-size:.75rem">Starost</div>' +
+                  '<div style="font-weight:700;font-size:1.05rem;color:' + ageColor + '">' + ageStr + '</div></div>' +
+                (kmSince ? '<div><div style="color:#64748b;font-size:.75rem">km od ugradnje</div>' +
+                  '<div style="font-weight:700;font-size:1.05rem">' + kmSince.toLocaleString("sr") + ' km</div></div>' : '<div></div>') +
+                (bd.brand || bd.ah ? '<div style="grid-column:span 2"><div style="color:#64748b;font-size:.75rem">Tip</div>' +
+                  '<div style="font-size:.9rem">' +
+                    [bd.brand, bd.ah ? bd.ah + ' Ah' : '', bd.cca ? bd.cca + ' A' : ''].filter(Boolean).join(' • ') +
+                  '</div></div>' : '') +
+              '</div>' +
+              (ageYears >= 3.5 ? '<div style="background:#7f1d1d;color:#fca5a5;padding:6px 8px;border-radius:6px;font-size:.8rem;margin-top:8px">⚠️ Akumulator stariji od 3.5 god. — preporučena zamena</div>' : '') +
+            '</div>';
+          }
+
+          if (!batEvents.length) {
+            html += '<div class="card"><p class="empty">Nema evidentiranih zamena akumulatora. Dodaj događaj tipa "Akumulator".</p></div>';
+          } else {
+            html += '<div style="font-weight:600;font-size:.85rem;margin:12px 0 6px">Istorija zamena</div>';
+            batEvents.forEach(function (e) {
+              var bd = e.battery_data || {};
+              var condColor = { 'novo': '#4ade80', 'polovan-ispravan': '#fbbf24', 'slab': '#fb923c', 'mrtav': '#f87171' };
+              html += '<div class="card" style="margin-bottom:.4rem;padding:10px 14px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+                  '<div>' +
+                    (bd.brand ? '<span style="font-weight:600">' + esc(bd.brand) + '</span> ' : '') +
+                    ([bd.ah ? bd.ah + ' Ah' : '', bd.cca ? bd.cca + ' A' : ''].filter(Boolean).length
+                      ? '<span style="color:#94a3b8;font-size:.82rem">' + [bd.ah ? bd.ah + ' Ah' : '', bd.cca ? bd.cca + ' A' : ''].filter(Boolean).join(' / ') + '</span>' : '') +
+                    (e.title ? '<div style="color:#94a3b8;font-size:.8rem">' + esc(e.title) + '</div>' : '') +
+                  '</div>' +
+                  (bd.condition ? '<span style="font-size:.8rem;color:' + (condColor[bd.condition] || '#94a3b8') + '">' + esc(bd.condition) + '</span>' : '') +
+                '</div>' +
+                '<div style="color:#64748b;font-size:.78rem;margin-top:4px;display:flex;gap:10px">' +
+                  '<span>' + (e.date || "").slice(0, 10) + '</span>' +
+                  (e.mileage_km ? '<span>' + e.mileage_km.toLocaleString("sr") + ' km</span>' : '') +
+                  (e.shop_name ? '<span>' + esc(e.shop_name) + '</span>' : '') +
+                  (e.cost && e.cost.total ? '<span>' + Math.round(e.cost.total).toLocaleString("sr") + ' ' + (e.cost.currency || "RSD") + '</span>' : '') +
+                '</div>' +
+              '</div>';
+            });
+          }
+
+          html += '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vehId) + '\',false)" style="font-size:.85rem">+ Dodaj zamenu akumulatora</button>';
+          return html;
+        });
+    },
+
     /* ===== TIRE TRACKER ===== */
     tire_log: function (params) {
       var vehId = (params && params.vehicle_id) || App.activeVehicleId;
@@ -2595,6 +2703,17 @@
       base.title = val("e_title");
       base.description = val("e_desc");
       base.shop_name = val("e_shop") || null;
+      if (base.type === "battery") {
+        var bBrand = val("e_bat_brand");
+        var bAh    = val("e_bat_ah")  ? parseFloat(val("e_bat_ah"))  : null;
+        var bCca   = val("e_bat_cca") ? parseFloat(val("e_bat_cca")) : null;
+        var bCond  = el("e_bat_cond") ? el("e_bat_cond").value : "";
+        base.battery_data = (bBrand || bAh || bCca || bCond)
+          ? { brand: bBrand || null, ah: bAh, cca: bCca, condition: bCond || null }
+          : null;
+      } else {
+        base.battery_data = null;
+      }
       if (base.type === "tires") {
         var tSet   = el("e_tire_set")   ? el("e_tire_set").value   : "";
         var tSize  = val("e_tire_size");
@@ -3529,6 +3648,8 @@
     onEventTypeChange: function (sel) {
       var tf = document.getElementById("tireFields");
       if (tf) tf.hidden = sel.value !== "tires";
+      var bf = document.getElementById("batteryFields");
+      if (bf) bf.hidden = sel.value !== "battery";
     },
 
     onExpTypeChange: function (sel) {
