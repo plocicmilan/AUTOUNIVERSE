@@ -355,6 +355,7 @@
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'mechanic_stats\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1c2030">🔩 Troškovi po servisu</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'tire_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1c20">🔄 Istorija guma</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'battery_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1a10">🔋 Istorija akumulatora</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'oil_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1500">🛢️ Istorija zamene ulja</button>' +
             (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
@@ -512,6 +513,22 @@
               '<input type="file" accept="image/*" multiple onchange="DR.pickEventPhotos(this)" hidden></label>' +
             '<div id="evtPreview">' + eventPhotoPreviewHTML() + '</div>' +
             retroBox +
+          '</div>' +
+          '<div id="oilFields"' + (e.type === "oil_change" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
+            '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🛢️ Detalji zamene ulja (opciono)</div>' +
+            '<div class="row2">' +
+              '<label class="field"><span>Specifikacija</span>' +
+                '<input id="e_oil_spec" type="text" placeholder="5W-30, 0W-40…" value="' + esc((e.oil_data && e.oil_data.spec) || "") + '"></label>' +
+              '<label class="field"><span>Količina (L)</span>' +
+                '<input id="e_oil_qty" type="number" step="0.1" placeholder="npr. 5.5" value="' + esc((e.oil_data && e.oil_data.qty_l != null) ? e.oil_data.qty_l : "") + '"></label>' +
+            '</div>' +
+            '<label class="field"><span>Brend ulja (opciono)</span>' +
+              '<input id="e_oil_brand" type="text" placeholder="Castrol, Shell, Mobil…" value="' + esc((e.oil_data && e.oil_data.brand) || "") + '"></label>' +
+            '<div style="margin-top:8px">' +
+              '<label class="chk"><input type="checkbox" id="e_oil_filter"' + (e.oil_data && e.oil_data.filter_changed ? " checked" : "") + '> Zamenjen filter ulja</label>' +
+              '<label class="chk mt8"><input type="checkbox" id="e_oil_air_filter"' + (e.oil_data && e.oil_data.air_filter_changed ? " checked" : "") + '> Zamenjen filter vazduha</label>' +
+              '<label class="chk mt8"><input type="checkbox" id="e_oil_cabin_filter"' + (e.oil_data && e.oil_data.cabin_filter_changed ? " checked" : "") + '> Zamenjen filter kabine</label>' +
+            '</div>' +
           '</div>' +
           '<div id="batteryFields"' + (e.type === "battery" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
             '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🔋 Detalji akumulatora (opciono)</div>' +
@@ -1666,6 +1683,104 @@
         });
     },
 
+    /* ===== OIL CHANGE TRACKER ===== */
+    oil_log: function (params) {
+      var vehId = (params && params.vehicle_id) || App.activeVehicleId;
+      return Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
+        .then(function (res) {
+          var v = res[0], events = res[1];
+          if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+
+          var oilEvents = events
+            .filter(function (e) { return e.type === "oil_change"; })
+            .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+          var vLabel = esc((v.make || "") + " " + (v.model || "") + (v.plate ? " • " + v.plate : ""));
+          var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+            '<h1>🛢️ Istorija zamene ulja</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 8px">' + vLabel + '</p>';
+
+          var latest = oilEvents[0];
+          if (latest) {
+            var od = latest.oil_data || {};
+            var installDate = (latest.date || "").slice(0, 10);
+            var ageMs = installDate ? (new Date() - new Date(installDate)) : null;
+            var ageMonths = ageMs ? Math.floor(ageMs / (1000 * 60 * 60 * 24 * 30.5)) : null;
+
+            // Km od poslednje zamene — max km u svim eventima posle tog datuma
+            var allKmEvents = events.filter(function (e) { return e.mileage_km && (e.date || "") >= installDate; });
+            var maxKm = allKmEvents.reduce(function (m, e) { return Math.max(m, e.mileage_km); }, latest.mileage_km || 0);
+            var kmSince = latest.mileage_km && maxKm > latest.mileage_km ? maxKm - latest.mileage_km : null;
+
+            // Tipičan interval: 10.000 km / 12 meseci
+            var kmColor = kmSince == null ? "#94a3b8"
+              : kmSince < 8000  ? "#4ade80"
+              : kmSince < 11000 ? "#fbbf24"
+              : "#f87171";
+            var moColor = ageMonths == null ? "#94a3b8"
+              : ageMonths < 9  ? "#4ade80"
+              : ageMonths < 13 ? "#fbbf24"
+              : "#f87171";
+
+            html += '<div class="card" style="margin-bottom:.6rem;background:#1a1510">' +
+              '<div style="font-weight:600;font-size:.88rem;margin-bottom:8px">Poslednja zamena</div>' +
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+                (kmSince != null ? '<div><div style="color:#64748b;font-size:.75rem">Km od zamene</div>' +
+                  '<div style="font-weight:700;font-size:1.1rem;color:' + kmColor + '">' + kmSince.toLocaleString("sr") + ' km</div></div>' : '<div></div>') +
+                (ageMonths != null ? '<div><div style="color:#64748b;font-size:.75rem">Meseci od zamene</div>' +
+                  '<div style="font-weight:700;font-size:1.1rem;color:' + moColor + '">' + ageMonths + ' mes.</div></div>' : '<div></div>') +
+                (od.spec || od.brand ? '<div style="grid-column:span 2"><div style="color:#64748b;font-size:.75rem">Ulje</div>' +
+                  '<div style="font-size:.9rem">' + [od.brand, od.spec, od.qty_l ? od.qty_l + ' L' : ''].filter(Boolean).join(' • ') + '</div></div>' : '') +
+                ((od.filter_changed || od.air_filter_changed || od.cabin_filter_changed) ?
+                  '<div style="grid-column:span 2;font-size:.78rem;color:#94a3b8">' +
+                    [od.filter_changed ? '✓ filter ulja' : '', od.air_filter_changed ? '✓ filter vazduha' : '', od.cabin_filter_changed ? '✓ filter kabine' : ''].filter(Boolean).join(' • ') +
+                  '</div>' : '') +
+              '</div>' +
+              ((kmSince != null && kmSince >= 11000) || (ageMonths != null && ageMonths >= 13)
+                ? '<div style="background:#7c2d12;color:#fdba74;padding:6px 8px;border-radius:6px;font-size:.8rem;margin-top:8px">⚠️ Preporučena zamena ulja (>10.000 km ili >12 mes.)</div>' : '') +
+            '</div>';
+          }
+
+          if (!oilEvents.length) {
+            html += '<div class="card"><p class="empty">Nema evidentiranih zamena ulja. Dodaj događaj tipa "Zamena ulja".</p></div>';
+          } else {
+            html += '<div style="font-weight:600;font-size:.85rem;margin:12px 0 6px">Istorija zamena</div>';
+            oilEvents.forEach(function (e, idx) {
+              var od = e.oil_data || {};
+              // km interval između ove i sledećeg (starije) zamene
+              var nextOlder = oilEvents[idx + 1];
+              var interval = (e.mileage_km && nextOlder && nextOlder.mileage_km)
+                ? e.mileage_km - nextOlder.mileage_km : null;
+
+              html += '<div class="card" style="margin-bottom:.4rem;padding:10px 14px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+                  '<div>' +
+                    (od.brand || od.spec
+                      ? '<span style="font-weight:600">' + esc([od.brand, od.spec].filter(Boolean).join(' ')) + '</span>'
+                      : '<span style="color:#64748b">Zamena ulja</span>') +
+                    (od.qty_l ? '<span style="color:#94a3b8;font-size:.82rem;margin-left:6px">' + od.qty_l + ' L</span>' : '') +
+                    ((od.filter_changed || od.air_filter_changed || od.cabin_filter_changed)
+                      ? '<div style="color:#94a3b8;font-size:.76rem;margin-top:2px">' +
+                          [od.filter_changed ? '✓ filter ulja' : '', od.air_filter_changed ? '✓ filter vazduha' : '', od.cabin_filter_changed ? '✓ filter kabine' : ''].filter(Boolean).join(' • ') +
+                        '</div>' : '') +
+                  '</div>' +
+                  (interval ? '<span style="font-size:.82rem;color:#64748b">' + interval.toLocaleString("sr") + ' km</span>' : '') +
+                '</div>' +
+                '<div style="color:#64748b;font-size:.78rem;margin-top:4px;display:flex;gap:10px">' +
+                  '<span>' + (e.date || "").slice(0, 10) + '</span>' +
+                  (e.mileage_km ? '<span>' + e.mileage_km.toLocaleString("sr") + ' km</span>' : '') +
+                  (e.shop_name ? '<span>' + esc(e.shop_name) + '</span>' : '') +
+                  (e.cost && e.cost.total ? '<span>' + Math.round(e.cost.total).toLocaleString("sr") + ' ' + (e.cost.currency || "RSD") + '</span>' : '') +
+                '</div>' +
+              '</div>';
+            });
+          }
+
+          html += '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vehId) + '\',false)" style="font-size:.85rem">+ Dodaj zamenu ulja</button>';
+          return html;
+        });
+    },
+
     /* ===== BATTERY TRACKER ===== */
     battery_log: function (params) {
       var vehId = (params && params.vehicle_id) || App.activeVehicleId;
@@ -2703,6 +2818,20 @@
       base.title = val("e_title");
       base.description = val("e_desc");
       base.shop_name = val("e_shop") || null;
+      if (base.type === "oil_change") {
+        var oSpec  = val("e_oil_spec");
+        var oQty   = val("e_oil_qty")   ? parseFloat(val("e_oil_qty"))   : null;
+        var oBrand = val("e_oil_brand");
+        var oFilt  = checked("e_oil_filter");
+        var oAir   = checked("e_oil_air_filter");
+        var oCabin = checked("e_oil_cabin_filter");
+        base.oil_data = (oSpec || oQty || oBrand || oFilt || oAir || oCabin)
+          ? { spec: oSpec || null, qty_l: oQty, brand: oBrand || null,
+              filter_changed: oFilt, air_filter_changed: oAir, cabin_filter_changed: oCabin }
+          : null;
+      } else {
+        base.oil_data = null;
+      }
       if (base.type === "battery") {
         var bBrand = val("e_bat_brand");
         var bAh    = val("e_bat_ah")  ? parseFloat(val("e_bat_ah"))  : null;
@@ -3646,10 +3775,13 @@
     setExpensesPeriod: function (p) { App.expensesPeriod = p; render("expenses"); },
 
     onEventTypeChange: function (sel) {
+      var v = sel.value;
       var tf = document.getElementById("tireFields");
-      if (tf) tf.hidden = sel.value !== "tires";
+      if (tf) tf.hidden = v !== "tires";
       var bf = document.getElementById("batteryFields");
-      if (bf) bf.hidden = sel.value !== "battery";
+      if (bf) bf.hidden = v !== "battery";
+      var of_ = document.getElementById("oilFields");
+      if (of_) of_.hidden = v !== "oil_change";
     },
 
     onExpTypeChange: function (sel) {

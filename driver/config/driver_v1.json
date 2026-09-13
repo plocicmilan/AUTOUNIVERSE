@@ -47,6 +47,7 @@
 
   "event_quick_types": [
     "service",
+    "oil_change",
     "repair",
     "tires",
     "battery",

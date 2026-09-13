@@ -172,6 +172,7 @@
   "d.documents_soon": "Dokumenta (saobraćajna, polise, računi) stižu u sledećoj verziji.",
   "d.need_vehicle": "Prvo dodaj vozilo.",
   "d.need_make": "Marka ili model je obavezan.",
+  "d.type_oil_change": "Zamena ulja",
   "d.type_battery": "Akumulator",
   "d.type_service": "Servis",
   "d.type_repair": "Popravka",
