@@ -197,6 +197,6 @@ nginx -s reload                         # za nginx config promene
 
 | # | Gde | Problem | Prioritet |
 |---|---|---|---|
-| 1 | vozila | 2 Citroën hero slike 404 (berlingo-2, c3-2) | Nisko |
-| 2 | autodelovi / autopijaca | favicon.ico + icon-192.png 404 (PWA install) | Nisko |
-| 3 | 54 vozila | Nedostaju `years_production_start/end` (old JSON schema) | Srednje |
+| 1 | vozila | 2 Citroën hero slike 404 (berlingo-2, c3-2) | ✅ RIJEŠENO 2026-09-13 |
+| 2 | autodelovi / autopijaca | favicon.ico + icon-192.png 404 (PWA install) | ✅ RIJEŠENO 2026-09-13 |
+| 3 | 54 vozila | Nedostaju `years_production_start/end` (old JSON schema) | ✅ RIJEŠENO 2026-09-13 |
