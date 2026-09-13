@@ -4,15 +4,17 @@ const BREVO_URL    = 'https://api.brevo.com/v3/smtp/email';
 const SENDER_EMAIL = 'info@autouniverse.rs';
 const SENDER_NAME  = 'AutoUniverse';
 
-async function send({ to, subject, html }) {
+async function send({ to, subject, html, scheduledAt }) {
   const key = process.env.BREVO_API_KEY;
   if (!key) { console.warn('[email] BREVO_API_KEY nije postavljen'); return; }
-  const body = JSON.stringify({
+  const payload = {
     sender:      { name: SENDER_NAME, email: SENDER_EMAIL },
     to:          [{ email: to }],
     subject,
     htmlContent: html,
-  });
+  };
+  if (scheduledAt) payload.scheduledAt = scheduledAt;
+  const body = JSON.stringify(payload);
   const res = await fetch(BREVO_URL, {
     method: 'POST',
     headers: { 'api-key': key, 'Content-Type': 'application/json' },
