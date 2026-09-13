@@ -38,7 +38,7 @@
     "calculators": { "tier": "key" },
     "checklists": { "tier": "key" },
     "stats": { "tier": "key" },
-    "pdf_dossier": { "tier": "key" },
+    "pdf_dossier": { "tier": "basic" },
     "sync": { "tier": "platform" },
     "link_mechanic": { "tier": "platform" },
     "verified_history": { "tier": "platform" },

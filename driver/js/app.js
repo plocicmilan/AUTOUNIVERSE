@@ -356,9 +356,7 @@
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vid) + '\',true)" data-i18n="d.dig_drawer"></button>' : '') +
-            (moduleUnlocked("pdf_dossier")
-              ? '<button class="btn btn-secondary mt8" onclick="DR.exportDossier(\'' + esc(vid) + '\')" data-i18n="d.dossier"></button>'
-              : '') +
+            (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.exportDossier(\'' + esc(vid) + '\')" data-i18n="d.dossier"></button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'vehicle_form\',{id:\'' + esc(vid) + '\'})" data-i18n="common.edit"></button>' : '') +
             (!isShared && v.status !== "sold" && v.status !== "totaled"
               ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'sell_vehicle\',{id:\'' + esc(vid) + '\'})" data-i18n="d.sell_vehicle"></button>'
@@ -2018,9 +2016,8 @@
       Store.remove("documents", id).then(function () { render("documents"); });
     },
 
-    /* ----- Dosije vozila (PDF, 🔑) ----- */
+    /* ----- Servisni pasoš (PDF) ----- */
     exportDossier: function (vehId) {
-      if (!moduleUnlocked("pdf_dossier")) { toast(t("license.locked")); return; }
       Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
         .then(function (res) {
           var v = res[0], events = res[1];
@@ -2038,7 +2035,17 @@
             events: events,
             typeLabel: function (ty) { return t("d.type_" + ty); }
           });
-          doc.save("dosije-" + (v.plate || v.make || "vozilo").replace(/\s+/g, "-") + ".pdf");
+          var fname = "servisni-pasos-" + (v.plate || v.make || "vozilo").replace(/\s+/g, "-") + ".pdf";
+          // Web Share API na mobilnim — dijeli direktno umjesto download
+          if (navigator.canShare && navigator.share) {
+            var blob = doc.output("blob");
+            var file = new File([blob], fname, { type: "application/pdf" });
+            if (navigator.canShare({ files: [file] })) {
+              navigator.share({ files: [file], title: fname }).catch(function () { doc.save(fname); });
+              return;
+            }
+          }
+          doc.save(fname);
         });
     },
 
