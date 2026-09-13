@@ -511,6 +511,14 @@
             '<div id="evtPreview">' + eventPhotoPreviewHTML() + '</div>' +
             retroBox +
           '</div>' +
+          '<div class="card" style="margin-bottom:.6rem">' +
+            '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🔔 Sledeći servis (opciono)</div>' +
+            '<label class="field"><span>Za km (npr. 185000)</span>' +
+              '<input id="e_next_km" type="number" placeholder="kilometraža sledećeg servisa" value="' + esc((e.next_service && e.next_service.km) ? e.next_service.km : "") + '"></label>' +
+            '<label class="field"><span>Datum (najkasnije do)</span>' +
+              '<input id="e_next_date" type="date" value="' + esc((e.next_service && e.next_service.date) ? e.next_service.date : "") + '"></label>' +
+            '<p style="color:#64748b;font-size:.78rem;margin:4px 0 0">Ako popuniš bar jedno polje, automatski se kreira podsetnik.</p>' +
+          '</div>' +
           '<button class="btn btn-primary" onclick="DR.saveEvent()" data-i18n="common.save"></button>' +
           (id ? '<button class="btn btn-danger mt8" onclick="DR.deleteEvent(\'' + esc(id) + '\')" data-i18n="common.delete"></button>' : '');
       });
@@ -2376,6 +2384,9 @@
       base.title = val("e_title");
       base.description = val("e_desc");
       base.shop_name = val("e_shop") || null;
+      var nextKm   = val("e_next_km")   ? parseInt(val("e_next_km"), 10)  : null;
+      var nextDate = val("e_next_date") || null;
+      base.next_service = (nextKm || nextDate) ? { km: nextKm, date: nextDate } : null;
       base.mileage_km = val("e_km") ? parseInt(val("e_km"), 10) : null;
       base.photos = (App._eventPhotos || []).slice();
       var retro = checked("e_retro");
@@ -2392,8 +2403,20 @@
         base.source = base.photos.length ? "receipt" : "owner";
       }
       if (!base.vehicle_id) { toast(t("d.need_vehicle")); return; }
+      var reminderOps = [];
+      if (base.next_service && (base.next_service.km || base.next_service.date)) {
+        reminderOps.push(Store.put("reminders", Models.createReminder({
+          vehicle_id:    base.vehicle_id,
+          title:         "Sledeći servis" + (base.title ? " — " + base.title : ""),
+          due_date:      base.next_service.date || null,
+          due_mileage_km: base.next_service.km  || null
+        })));
+      }
       Store.put("events", base).then(function () {
-        toast(t("common.saved"));
+        return Promise.all(reminderOps);
+      }).then(function () {
+        var msg = t("common.saved") + (reminderOps.length ? " + podsetnik kreiran 🔔" : "");
+        toast(msg);
         if (hubConnected()) {
           var _vmap = JSON.parse(localStorage.getItem(HUB_MAP_KEY) || "{}");
           var sid = _vmap[base.vehicle_id];
