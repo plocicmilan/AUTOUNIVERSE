@@ -52,6 +52,7 @@
     "belt_service",
     "coolant_service",
     "spark_plugs",
+    "transmission_fluid",
     "repair",
     "tires",
     "battery",

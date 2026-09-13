@@ -518,6 +518,29 @@
             '<div id="evtPreview">' + eventPhotoPreviewHTML() + '</div>' +
             retroBox +
           '</div>' +
+          '<div id="transFields"' + (e.type === "transmission_fluid" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
+            '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">⚙️ Detalji ulja menjača (opciono)</div>' +
+            '<label class="field"><span>Tip menjača</span>' +
+              '<select id="e_trn_gbox">' +
+                ['', 'manual', 'automatic', 'cvt', 'dsg', 'pdc'].map(function (t_) {
+                  var labels = { '': '— izaberi —', 'manual': 'Manuelni', 'automatic': 'Automatik', 'cvt': 'CVT', 'dsg': 'DSG / DCT', 'pdc': 'PDK / Tiptronic' };
+                  return '<option value="' + t_ + '"' + (e.trans_data && e.trans_data.gearbox_type === t_ ? " selected" : "") + '>' + labels[t_] + '</option>';
+                }).join("") +
+              '</select></label>' +
+            '<div class="row2">' +
+              '<label class="field"><span>Fluid (ATF/MTF…)</span>' +
+                '<input id="e_trn_fluid" type="text" placeholder="ATF, MTF, DSG…" value="' + esc((e.trans_data && e.trans_data.fluid_type) || "") + '"></label>' +
+              '<label class="field"><span>Količina (L)</span>' +
+                '<input id="e_trn_qty" type="number" step="0.1" placeholder="npr. 7" value="' + esc((e.trans_data && e.trans_data.qty_l != null) ? e.trans_data.qty_l : "") + '"></label>' +
+            '</div>' +
+            '<label class="field"><span>Brend (opciono)</span>' +
+              '<input id="e_trn_brand" type="text" placeholder="ZF, Castrol, Pentosin…" value="' + esc((e.trans_data && e.trans_data.brand) || "") + '"></label>' +
+            '<label class="field"><span>Interval zamene (km)</span>' +
+              '<input id="e_trn_interval" type="number" step="5000" placeholder="npr. 60000" value="' + esc((e.trans_data && e.trans_data.interval_km) ? e.trans_data.interval_km : "") + '"></label>' +
+            '<div style="margin-top:8px">' +
+              '<label class="chk"><input type="checkbox" id="e_trn_filter"' + (e.trans_data && e.trans_data.filter_changed ? " checked" : "") + '> Zamenjen filter menjača</label>' +
+            '</div>' +
+          '</div>' +
           '<div id="sparkFields"' + (e.type === "spark_plugs" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
             '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">✨ Detalji svećica (opciono)</div>' +
             '<label class="field"><span>Tip</span>' +
@@ -1749,6 +1772,96 @@
           });
 
           html += '<button class="btn btn-secondary mt8" onclick="DR.go(\'expense_form\')" style="font-size:.85rem">+ Dodaj punjenje</button>';
+          return html;
+        });
+    },
+
+    /* ===== TRANSMISSION FLUID TRACKER ===== */
+    trans_log: function (params) {
+      var vehId = (params && params.vehicle_id) || App.activeVehicleId;
+      return Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
+        .then(function (res) {
+          var v = res[0], events = res[1];
+          if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+
+          var transEvents = events
+            .filter(function (e) { return e.type === "transmission_fluid"; })
+            .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+          var gboxLabel = { 'manual': 'Manuelni', 'automatic': 'Automatik', 'cvt': 'CVT', 'dsg': 'DSG/DCT', 'pdc': 'PDK/Tiptronic' };
+          var defaultInterval = { 'manual': 60000, 'automatic': 50000, 'cvt': 40000, 'dsg': 40000, 'pdc': 50000 };
+
+          var vLabel = esc((v.make || "") + " " + (v.model || "") + (v.plate ? " • " + v.plate : ""));
+          var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+            '<h1>⚙️ Istorija ulja menjača</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 8px">' + vLabel + '</p>';
+
+          var latest = transEvents[0];
+          if (latest) {
+            var td = latest.trans_data || {};
+            var interval = td.interval_km || (defaultInterval[td.gearbox_type] || 60000);
+            var installDate = (latest.date || "").slice(0, 10);
+            var allKmEvents = events.filter(function (e) { return e.mileage_km && (e.date || "") >= installDate; });
+            var maxKm = allKmEvents.reduce(function (m, e) { return Math.max(m, e.mileage_km); }, latest.mileage_km || 0);
+            var kmSince = latest.mileage_km && maxKm > latest.mileage_km ? maxKm - latest.mileage_km : null;
+            var pct = kmSince != null ? kmSince / interval : null;
+            var kmColor = pct == null ? "#94a3b8" : pct < 0.7 ? "#4ade80" : pct < 0.9 ? "#fbbf24" : "#f87171";
+
+            html += '<div class="card" style="margin-bottom:.6rem;background:#0f1520">' +
+              '<div style="font-weight:600;font-size:.88rem;margin-bottom:8px">' +
+                (td.gearbox_type ? esc(gboxLabel[td.gearbox_type] || td.gearbox_type) + ' — ' : '') + 'Poslednja zamena' +
+              '</div>' +
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+                (kmSince != null ? '<div><div style="color:#64748b;font-size:.75rem">Km od zamene</div>' +
+                  '<div style="font-weight:700;font-size:1.1rem;color:' + kmColor + '">' + kmSince.toLocaleString("sr") + ' km</div></div>' : '<div></div>') +
+                '<div><div style="color:#64748b;font-size:.75rem">Interval</div>' +
+                  '<div style="font-weight:600;font-size:.95rem">' + interval.toLocaleString("sr") + ' km</div></div>' +
+                ((td.fluid_type || td.brand || td.qty_l) ?
+                  '<div style="grid-column:span 2"><div style="color:#64748b;font-size:.75rem">Fluid</div>' +
+                    '<div style="font-size:.9rem">' +
+                      [td.brand, td.fluid_type, td.qty_l ? td.qty_l + ' L' : ''].filter(Boolean).join(' • ') +
+                    '</div></div>' : '') +
+                (td.filter_changed ? '<div style="grid-column:span 2;font-size:.78rem;color:#94a3b8">✓ filter menjača zamenjen</div>' : '') +
+              '</div>' +
+              (pct != null && pct >= 0.9
+                ? '<div style="background:#1e1b4b;color:#c4b5fd;padding:6px 8px;border-radius:6px;font-size:.8rem;margin-top:8px">⚠️ Blizu intervala zamene ulja menjača</div>' : '') +
+              '<div style="color:#64748b;font-size:.78rem;margin-top:6px">' + installDate +
+                (latest.mileage_km ? ' • ' + latest.mileage_km.toLocaleString("sr") + ' km' : '') + '</div>' +
+            '</div>';
+          }
+
+          if (!transEvents.length) {
+            html += '<div class="card"><p class="empty">Nema evidentiranih zamena ulja menjača. Dodaj događaj tipa "Ulje menjača".</p></div>';
+          } else {
+            html += '<div style="font-weight:600;font-size:.85rem;margin:12px 0 6px">Istorija zamena</div>';
+            transEvents.forEach(function (e, idx) {
+              var td = e.trans_data || {};
+              var nextOlder = transEvents[idx + 1];
+              var kmInterval = (e.mileage_km && nextOlder && nextOlder.mileage_km)
+                ? e.mileage_km - nextOlder.mileage_km : null;
+              html += '<div class="card" style="margin-bottom:.4rem;padding:10px 14px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+                  '<div>' +
+                    (td.gearbox_type ? '<span style="color:#a78bfa;font-size:.82rem">' + esc(gboxLabel[td.gearbox_type] || td.gearbox_type) + '</span> ' : '') +
+                    (td.brand || td.fluid_type
+                      ? '<span style="font-weight:600">' + esc([td.brand, td.fluid_type].filter(Boolean).join(' ')) + '</span>'
+                      : '<span style="color:#64748b">Zamena</span>') +
+                    (td.qty_l ? '<span style="color:#94a3b8;font-size:.82rem;margin-left:6px">' + td.qty_l + ' L</span>' : '') +
+                    (td.filter_changed ? '<div style="color:#94a3b8;font-size:.76rem">✓ filter menjača</div>' : '') +
+                  '</div>' +
+                  (kmInterval ? '<span style="font-size:.82rem;color:#64748b">' + kmInterval.toLocaleString("sr") + ' km</span>' : '') +
+                '</div>' +
+                '<div style="color:#64748b;font-size:.78rem;margin-top:3px;display:flex;gap:10px">' +
+                  '<span>' + (e.date || "").slice(0, 10) + '</span>' +
+                  (e.mileage_km ? '<span>' + e.mileage_km.toLocaleString("sr") + ' km</span>' : '') +
+                  (e.shop_name ? '<span>' + esc(e.shop_name) + '</span>' : '') +
+                  (e.cost && e.cost.total ? '<span>' + Math.round(e.cost.total).toLocaleString("sr") + ' ' + (e.cost.currency || "RSD") + '</span>' : '') +
+                '</div>' +
+              '</div>';
+            });
+          }
+
+          html += '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vehId) + '\',false)" style="font-size:.85rem">+ Dodaj zamenu ulja menjača</button>';
           return html;
         });
     },
@@ -3231,6 +3344,20 @@
       base.title = val("e_title");
       base.description = val("e_desc");
       base.shop_name = val("e_shop") || null;
+      if (base.type === "transmission_fluid") {
+        var trGbox   = el("e_trn_gbox")     ? el("e_trn_gbox").value              : "";
+        var trFluid  = val("e_trn_fluid");
+        var trQty    = val("e_trn_qty")      ? parseFloat(val("e_trn_qty"))        : null;
+        var trBrand  = val("e_trn_brand");
+        var trIntvl  = val("e_trn_interval") ? parseInt(val("e_trn_interval"), 10) : null;
+        var trFilter = checked("e_trn_filter");
+        base.trans_data = (trGbox || trFluid || trQty || trBrand || trIntvl || trFilter)
+          ? { gearbox_type: trGbox || null, fluid_type: trFluid || null, qty_l: trQty,
+              brand: trBrand || null, interval_km: trIntvl, filter_changed: trFilter }
+          : null;
+      } else {
+        base.trans_data = null;
+      }
       if (base.type === "spark_plugs") {
         var spType = el("e_spk_type")     ? el("e_spk_type").value             : "";
         var spBrand = val("e_spk_brand");
@@ -4255,6 +4382,8 @@
       if (clf) clf.hidden = v !== "coolant_service";
       var spf = document.getElementById("sparkFields");
       if (spf) spf.hidden = v !== "spark_plugs";
+      var trf = document.getElementById("transFields");
+      if (trf) trf.hidden = v !== "transmission_fluid";
     },
 
     onExpTypeChange: function (sel) {
