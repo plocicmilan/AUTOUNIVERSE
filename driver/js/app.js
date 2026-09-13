@@ -1499,7 +1499,13 @@
         html += '</div>';
       });
 
-      html += '<button class="btn btn-secondary" onclick="DR.resetCarCheck()" style="font-size:.85rem">↩ Resetuj sve</button>' +
+      html += '<div class="card" style="margin-bottom:.6rem">' +
+        '<div style="font-size:.83rem;color:#64748b;margin-bottom:8px">Opcionalno za PDF</div>' +
+        '<input id="cc_vehicle" type="text" placeholder="Vozilo (npr. VW Golf 2012, 1.6 TDI)" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#1e293b;color:#e2e8f0;font-size:.85rem;box-sizing:border-box;margin-bottom:8px">' +
+        '<input id="cc_note" type="text" placeholder="Napomena (npr. tablica, mesto pregleda)" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#1e293b;color:#e2e8f0;font-size:.85rem;box-sizing:border-box">' +
+        '</div>' +
+        '<button class="btn btn-secondary" onclick="DR.exportCarCheckPdf()" style="font-size:.85rem">📄 Izvezi PDF</button>' +
+        '<button class="btn btn-secondary mt8" onclick="DR.resetCarCheck()" style="font-size:.85rem">↩ Resetuj sve</button>' +
         '<button class="btn btn-secondary mt8" onclick="DR.go(\'vin_check\')" style="font-size:.85rem">🔢 Provjeri VIN broj</button>';
       return html;
     },
@@ -3518,6 +3524,149 @@
 
     resetCarCheck: function () {
       document.querySelectorAll('#app input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
+    },
+
+    exportCarCheckPdf: function () {
+      var sections = [
+        { title: "Dokumenta", items: [
+          "Saobraćajna dozvola — ime vlasnika, VIN, godište",
+          "Knjižica vozila (servisna historija)",
+          "Polisa osiguranja — do kad važi",
+          "Registracija — važi li, do kad",
+          "Ukoliko kredit: banka mora odobriti prodaju",
+          "Nema upisane zabrane otuđenja (proveri MUP evidenciju)",
+        ]},
+        { title: "Karoserija", items: [
+          "Proverite sve boje pod različitim kutovima (razlike = farbanje)",
+          "Fugen (razmaci između vrata/haube/gepeka) — jednaki sa svih strana",
+          "Tragovi rđe ispod gumenih lajsni i ispod vrata",
+          "Stakla — pukotine, mjehurovi, neoriginalni UR kôd",
+          "Hvatajte magneteom duž pragova i krila (špahtla ne privlači magnet)",
+        ]},
+        { title: "Motor i pogon", items: [
+          "Nivo ulja — boja (crno=staro, mlečno=voda u ulju!)",
+          "Nivo rashladne tečnosti — boja i nivo",
+          "Tragovi curenja ispod automobila posle 10 min stajanja",
+          "Dim iz auspuha: beli (voda) / plavi (ulje) / crni (benzin) = problem",
+          "Motor hladnom — startovati, slušati klopotanje i šumove",
+          "Preveriti broj motora — mora odgovarati saobraćajnoj",
+        ]},
+        { title: "Probna vožnja", items: [
+          "Kočnice — auto ne sme da vuče u stranu",
+          "Volan — ne sme da vibrira ili vuče",
+          "Menjač — sve brzine ulaze glatko",
+          "Sva svetla, grijanje, klima, elektropodizači",
+          "ABS lampica, check engine — ništa ne sme svetleti",
+          "Test kočenja na 60 km/h — ravno kočenje",
+        ]},
+        { title: "Cena i tržište", items: [
+          "Uporedi sa Polovniautomobili.rs — ista godišnja/km/oprema",
+          "Istorija cene — oglasi na KP/PA duže od 30 dana = pregovaraj",
+          "Kalkuliši: reg + servis odmah + prvih 6 meseci troškova",
+          "Ne plaćaj avans bez overe kod notara",
+          "Kupoprodajni ugovor — obavezno u 2 primerka, overiti potpise",
+        ]},
+      ];
+
+      var doc = new jspdf.jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      var pw = doc.internal.pageSize.getWidth();
+      var ph = doc.internal.pageSize.getHeight();
+      var lm = 18, rm = 18, y = 20;
+      var cw = pw - lm - rm;
+
+      // Header
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("PREGLED VOZILA", lm, y);
+      doc.setFont("Helvetica", "normal");
+      doc.setFontSize(9);
+      var now = new Date();
+      var dateStr = now.getDate() + "." + (now.getMonth() + 1) + "." + now.getFullYear() + ".";
+      doc.text("Datum: " + dateStr, pw - rm - doc.getTextWidth("Datum: " + dateStr), y);
+      y += 6;
+      doc.setDrawColor(100, 116, 139);
+      doc.setLineWidth(0.4);
+      doc.line(lm, y, pw - rm, y);
+      y += 8;
+
+      // Vehicle info line (optional — from input fields if visible)
+      var fVehicle = document.getElementById("cc_vehicle");
+      var fNote = document.getElementById("cc_note");
+      if (fVehicle && fVehicle.value.trim()) {
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("Vozilo: " + fVehicle.value.trim(), lm, y);
+        y += 5;
+      }
+      if (fNote && fNote.value.trim()) {
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text("Napomena: " + fNote.value.trim(), lm, y);
+        y += 5;
+      }
+      if ((fVehicle && fVehicle.value.trim()) || (fNote && fNote.value.trim())) y += 2;
+
+      // Sections
+      sections.forEach(function (sec, si) {
+        var sectionEmojis = ["📄", "🔍", "🔧", "🚗", "💰"];
+        if (y > ph - 50) { doc.addPage(); y = 20; }
+
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setFillColor(241, 245, 246);
+        doc.rect(lm, y - 4, cw, 7, "F");
+        doc.text(sectionEmojis[si] + " " + sec.title, lm + 2, y + 0.5);
+        y += 8;
+
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(9);
+
+        sec.items.forEach(function (item, i) {
+          if (y > ph - 20) { doc.addPage(); y = 20; }
+          var sectionKey = ["Dok", "Kar", "Mot", "Pro", "Cen"][si];
+          var id = "chk_" + sectionKey + i;
+          var checked = document.getElementById(id) && document.getElementById(id).checked;
+          var mark = checked ? "✓" : "□";
+
+          doc.setFont("Helvetica", checked ? "bold" : "normal");
+          doc.setTextColor(checked ? 30 : 80, checked ? 100 : 80, checked ? 60 : 80);
+          doc.text(mark + "  " + item, lm + 2, y);
+          doc.setTextColor(0, 0, 0);
+          y += 5.5;
+        });
+        y += 3;
+      });
+
+      // Signature block
+      if (y > ph - 45) { doc.addPage(); y = 20; }
+      y += 4;
+      doc.setDrawColor(100, 116, 139);
+      doc.setLineWidth(0.4);
+      doc.line(lm, y, pw - rm, y);
+      y += 6;
+      doc.setFont("Helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text("Kupac:", lm, y);
+      doc.text("Prodavac:", pw / 2 + 5, y);
+      y += 14;
+      doc.line(lm, y, lm + 65, y);
+      doc.line(pw / 2 + 5, y, pw / 2 + 70, y);
+      y += 4;
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text("potpis / datum", lm, y);
+      doc.text("potpis / datum", pw / 2 + 5, y);
+
+      var fname = "pregled-vozila-" + dateStr.replace(/\./g, "") + ".pdf";
+      if (navigator.canShare && navigator.share) {
+        var blob = doc.output("blob");
+        var file = new File([blob], fname, { type: "application/pdf" });
+        if (navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], title: "Pregled vozila" }).catch(function () { doc.save(fname); });
+          return;
+        }
+      }
+      doc.save(fname);
     },
 
     setHistMode: function (mode) {
