@@ -51,6 +51,7 @@
     "brake_service",
     "belt_service",
     "coolant_service",
+    "spark_plugs",
     "repair",
     "tires",
     "battery",

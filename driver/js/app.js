@@ -359,6 +359,7 @@
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'brake_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a0a0a">🛑 Istorija kočnica</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'belt_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#0a1a0a">⚙️ Istorija kaišа/lanca</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'coolant_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#0a1020">🌡️ Istorija rashladne tečnosti</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'spark_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1505">✨ Istorija svećica</button>' +
             (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
@@ -516,6 +517,26 @@
               '<input type="file" accept="image/*" multiple onchange="DR.pickEventPhotos(this)" hidden></label>' +
             '<div id="evtPreview">' + eventPhotoPreviewHTML() + '</div>' +
             retroBox +
+          '</div>' +
+          '<div id="sparkFields"' + (e.type === "spark_plugs" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
+            '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">✨ Detalji svećica (opciono)</div>' +
+            '<label class="field"><span>Tip</span>' +
+              '<select id="e_spk_type">' +
+                ['', 'standard', 'iridium', 'platinum', 'double-platinum'].map(function (t_) {
+                  var labels = { '': '— izaberi —', 'standard': 'Standardne', 'iridium': 'Iridijum', 'platinum': 'Platina', 'double-platinum': 'Dupla platina' };
+                  return '<option value="' + t_ + '"' + (e.spark_data && e.spark_data.plug_type === t_ ? " selected" : "") + '>' + labels[t_] + '</option>';
+                }).join("") +
+              '</select></label>' +
+            '<div class="row2">' +
+              '<label class="field"><span>Brend</span>' +
+                '<input id="e_spk_brand" type="text" placeholder="NGK, Bosch, Denso…" value="' + esc((e.spark_data && e.spark_data.brand) || "") + '"></label>' +
+              '<label class="field"><span>Kom.</span>' +
+                '<input id="e_spk_qty" type="number" min="1" max="16" placeholder="4" value="' + esc((e.spark_data && e.spark_data.qty != null) ? e.spark_data.qty : "") + '"></label>' +
+            '</div>' +
+            '<label class="field"><span>Razmak elektrode (mm, opciono)</span>' +
+              '<input id="e_spk_gap" type="number" step="0.1" placeholder="npr. 0.8" value="' + esc((e.spark_data && e.spark_data.gap_mm != null) ? e.spark_data.gap_mm : "") + '"></label>' +
+            '<label class="field"><span>Interval zamene (km)</span>' +
+              '<input id="e_spk_interval" type="number" step="5000" placeholder="npr. 60000" value="' + esc((e.spark_data && e.spark_data.interval_km) ? e.spark_data.interval_km : "") + '"></label>' +
           '</div>' +
           '<div id="coolantFields"' + (e.type === "coolant_service" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
             '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🌡️ Detalji rashladne tečnosti (opciono)</div>' +
@@ -1728,6 +1749,91 @@
           });
 
           html += '<button class="btn btn-secondary mt8" onclick="DR.go(\'expense_form\')" style="font-size:.85rem">+ Dodaj punjenje</button>';
+          return html;
+        });
+    },
+
+    /* ===== SPARK PLUGS TRACKER ===== */
+    spark_log: function (params) {
+      var vehId = (params && params.vehicle_id) || App.activeVehicleId;
+      return Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
+        .then(function (res) {
+          var v = res[0], events = res[1];
+          if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+
+          var sparkEvents = events
+            .filter(function (e) { return e.type === "spark_plugs"; })
+            .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+          var typeLabel = { 'standard': 'Standardne', 'iridium': 'Iridijum', 'platinum': 'Platina', 'double-platinum': 'Dupla platina' };
+          var defaultInterval = { 'standard': 30000, 'iridium': 80000, 'platinum': 60000, 'double-platinum': 100000 };
+
+          var vLabel = esc((v.make || "") + " " + (v.model || "") + (v.plate ? " • " + v.plate : ""));
+          var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+            '<h1>✨ Istorija svećica</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 8px">' + vLabel + '</p>';
+
+          var latest = sparkEvents[0];
+          if (latest) {
+            var sd = latest.spark_data || {};
+            var interval = sd.interval_km || (defaultInterval[sd.plug_type] || 30000);
+            var installDate = (latest.date || "").slice(0, 10);
+            var allKmEvents = events.filter(function (e) { return e.mileage_km && (e.date || "") >= installDate; });
+            var maxKm = allKmEvents.reduce(function (m, e) { return Math.max(m, e.mileage_km); }, latest.mileage_km || 0);
+            var kmSince = latest.mileage_km && maxKm > latest.mileage_km ? maxKm - latest.mileage_km : null;
+            var pct = kmSince != null ? kmSince / interval : null;
+            var kmColor = pct == null ? "#94a3b8" : pct < 0.7 ? "#4ade80" : pct < 0.9 ? "#fbbf24" : "#f87171";
+
+            html += '<div class="card" style="margin-bottom:.6rem;background:#1a1505">' +
+              '<div style="font-weight:600;font-size:.88rem;margin-bottom:8px">Poslednja zamena</div>' +
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+                (kmSince != null ? '<div><div style="color:#64748b;font-size:.75rem">Km od zamene</div>' +
+                  '<div style="font-weight:700;font-size:1.1rem;color:' + kmColor + '">' + kmSince.toLocaleString("sr") + ' km</div></div>' : '<div></div>') +
+                '<div><div style="color:#64748b;font-size:.75rem">Interval</div>' +
+                  '<div style="font-weight:600;font-size:.95rem">' + interval.toLocaleString("sr") + ' km</div></div>' +
+                ((sd.plug_type || sd.brand) ?
+                  '<div style="grid-column:span 2"><div style="color:#64748b;font-size:.75rem">Svećice</div>' +
+                    '<div style="font-size:.9rem">' +
+                      [sd.brand, typeLabel[sd.plug_type] || sd.plug_type, sd.qty ? sd.qty + ' kom.' : '', sd.gap_mm ? sd.gap_mm + ' mm' : ''].filter(Boolean).join(' • ') +
+                    '</div></div>' : '') +
+              '</div>' +
+              (pct != null && pct >= 0.9
+                ? '<div style="background:#451a03;color:#fed7aa;padding:6px 8px;border-radius:6px;font-size:.8rem;margin-top:8px">⚠️ Blizu intervala zamene svećica</div>' : '') +
+              '<div style="color:#64748b;font-size:.78rem;margin-top:6px">' + installDate +
+                (latest.mileage_km ? ' • ' + latest.mileage_km.toLocaleString("sr") + ' km' : '') + '</div>' +
+            '</div>';
+          }
+
+          if (!sparkEvents.length) {
+            html += '<div class="card"><p class="empty">Nema evidentiranih zamena svećica. Dodaj događaj tipa "Svećice".</p></div>';
+          } else {
+            html += '<div style="font-weight:600;font-size:.85rem;margin:12px 0 6px">Istorija zamena</div>';
+            sparkEvents.forEach(function (e, idx) {
+              var sd = e.spark_data || {};
+              var nextOlder = sparkEvents[idx + 1];
+              var interval = (e.mileage_km && nextOlder && nextOlder.mileage_km)
+                ? e.mileage_km - nextOlder.mileage_km : null;
+              html += '<div class="card" style="margin-bottom:.4rem;padding:10px 14px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+                  '<div>' +
+                    (sd.brand ? '<span style="font-weight:600">' + esc(sd.brand) + '</span> ' : '') +
+                    (sd.plug_type ? '<span style="color:#fbbf24;font-size:.82rem">' + esc(typeLabel[sd.plug_type] || sd.plug_type) + '</span>' : '') +
+                    ([sd.qty ? sd.qty + ' kom.' : '', sd.gap_mm ? sd.gap_mm + ' mm' : ''].filter(Boolean).length
+                      ? '<div style="color:#94a3b8;font-size:.78rem">' + [sd.qty ? sd.qty + ' kom.' : '', sd.gap_mm ? sd.gap_mm + ' mm' : ''].filter(Boolean).join(' • ') + '</div>' : '') +
+                  '</div>' +
+                  (interval ? '<span style="font-size:.82rem;color:#64748b">' + interval.toLocaleString("sr") + ' km</span>' : '') +
+                '</div>' +
+                '<div style="color:#64748b;font-size:.78rem;margin-top:3px;display:flex;gap:10px">' +
+                  '<span>' + (e.date || "").slice(0, 10) + '</span>' +
+                  (e.mileage_km ? '<span>' + e.mileage_km.toLocaleString("sr") + ' km</span>' : '') +
+                  (e.shop_name ? '<span>' + esc(e.shop_name) + '</span>' : '') +
+                  (e.cost && e.cost.total ? '<span>' + Math.round(e.cost.total).toLocaleString("sr") + ' ' + (e.cost.currency || "RSD") + '</span>' : '') +
+                '</div>' +
+              '</div>';
+            });
+          }
+
+          html += '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vehId) + '\',false)" style="font-size:.85rem">+ Dodaj zamenu svećica</button>';
           return html;
         });
     },
@@ -3125,6 +3231,19 @@
       base.title = val("e_title");
       base.description = val("e_desc");
       base.shop_name = val("e_shop") || null;
+      if (base.type === "spark_plugs") {
+        var spType = el("e_spk_type")     ? el("e_spk_type").value             : "";
+        var spBrand = val("e_spk_brand");
+        var spQty   = val("e_spk_qty")      ? parseInt(val("e_spk_qty"), 10)   : null;
+        var spGap   = val("e_spk_gap")      ? parseFloat(val("e_spk_gap"))     : null;
+        var spIntvl = val("e_spk_interval") ? parseInt(val("e_spk_interval"), 10) : null;
+        base.spark_data = (spType || spBrand || spQty || spGap || spIntvl)
+          ? { plug_type: spType || null, brand: spBrand || null, qty: spQty,
+              gap_mm: spGap, interval_km: spIntvl }
+          : null;
+      } else {
+        base.spark_data = null;
+      }
       if (base.type === "coolant_service") {
         var cType  = val("e_clt_type");
         var cConc  = val("e_clt_conc")  ? parseFloat(val("e_clt_conc"))  : null;
@@ -4134,6 +4253,8 @@
       if (blf) blf.hidden = v !== "belt_service";
       var clf = document.getElementById("coolantFields");
       if (clf) clf.hidden = v !== "coolant_service";
+      var spf = document.getElementById("sparkFields");
+      if (spf) spf.hidden = v !== "spark_plugs";
     },
 
     onExpTypeChange: function (sel) {
