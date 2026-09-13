@@ -677,10 +677,6 @@
     shareWithOwner: function () {
       captureStep();
       if (!window.AUCore) { toast("AUCore modul nije učitan."); return; }
-      if (!AUCore.getSession()) {
-        toast("QR deljenje zahteva besplatni AU Core nalog. Prijavite se u Podešavanjima → AU Core.");
-        return;
-      }
       var v = byId(WO.vehicles, WO.draft.vehicle_id);
       var profile = window.Store.settings.get("profile", { name: "" });
       // Payload BEZ cena (FEEDBACK #10)
