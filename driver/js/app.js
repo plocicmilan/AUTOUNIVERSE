@@ -356,6 +356,7 @@
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'tire_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1c20">🔄 Istorija guma</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'battery_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1a10">🔋 Istorija akumulatora</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'oil_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1500">🛢️ Istorija zamene ulja</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'brake_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a0a0a">🛑 Istorija kočnica</button>' +
             (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
@@ -513,6 +514,20 @@
               '<input type="file" accept="image/*" multiple onchange="DR.pickEventPhotos(this)" hidden></label>' +
             '<div id="evtPreview">' + eventPhotoPreviewHTML() + '</div>' +
             retroBox +
+          '</div>' +
+          '<div id="brakeFields"' + (e.type === "brake_service" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
+            '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🛑 Detalji kočnica (opciono)</div>' +
+            '<div class="row2">' +
+              '<label class="field"><span>Pločice napred (mm)</span>' +
+                '<input id="e_brk_fp" type="number" step="0.5" placeholder="npr. 8" value="' + esc((e.brake_data && e.brake_data.front_pads_mm != null) ? e.brake_data.front_pads_mm : "") + '"></label>' +
+              '<label class="field"><span>Pločice nazad (mm)</span>' +
+                '<input id="e_brk_rp" type="number" step="0.5" placeholder="npr. 6" value="' + esc((e.brake_data && e.brake_data.rear_pads_mm != null) ? e.brake_data.rear_pads_mm : "") + '"></label>' +
+            '</div>' +
+            '<div style="margin-top:8px">' +
+              '<label class="chk"><input type="checkbox" id="e_brk_fd"' + (e.brake_data && e.brake_data.front_discs_changed ? " checked" : "") + '> Zamenjeni diskovi napred</label>' +
+              '<label class="chk mt8"><input type="checkbox" id="e_brk_rd"' + (e.brake_data && e.brake_data.rear_discs_changed ? " checked" : "") + '> Zamenjeni diskovi nazad</label>' +
+              '<label class="chk mt8"><input type="checkbox" id="e_brk_fl"' + (e.brake_data && e.brake_data.fluid_changed ? " checked" : "") + '> Zamenjena kočiona tečnost</label>' +
+            '</div>' +
           '</div>' +
           '<div id="oilFields"' + (e.type === "oil_change" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
             '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🛢️ Detalji zamene ulja (opciono)</div>' +
@@ -1683,6 +1698,90 @@
         });
     },
 
+    /* ===== BRAKE TRACKER ===== */
+    brake_log: function (params) {
+      var vehId = (params && params.vehicle_id) || App.activeVehicleId;
+      return Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
+        .then(function (res) {
+          var v = res[0], events = res[1];
+          if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+
+          var brakeEvents = events
+            .filter(function (e) { return e.type === "brake_service"; })
+            .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+          var vLabel = esc((v.make || "") + " " + (v.model || "") + (v.plate ? " • " + v.plate : ""));
+          var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+            '<h1>🛑 Istorija kočnica</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 8px">' + vLabel + '</p>';
+
+          // Pločice — color code: ≥5mm zeleno, ≥3mm žuto, <3mm crveno
+          function padColor(mm) {
+            return mm == null ? "#94a3b8" : mm >= 5 ? "#4ade80" : mm >= 3 ? "#fbbf24" : "#f87171";
+          }
+          function padWarn(mm) { return mm != null && mm < 3; }
+
+          var latest = brakeEvents[0];
+          if (latest) {
+            var bd = latest.brake_data || {};
+            var warnFront = padWarn(bd.front_pads_mm), warnRear = padWarn(bd.rear_pads_mm);
+            html += '<div class="card" style="margin-bottom:.6rem;background:#1a1010">' +
+              '<div style="font-weight:600;font-size:.88rem;margin-bottom:8px">Poslednji servis kočnica</div>' +
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+                (bd.front_pads_mm != null ? '<div><div style="color:#64748b;font-size:.75rem">Pločice napred</div>' +
+                  '<div style="font-weight:700;font-size:1.1rem;color:' + padColor(bd.front_pads_mm) + '">' + bd.front_pads_mm + ' mm</div></div>' : '<div></div>') +
+                (bd.rear_pads_mm != null ? '<div><div style="color:#64748b;font-size:.75rem">Pločice nazad</div>' +
+                  '<div style="font-weight:700;font-size:1.1rem;color:' + padColor(bd.rear_pads_mm) + '">' + bd.rear_pads_mm + ' mm</div></div>' : '<div></div>') +
+                ((bd.front_discs_changed || bd.rear_discs_changed || bd.fluid_changed) ?
+                  '<div style="grid-column:span 2;font-size:.78rem;color:#94a3b8">' +
+                    [bd.front_discs_changed ? '✓ diskovi napred' : '',
+                     bd.rear_discs_changed  ? '✓ diskovi nazad'  : '',
+                     bd.fluid_changed       ? '✓ kočiona tečnost' : ''].filter(Boolean).join(' • ') +
+                  '</div>' : '') +
+              '</div>' +
+              (warnFront || warnRear
+                ? '<div style="background:#7f1d1d;color:#fca5a5;padding:6px 8px;border-radius:6px;font-size:.8rem;margin-top:8px">⚠️ Pločice ispod 3mm — hitna zamena</div>' : '') +
+              '<div style="color:#64748b;font-size:.78rem;margin-top:6px">' + (latest.date || "").slice(0, 10) +
+                (latest.mileage_km ? ' • ' + latest.mileage_km.toLocaleString("sr") + ' km' : '') + '</div>' +
+            '</div>';
+          }
+
+          if (!brakeEvents.length) {
+            html += '<div class="card"><p class="empty">Nema evidentiranih servisa kočnica. Dodaj događaj tipa "Kočnice".</p></div>';
+          } else {
+            html += '<div style="font-weight:600;font-size:.85rem;margin:12px 0 6px">Istorija</div>';
+            brakeEvents.forEach(function (e) {
+              var bd = e.brake_data || {};
+              html += '<div class="card" style="margin-bottom:.4rem;padding:10px 14px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center">' +
+                  '<div style="display:flex;gap:14px">' +
+                    (bd.front_pads_mm != null
+                      ? '<span style="font-size:.88rem">⬆ <b style="color:' + padColor(bd.front_pads_mm) + '">' + bd.front_pads_mm + 'mm</b></span>' : '') +
+                    (bd.rear_pads_mm != null
+                      ? '<span style="font-size:.88rem">⬇ <b style="color:' + padColor(bd.rear_pads_mm) + '">' + bd.rear_pads_mm + 'mm</b></span>' : '') +
+                  '</div>' +
+                  (e.mileage_km ? '<span style="color:#64748b;font-size:.8rem">' + e.mileage_km.toLocaleString("sr") + ' km</span>' : '') +
+                '</div>' +
+                ((bd.front_discs_changed || bd.rear_discs_changed || bd.fluid_changed)
+                  ? '<div style="color:#94a3b8;font-size:.76rem;margin-top:3px">' +
+                      [bd.front_discs_changed ? '✓ diskovi napred' : '',
+                       bd.rear_discs_changed  ? '✓ diskovi nazad'  : '',
+                       bd.fluid_changed       ? '✓ tečnost' : ''].filter(Boolean).join(' • ') +
+                    '</div>' : '') +
+                '<div style="color:#64748b;font-size:.78rem;margin-top:3px;display:flex;gap:10px">' +
+                  '<span>' + (e.date || "").slice(0, 10) + '</span>' +
+                  (e.shop_name ? '<span>' + esc(e.shop_name) + '</span>' : '') +
+                  (e.cost && e.cost.total ? '<span>' + Math.round(e.cost.total).toLocaleString("sr") + ' ' + (e.cost.currency || "RSD") + '</span>' : '') +
+                '</div>' +
+              '</div>';
+            });
+          }
+
+          html += '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vehId) + '\',false)" style="font-size:.85rem">+ Dodaj servis kočnica</button>';
+          return html;
+        });
+    },
+
     /* ===== OIL CHANGE TRACKER ===== */
     oil_log: function (params) {
       var vehId = (params && params.vehicle_id) || App.activeVehicleId;
@@ -2818,6 +2917,19 @@
       base.title = val("e_title");
       base.description = val("e_desc");
       base.shop_name = val("e_shop") || null;
+      if (base.type === "brake_service") {
+        var bFP  = val("e_brk_fp") ? parseFloat(val("e_brk_fp")) : null;
+        var bRP  = val("e_brk_rp") ? parseFloat(val("e_brk_rp")) : null;
+        var bFD  = checked("e_brk_fd");
+        var bRD  = checked("e_brk_rd");
+        var bFL  = checked("e_brk_fl");
+        base.brake_data = (bFP != null || bRP != null || bFD || bRD || bFL)
+          ? { front_pads_mm: bFP, rear_pads_mm: bRP,
+              front_discs_changed: bFD, rear_discs_changed: bRD, fluid_changed: bFL }
+          : null;
+      } else {
+        base.brake_data = null;
+      }
       if (base.type === "oil_change") {
         var oSpec  = val("e_oil_spec");
         var oQty   = val("e_oil_qty")   ? parseFloat(val("e_oil_qty"))   : null;
@@ -3782,6 +3894,8 @@
       if (bf) bf.hidden = v !== "battery";
       var of_ = document.getElementById("oilFields");
       if (of_) of_.hidden = v !== "oil_change";
+      var bkf = document.getElementById("brakeFields");
+      if (bkf) bkf.hidden = v !== "brake_service";
     },
 
     onExpTypeChange: function (sel) {

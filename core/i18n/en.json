@@ -172,6 +172,7 @@
   "d.documents_soon": "Documents (registration, policies, receipts) coming in the next version.",
   "d.need_vehicle": "Add a vehicle first.",
   "d.need_make": "Make or model is required.",
+  "d.type_brake_service": "Brakes",
   "d.type_oil_change": "Oil change",
   "d.type_battery": "Battery",
   "d.type_service": "Service",
