@@ -353,6 +353,7 @@
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'kalkulatori\')" style="background:#1e3a5f">🧮 Kalkulatori</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'timeline\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1c2a3a">📅 Timeline događaja</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'mechanic_stats\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1c2030">🔩 Troškovi po servisu</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'tire_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1c20">🔄 Istorija guma</button>' +
             (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
@@ -498,7 +499,7 @@
           '<h1>' + (retro ? t("d.initial_cta") : t("d.add_event")) + '</h1>' +
           '<div class="card">' +
             '<label class="field"><span>' + t("d.nav_vehicle") + '</span><select id="e_vehicle">' + vehOpts + '</select></label>' +
-            '<label class="field"><span>' + t("d.event_type") + '</span><select id="e_type">' + typeOpts + '</select></label>' +
+            '<label class="field"><span>' + t("d.event_type") + '</span><select id="e_type" onchange="DR.onEventTypeChange(this)">' + typeOpts + '</select></label>' +
             field("e_title", "d.event_title", e.title) +
             field("e_date", "common.date", (e.date || (retro ? "" : todayISO())), "date") +
             field("e_km", "common.mileage", e.mileage_km != null ? e.mileage_km : "", "number") +
@@ -510,6 +511,22 @@
               '<input type="file" accept="image/*" multiple onchange="DR.pickEventPhotos(this)" hidden></label>' +
             '<div id="evtPreview">' + eventPhotoPreviewHTML() + '</div>' +
             retroBox +
+          '</div>' +
+          '<div id="tireFields"' + (e.type === "tires" ? "" : ' hidden') + ' class="card" style="margin-bottom:.6rem">' +
+            '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🔄 Detalji guma (opciono)</div>' +
+            '<label class="field"><span>Set</span>' +
+              '<select id="e_tire_set">' +
+                '<option value=""' + (!e.tire_data || !e.tire_data.set_name ? " selected" : "") + '>— izaberi —</option>' +
+                ['letnje','zimske','cjelogodišnje','off-road'].map(function (s) {
+                  return '<option value="' + s + '"' + (e.tire_data && e.tire_data.set_name === s ? " selected" : "") + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>';
+                }).join("") +
+              '</select></label>' +
+            '<label class="field"><span>Dimenzija (npr. 205/55 R16)</span>' +
+              '<input id="e_tire_size" type="text" placeholder="205/55 R16" value="' + esc((e.tire_data && e.tire_data.size) || "") + '"></label>' +
+            '<label class="field"><span>Brend (opciono)</span>' +
+              '<input id="e_tire_brand" type="text" placeholder="Michelin, Nokian…" value="' + esc((e.tire_data && e.tire_data.brand) || "") + '"></label>' +
+            '<label class="field"><span>Dubina gaznog sloja (mm)</span>' +
+              '<input id="e_tire_tread" type="number" step="0.5" placeholder="npr. 7.5" value="' + esc((e.tire_data && e.tire_data.tread_mm != null) ? e.tire_data.tread_mm : "") + '"></label>' +
           '</div>' +
           '<div class="card" style="margin-bottom:.6rem">' +
             '<div style="font-weight:600;font-size:.88rem;margin-bottom:10px">🔔 Sledeći servis (opciono)</div>' +
@@ -1630,6 +1647,91 @@
         });
     },
 
+    /* ===== TIRE TRACKER ===== */
+    tire_log: function (params) {
+      var vehId = (params && params.vehicle_id) || App.activeVehicleId;
+      return Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
+        .then(function (res) {
+          var v = res[0], events = res[1];
+          if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+
+          var tires = v.tires || {};
+          var tireEvents = events
+            .filter(function (e) { return e.type === "tires"; })
+            .sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+          var vLabel = esc((v.make || "") + " " + (v.model || "") + (v.plate ? " • " + v.plate : ""));
+          var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+            '<h1>🔄 Istorija guma</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 8px">' + vLabel + '</p>';
+
+          // Aktuelni set iz vehicle.tires
+          if (tires.size_front || tires.current_set) {
+            html += '<div class="card" style="margin-bottom:.6rem;background:#1a2010">' +
+              '<div style="font-weight:600;font-size:.88rem;margin-bottom:6px">Aktuelni set</div>' +
+              (tires.current_set ? '<div><b>' + esc(tires.current_set) + '</b></div>' : '') +
+              (tires.size_front ? '<div style="color:#64748b;font-size:.82rem">' + esc(tires.size_front) + '</div>' : '') +
+            '</div>';
+          }
+
+          if (!tireEvents.length) {
+            html += '<div class="card"><p class="empty">Nema evidentiranih zamena guma. Dodaj događaj tipa "Gume".</p></div>';
+          } else {
+            // Statistika: ukupno zamena, avg km po setu
+            var withKm = tireEvents.filter(function (e) { return e.mileage_km; });
+            html += '<div class="card" style="margin-bottom:.6rem;background:#181f2a">' +
+              '<div style="display:flex;gap:20px">' +
+                '<div><div style="color:#64748b;font-size:.75rem">Zamena ukupno</div>' +
+                  '<div style="font-weight:700;font-size:1.1rem">' + tireEvents.length + '</div></div>' +
+                (withKm.length >= 2 ? (function () {
+                  var intervals = [];
+                  for (var i = 0; i < withKm.length - 1; i++) {
+                    var diff = withKm[i].mileage_km - withKm[i + 1].mileage_km;
+                    if (diff > 0) intervals.push(diff);
+                  }
+                  if (!intervals.length) return "";
+                  var avg = Math.round(intervals.reduce(function (s, x) { return s + x; }, 0) / intervals.length);
+                  return '<div><div style="color:#64748b;font-size:.75rem">Avg km/set</div>' +
+                    '<div style="font-weight:700;font-size:1.1rem">' + avg.toLocaleString("sr") + '</div></div>';
+                })() : '') +
+              '</div>' +
+            '</div>';
+
+            // Lista zamena
+            tireEvents.forEach(function (e) {
+              var td = e.tire_data || {};
+              var setColor = td.set_name === "zimske" ? "#93c5fd" : td.set_name === "letnje" ? "#fbbf24" : "#94a3b8";
+              var treadColor = td.tread_mm != null
+                ? (td.tread_mm >= 4 ? "#4ade80" : td.tread_mm >= 2 ? "#fbbf24" : "#f87171")
+                : null;
+
+              html += '<div class="card" style="margin-bottom:.4rem;padding:10px 14px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+                  '<div>' +
+                    (td.set_name ? '<span style="font-weight:700;color:' + setColor + '">' + td.set_name.charAt(0).toUpperCase() + td.set_name.slice(1) + '</span> ' : '') +
+                    (td.brand ? '<span style="font-size:.85rem">' + esc(td.brand) + '</span>' : '') +
+                    (td.size ? '<div style="color:#94a3b8;font-size:.8rem">' + esc(td.size) + '</div>' : '') +
+                    (e.title && e.title !== t("d.type_tires") ? '<div style="color:#94a3b8;font-size:.8rem">' + esc(e.title) + '</div>' : '') +
+                  '</div>' +
+                  '<div style="text-align:right">' +
+                    (td.tread_mm != null ? '<div style="font-weight:700;color:' + treadColor + '">' + td.tread_mm + ' mm</div>' : '') +
+                    (e.mileage_km ? '<div style="color:#64748b;font-size:.8rem">' + e.mileage_km.toLocaleString("sr") + ' km</div>' : '') +
+                  '</div>' +
+                '</div>' +
+                '<div style="color:#64748b;font-size:.78rem;margin-top:4px;display:flex;gap:10px">' +
+                  '<span>' + (e.date || "").slice(0, 10) + '</span>' +
+                  (e.shop_name ? '<span>' + esc(e.shop_name) + '</span>' : '') +
+                  (e.cost && e.cost.total ? '<span>' + Math.round(e.cost.total).toLocaleString("sr") + ' ' + (e.cost.currency || "RSD") + '</span>' : '') +
+                '</div>' +
+              '</div>';
+            });
+          }
+
+          html += '<button class="btn btn-secondary mt8" onclick="DR.addEvent(\'' + esc(vehId) + '\',false)" style="font-size:.85rem">+ Dodaj zamenu guma</button>';
+          return html;
+        });
+    },
+
     /* ===== TROŠKOVI PO SERVISU ===== */
     mechanic_stats: function (params) {
       var vehId = (params && params.vehicle_id) || App.activeVehicleId;
@@ -2493,6 +2595,17 @@
       base.title = val("e_title");
       base.description = val("e_desc");
       base.shop_name = val("e_shop") || null;
+      if (base.type === "tires") {
+        var tSet   = el("e_tire_set")   ? el("e_tire_set").value   : "";
+        var tSize  = val("e_tire_size");
+        var tBrand = val("e_tire_brand");
+        var tTread = val("e_tire_tread") ? parseFloat(val("e_tire_tread")) : null;
+        base.tire_data = (tSet || tSize || tBrand || tTread != null)
+          ? { set_name: tSet || null, size: tSize || null, brand: tBrand || null, tread_mm: tTread }
+          : null;
+      } else {
+        base.tire_data = null;
+      }
       var nextKm   = val("e_next_km")   ? parseInt(val("e_next_km"), 10)  : null;
       var nextDate = val("e_next_date") || null;
       base.next_service = (nextKm || nextDate) ? { km: nextKm, date: nextDate } : null;
@@ -3412,6 +3525,11 @@
 
     setExpensesVehicle: function (id) { App.expensesVehicleId = id; render("expenses"); },
     setExpensesPeriod: function (p) { App.expensesPeriod = p; render("expenses"); },
+
+    onEventTypeChange: function (sel) {
+      var tf = document.getElementById("tireFields");
+      if (tf) tf.hidden = sel.value !== "tires";
+    },
 
     onExpTypeChange: function (sel) {
       var ff = document.getElementById("fuelFields");
