@@ -1159,13 +1159,25 @@
 
     /* ===== TRADE SUMMARY — godišnji sažetak preprodaje ===== */
     trade_summary: function () {
-      return Store.all("vehicles").then(function (vehicles) {
+      return Promise.all([Store.all("vehicles"), Store.all("events")]).then(function (res) {
+        var vehicles = res[0], allEvents = res[1];
         var tradeVehs = vehicles.filter(function (v) { return v.trade_mode; });
         if (!tradeVehs.length) {
           return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
-            '<h1>📊 Trade Sažetak</h1>' +
-            '<div class="card"><p class="empty">Nema vozila u trade modu. Uključi trade mod na vozilu.</p></div>';
+            '<h1>📊 Trade Dashboard</h1>' +
+            '<div class="card"><p class="empty">Nema vozila u trade modu. Uključi trade mod na vozilu da pratiš promet.</p></div>';
         }
+
+        // costs by vehicle id — suma svih troškova (servis/popravka/rashod) u EUR ili RSD
+        var costsByVeh = {};
+        allEvents.forEach(function (e) {
+          if (!e.vehicle_id || !e.cost || !e.cost.total) return;
+          if (!costsByVeh[e.vehicle_id]) costsByVeh[e.vehicle_id] = { EUR: 0, RSD: 0 };
+          var cur = (e.cost.currency || 'RSD').toUpperCase();
+          if (cur === 'EUR') costsByVeh[e.vehicle_id].EUR += parseFloat(e.cost.total) || 0;
+          else               costsByVeh[e.vehicle_id].RSD += parseFloat(e.cost.total) || 0;
+        });
+
         var now = new Date();
         var years = [];
         tradeVehs.forEach(function (v) {
@@ -1180,69 +1192,113 @@
         var activeYear = App._tradeSummaryYear || years[0];
         App._tradeSummaryYear = activeYear;
 
-        var sold     = tradeVehs.filter(function (v) { return v.status === 'sold' && v.trade && v.trade.sale && v.trade.sale.date && v.trade.sale.date.startsWith(activeYear); });
-        var active   = tradeVehs.filter(function (v) { return v.status !== 'sold' && v.status !== 'archived' && v.status !== 'totaled'; });
-        var totalProfit = 0;
+        var sold   = tradeVehs.filter(function (v) { return v.status === 'sold' && v.trade && v.trade.sale && v.trade.sale.date && v.trade.sale.date.startsWith(activeYear); });
+        var active = tradeVehs.filter(function (v) { return v.status !== 'sold' && v.status !== 'archived' && v.status !== 'totaled'; });
+
+        var totalProfit = 0, totalRevenue = 0;
         var profitData  = [];
 
         sold.forEach(function (v) {
-          var buyPrice  = (v.trade && v.trade.purchase && v.trade.purchase.price) || 0;
-          var sellPrice = (v.trade && v.trade.sale && v.trade.sale.price) || 0;
-          var cur = (v.trade && v.trade.sale && v.trade.sale.currency) || 'EUR';
+          var buyPrice  = parseFloat((v.trade && v.trade.purchase && v.trade.purchase.price) || 0);
+          var sellPrice = parseFloat((v.trade && v.trade.sale && v.trade.sale.price) || 0);
+          var cur = ((v.trade && v.trade.sale && v.trade.sale.currency) || 'EUR').toUpperCase();
+          var vCosts = costsByVeh[v.id] || { EUR: 0, RSD: 0 };
+          // costs u istoj valuti kao prodaja
+          var costsInCur = cur === 'EUR' ? vCosts.EUR : vCosts.RSD;
           var days = 0;
-          if (v.trade.purchase && v.trade.purchase.date && v.trade.sale.date) {
+          if (v.trade && v.trade.purchase && v.trade.purchase.date && v.trade.sale.date) {
             days = Math.round((new Date(v.trade.sale.date) - new Date(v.trade.purchase.date)) / 86400000);
           }
-          var profit = sellPrice - buyPrice;
-          totalProfit += profit;
-          profitData.push({ v: v, profit: profit, cur: cur, days: days });
+          var profit = sellPrice - buyPrice - costsInCur;
+          totalProfit  += profit;
+          totalRevenue += sellPrice;
+          profitData.push({ v: v, profit: profit, revenue: sellPrice, costs: costsInCur, cur: cur, days: days });
         });
 
-        var best  = profitData.sort(function (a, b) { return b.profit - a.profit; })[0];
-        var worst = profitData.length > 1 ? profitData[profitData.length - 1] : null;
+        var sortedProfit = profitData.slice().sort(function (a, b) { return b.profit - a.profit; });
+        var best  = sortedProfit[0] || null;
+        var worst = sortedProfit.length > 1 ? sortedProfit[sortedProfit.length - 1] : null;
+        var avgProfit = sold.length ? Math.round(totalProfit / sold.length) : 0;
 
         var yearTabs = years.map(function (y) {
           return '<button class="chip' + (y === activeYear ? ' active' : '') + '" onclick="App._tradeSummaryYear=\'' + y + '\';DR.go(\'trade_summary\')">' + y + '</button>';
         }).join('');
 
-        var soldRows = profitData.map(function (d) {
-          var sign = d.profit >= 0 ? '+' : '';
-          var color = d.profit >= 0 ? '#10b981' : '#ef4444';
-          return '<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px">' +
-            '<div>' +
+        function profitBadge(p, cur) {
+          var sign = p >= 0 ? '+' : '';
+          var col  = p >= 0 ? '#10b981' : '#ef4444';
+          return '<b style="color:' + col + '">' + sign + Math.round(p).toLocaleString('sr-RS') + ' ' + cur + '</b>';
+        }
+
+        var soldRows = sortedProfit.map(function (d) {
+          var costsLine = d.costs > 0 ? '<span class="muted"> • troškovi: ' + Math.round(d.costs).toLocaleString('sr-RS') + ' ' + d.cur + '</span>' : '';
+          return '<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;gap:8px">' +
+            '<div style="flex:1;min-width:0">' +
               '<b style="font-size:.92rem">' + esc(d.v.make + ' ' + d.v.model + (d.v.year ? ' ' + d.v.year : '')) + '</b>' +
-              '<div class="muted" style="font-size:.78rem">' + (d.days ? d.days + ' dana' : '') + '</div>' +
+              '<div class="muted" style="font-size:.78rem">' +
+                (d.days ? d.days + ' dana' : '') + costsLine +
+              '</div>' +
             '</div>' +
-            '<b style="color:' + color + '">' + sign + d.profit.toLocaleString('sr-RS') + ' ' + d.cur + '</b>' +
+            profitBadge(d.profit, d.cur) +
           '</div>';
         }).join('') || '<div class="card"><p class="empty">Nema prodatih vozila u ' + activeYear + '.</p></div>';
 
         var activeCards = active.map(function (v) {
-          var buyPrice  = (v.trade && v.trade.purchase && v.trade.purchase.price) || 0;
-          var cur = (v.trade && v.trade.purchase && v.trade.purchase.currency) || 'EUR';
+          var buyPrice = parseFloat((v.trade && v.trade.purchase && v.trade.purchase.price) || 0);
+          var cur = ((v.trade && v.trade.purchase && v.trade.purchase.currency) || 'EUR').toUpperCase();
+          var vCosts = costsByVeh[v.id] || { EUR: 0, RSD: 0 };
+          var costsInCur = cur === 'EUR' ? vCosts.EUR : vCosts.RSD;
+          var invested = buyPrice + costsInCur;
           return '<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px">' +
             '<div>' +
               '<b style="font-size:.92rem">' + esc(v.make + ' ' + v.model + (v.year ? ' ' + v.year : '')) + '</b>' +
-              '<div class="muted" style="font-size:.78rem">Status: ' + (v.status || 'aktivno') + '</div>' +
+              '<div class="muted" style="font-size:.78rem">' + (v.status || 'aktivno') +
+                (costsInCur > 0 ? ' • troškovi: ' + Math.round(costsInCur).toLocaleString('sr-RS') + ' ' + cur : '') +
+              '</div>' +
             '</div>' +
-            (buyPrice ? '<span class="muted">' + buyPrice.toLocaleString('sr-RS') + ' ' + cur + '</span>' : '') +
+            (invested ? '<span class="muted">' + Math.round(invested).toLocaleString('sr-RS') + ' ' + cur + '</span>' : '') +
           '</div>';
-        }).join('') || '<p class="muted">Nema aktivnih vozila u obrtu.</p>';
+        }).join('') || '<p class="muted" style="padding:8px 0">Nema aktivnih vozila u obrtu.</p>';
 
-        var sign = totalProfit >= 0 ? '+' : '';
-        var profitColor = totalProfit >= 0 ? '#10b981' : '#ef4444';
+        var profColor = totalProfit >= 0 ? '#10b981' : '#ef4444';
+        var profSign  = totalProfit >= 0 ? '+' : '';
+        var avgColor  = avgProfit >= 0 ? '#10b981' : '#ef4444';
+        var avgSign   = avgProfit >= 0 ? '+' : '';
+        // currency label za summary — ako postoji samo jedna valuta koristi je
+        var currencies = [...new Set(profitData.map(function(d){return d.cur;}))];
+        var curLabel = currencies.length === 1 ? currencies[0] : 'mešano';
 
         return '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
-          '<h1>📊 Trade Sažetak</h1>' +
+          '<h1>📊 Trade Dashboard</h1>' +
           '<div class="vehswitch">' + yearTabs + '</div>' +
-          '<div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center">' +
-            '<div><div style="font-size:1.6rem;font-weight:700;color:' + profitColor + '">' + sign + totalProfit.toLocaleString('sr-RS') + '</div><div class="muted" style="font-size:.75rem">Profit ' + activeYear + '</div></div>' +
-            '<div><div style="font-size:1.6rem;font-weight:700">' + sold.length + '</div><div class="muted" style="font-size:.75rem">Prodato vozila</div></div>' +
-            '<div><div style="font-size:1.6rem;font-weight:700">' + active.length + '</div><div class="muted" style="font-size:.75rem">U obrtu</div></div>' +
-            (best ? '<div><div style="font-size:1rem;font-weight:600;color:#10b981">' + esc(best.v.make + ' ' + best.v.model) + '</div><div class="muted" style="font-size:.75rem">Najuspešnije</div></div>' : '<div></div>') +
+          '<div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center;padding:16px">' +
+            '<div>' +
+              '<div style="font-size:1.5rem;font-weight:700;color:' + profColor + '">' + profSign + Math.round(totalProfit).toLocaleString('sr-RS') + '</div>' +
+              '<div class="muted" style="font-size:.72rem">Neto profit ' + activeYear + (curLabel !== 'mešano' ? ' (' + curLabel + ')' : '') + '</div>' +
+            '</div>' +
+            '<div>' +
+              '<div style="font-size:1.5rem;font-weight:700">' + sold.length + '</div>' +
+              '<div class="muted" style="font-size:.72rem">Prodato vozila</div>' +
+            '</div>' +
+            '<div>' +
+              '<div style="font-size:1.5rem;font-weight:700">' + active.length + '</div>' +
+              '<div class="muted" style="font-size:.72rem">U obrtu</div>' +
+            '</div>' +
+            '<div>' +
+              '<div style="font-size:1.5rem;font-weight:700;color:' + avgColor + '">' + (sold.length ? avgSign + Math.round(avgProfit).toLocaleString('sr-RS') : '—') + '</div>' +
+              '<div class="muted" style="font-size:.72rem">Prosečan profit</div>' +
+            '</div>' +
+            (best ? '<div style="grid-column:1">' +
+              '<div style="font-size:.9rem;font-weight:600;color:#10b981">' + esc(best.v.make + ' ' + best.v.model) + '</div>' +
+              '<div class="muted" style="font-size:.72rem">Najuspešnije</div>' +
+            '</div>' : '') +
+            (worst ? '<div>' +
+              '<div style="font-size:.9rem;font-weight:600;color:#ef4444">' + esc(worst.v.make + ' ' + worst.v.model) + '</div>' +
+              '<div class="muted" style="font-size:.72rem">Najlošije</div>' +
+            '</div>' : '') +
           '</div>' +
-          '<h2 style="margin:.8rem 0 .5rem;font-size:.95rem">Prodato u ' + activeYear + '</h2>' + soldRows +
-          (active.length ? '<h2 style="margin:.8rem 0 .5rem;font-size:.95rem">Aktivno u obrtu</h2>' + activeCards : '');
+          '<h2 style="margin:.8rem 0 .5rem;font-size:.93rem">Prodato u ' + activeYear + '</h2>' + soldRows +
+          (active.length ? '<h2 style="margin:.8rem 0 .5rem;font-size:.93rem">Aktivno u obrtu</h2>' + activeCards : '');
       });
     },
 
