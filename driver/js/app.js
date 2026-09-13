@@ -1499,8 +1499,185 @@
         html += '</div>';
       });
 
-      html += '<button class="btn btn-secondary" onclick="DR.resetCarCheck()" style="font-size:.85rem">↩ Resetuj sve</button>';
+      html += '<button class="btn btn-secondary" onclick="DR.resetCarCheck()" style="font-size:.85rem">↩ Resetuj sve</button>' +
+        '<button class="btn btn-secondary mt8" onclick="DR.go(\'vin_check\')" style="font-size:.85rem">🔢 Provjeri VIN broj</button>';
       return html;
+    },
+
+    /* ===== VIN VALIDATOR ===== */
+    vin_check: function () {
+      // WMI baza: prva 3 znaka VIN-a → { make, country }
+      var WMI = {
+        // Germany
+        'WVW':'Volkswagen','WV1':'Volkswagen','WV2':'Volkswagen','WAU':'Audi','WUA':'Audi',
+        'WBA':'BMW','WBB':'BMW','WBD':'BMW','WBS':'BMW','WBY':'BMW',
+        'WDB':'Mercedes-Benz','WDD':'Mercedes-Benz','WDC':'Mercedes-Benz',
+        'W0L':'Opel','W0V':'Opel',
+        'WF0':'Ford (Germany)','WFO':'Ford (Germany)',
+        'WP0':'Porsche','WP1':'Porsche',
+        'TRU':'Audi (Hungary)','TMB':'Škoda','TM9':'Škoda',
+        // Czech / Slovakia / Hungary
+        'VSS':'SEAT','VSX':'SEAT',
+        // France
+        'VF1':'Renault','VF2':'Renault','VF3':'Peugeot','VF7':'Citroën','VF6':'Opel (France)',
+        'VNK':'Toyota (France)','VNE':'Renault (Romania)',
+        // Italy
+        'ZFA':'Fiat','ZFF':'Ferrari','ZHW':'Lamborghini','ZAR':'Alfa Romeo','ZCF':'Iveco',
+        // Romania
+        'UU1':'Dacia','UU6':'Dacia',
+        // Japan
+        'JHM':'Honda','JH4':'Honda','JH2':'Honda',
+        'JT2':'Toyota','JT3':'Toyota','JT4':'Toyota','JTD':'Toyota','JTE':'Toyota','JTJ':'Toyota','JTM':'Toyota',
+        'JAA':'Mitsubishi','JAB':'Mitsubishi','JA3':'Mitsubishi','JA4':'Mitsubishi',
+        'JN1':'Nissan','JN6':'Nissan','JN8':'Nissan',
+        'JM1':'Mazda','JM3':'Mazda','JMB':'Mitsubishi',
+        'JS1':'Suzuki','JS2':'Suzuki','JS3':'Suzuki',
+        'JYA':'Yamaha',
+        // South Korea
+        'KMH':'Hyundai','KMF':'Hyundai','KNA':'Kia','KNB':'Kia','KND':'Kia',
+        'KL1':'Chevrolet (Korea)','KL8':'Chevrolet (Korea)',
+        // Sweden
+        'YV1':'Volvo','YV2':'Volvo','YV3':'Volvo','YV4':'Volvo',
+        'YS3':'Saab',
+        // UK
+        'SAJ':'Jaguar','SAL':'Land Rover','SAR':'Land Rover','SCA':'Rolls-Royce',
+        'SCF':'Aston Martin','SCE':'McLaren',
+        // USA
+        '1FA':'Ford','1FB':'Ford','1FC':'Ford','1FD':'Ford','1FT':'Ford',
+        '1G1':'Chevrolet','1GC':'Chevrolet','1GT':'GMC','1GM':'Pontiac',
+        '1HG':'Honda (USA)','2HG':'Honda (Canada)','5FN':'Honda',
+        '1N4':'Nissan (USA)','1N6':'Nissan (USA)',
+        '1VW':'Volkswagen (USA)','1YV':'Mazda',
+        '2T1':'Toyota (Canada)','4T1':'Toyota (USA)','4T3':'Toyota (USA)',
+        '3VW':'Volkswagen (Mexico)','3VY':'Volkswagen (Mexico)',
+        // China
+        'LVS':'Volvo (China)','LGB':'Buick (China)','LFV':'Volkswagen (China)',
+        // Turkey
+        'NM0':'Ford (Turkey)','NMT':'Toyota (Turkey)',
+        // Poland
+        'SUF':'Fiat (Poland)',
+        // Spain
+        'VS6':'Ford (Spain)','VS7':'Ford (Spain)',
+      };
+
+      // Zemlja/region po prvom znaku WMI
+      var WMI_COUNTRY = {
+        'A':'Južna Afrika','B':'Angola','C':'Kenija','D':'Madagaskar','E':'Tanzanija',
+        'F':'Gana','G':'Nigerija','H':'Kenija','J':'Japan','K':'Južna Koreja',
+        'L':'Kina','M':'Indija','N':'Indonezija','P':'Filipini','R':'Tajvan',
+        'S':'UK/Nemačka (S=UK, W=Nema)','T':'Švajcarska/Češka','U':'Rumunija/Rusija',
+        'V':'Francuska/Španija','W':'Nemačka','X':'Rusija','Y':'Švedska/Finska/Norveška',
+        'Z':'Italija',
+        '1':'SAD','2':'Kanada','3':'Meksiko','4':'SAD','5':'SAD',
+        '6':'Australija','7':'Novi Zeland','8':'Argentina','9':'Brazil',
+      };
+
+      var YEAR_MAP = (function () {
+        var chars = 'ABCDEFGHJKLMNPRSTUVWXY123456789';
+        var m = {};
+        chars.split('').forEach(function (c, i) {
+          m[c] = 1980 + i;
+          m[c + '0'] = 2010 + i; // second cycle (same char = +30)
+        });
+        // Position-10 year decode
+        var yr = {};
+        var cycle = 'ABCDEFGHJKLMNPRSTUVWXY123456789';
+        cycle.split('').forEach(function (c, i) {
+          var base = 1980 + i;
+          yr[c] = base <= 2009 ? base : base; // 1980-2009
+        });
+        return yr;
+      })();
+
+      // Pravilna year mapa po VIN standardu — pozicija 10
+      var MODEL_YEAR = {
+        'A':1980,'B':1981,'C':1982,'D':1983,'E':1984,'F':1985,'G':1986,'H':1987,
+        'J':1988,'K':1989,'L':1990,'M':1991,'N':1992,'P':1993,'R':1994,'S':1995,
+        'T':1996,'V':1997,'W':1998,'X':1999,'Y':2000,
+        '1':2001,'2':2002,'3':2003,'4':2004,'5':2005,'6':2006,'7':2007,'8':2008,'9':2009,
+        // drugi ciklus (isti znakovi +30 god)
+      };
+      // drugi ciklus
+      ['A','B','C','D','E','F','G','H','J','K','L','M','N','P','R','S','T','V','W','X','Y'].forEach(function(c,i){
+        if (!MODEL_YEAR[c]) MODEL_YEAR[c] = 1980+i;
+        else MODEL_YEAR[c + '_2'] = 2010+i; // interno za prikaz
+      });
+      function decodeYear(c) {
+        var base = MODEL_YEAR[c];
+        if (!base) return null;
+        var now = new Date().getFullYear();
+        if (base >= 2010) return base;
+        // Provjeri: ako je base+30 ≤ now+1, ambiguity postoji
+        var alt = base + 30;
+        if (alt <= now + 1) return alt + ' ili ' + base;
+        return base;
+      }
+
+      // Check digit validacija
+      function vinCheckDigit(vin) {
+        var T = {'A':1,'B':2,'C':3,'D':4,'E':5,'F':6,'G':7,'H':8,
+                 'J':1,'K':2,'L':3,'M':4,'N':5,'P':7,'R':9,
+                 'S':2,'T':3,'U':4,'V':5,'W':6,'X':7,'Y':8,'Z':9};
+        var W = [8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2];
+        var sum = 0;
+        for (var i = 0; i < 17; i++) {
+          var c = vin[i];
+          var val = /[0-9]/.test(c) ? parseInt(c) : (T[c] || 0);
+          sum += val * W[i];
+        }
+        var rem = sum % 11;
+        return rem === 10 ? 'X' : String(rem);
+      }
+
+      var vin = (App._vinCheckInput || '').toUpperCase();
+      var result = '';
+
+      if (vin.length === 17) {
+        var formatOk  = /^[A-HJ-NPR-Z0-9]{17}$/.test(vin);
+        var checkOk   = formatOk && vinCheckDigit(vin) === vin[8];
+        var wmi       = vin.slice(0, 3);
+        var make      = WMI[wmi] || WMI[wmi.slice(0,2)] || null;
+        var country   = WMI_COUNTRY[vin[0]] || '—';
+        var yearChar  = vin[9];
+        var year      = decodeYear(yearChar);
+        var seqNum    = vin.slice(11);
+
+        function row(label, val, ok) {
+          var icon = ok === true ? '✅' : ok === false ? '❌' : '•';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">' +
+            '<span style="color:#94a3b8;font-size:.85rem">' + label + '</span>' +
+            '<span style="font-weight:600;font-size:.88rem">' + icon + ' ' + esc(String(val)) + '</span></div>';
+        }
+
+        result = '<div class="card" style="margin-top:12px">' +
+          row('Format (17 znakova)', formatOk ? 'Ispravan' : 'Greška', formatOk) +
+          row('Check digit (poz. 9)', checkOk ? 'Ispravan' : 'Neispravan — moguća greška', checkOk) +
+          row('WMI', wmi + (make ? ' — ' + make : ' — Nepoznato'), make !== null) +
+          row('Zemlja porekla', country, null) +
+          row('Godište (poz. 10)', year !== null ? year : '— (nepoznat kod: ' + yearChar + ')', year !== null) +
+          row('Redni broj (poz. 12–17)', seqNum, null) +
+        '</div>' +
+        (!checkOk && formatOk
+          ? '<p style="font-size:.8rem;color:#f97316;padding:6px 4px">⚠️ Pogrešan check digit — VIN je možda preukucan ili krivotvorien.</p>'
+          : '') +
+        (make === null
+          ? '<p style="font-size:.8rem;color:#64748b;padding:6px 4px">WMI nije u lokalnoj bazi. Probaj online NHTSA dekodiranje.</p>'
+          : '') +
+        '<a href="https://vpic.nhtsa.dot.gov/decoder/Decoder?VIN=' + vin + '" target="_blank" style="display:block;text-align:center;margin-top:8px;font-size:.82rem;color:#5c6bc0;text-decoration:none">🔗 NHTSA detaljna analiza (online)</a>';
+      }
+
+      return '<button class="linkback" onclick="DR.go(\'car_check\')" data-i18n="common.back"></button>' +
+        '<h1>🔢 VIN Validator</h1>' +
+        '<p style="color:#64748b;font-size:.83rem;padding:0 0 12px">Provjeri VIN broj — format, marka i godište. Radi potpuno offline.</p>' +
+        '<div class="card">' +
+          '<label class="field"><span>VIN broj (17 znakova)</span>' +
+            '<input id="f_vin_chk" type="text" placeholder="npr. WVWZZZ1KZBM000001" maxlength="17" ' +
+              'style="text-transform:uppercase;letter-spacing:.08em;font-family:monospace;font-size:1rem" ' +
+              'value="' + esc(vin) + '" oninput="App._vinCheckInput=this.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g,\'\');this.value=App._vinCheckInput">' +
+          '</label>' +
+          '<button class="btn btn-primary" style="margin-top:8px" onclick="App._vinCheckInput=document.getElementById(\'f_vin_chk\').value;DR.go(\'vin_check\')">Analiziraj</button>' +
+        '</div>' +
+        result;
     },
 
     /* ===== KALKULATORI HUB ===== */
@@ -1515,6 +1692,7 @@
             ['cost_calc',  '💰', 'Troškovi vlasništva',     'Ukupni godišnji troškovi posedovanja auta'],
             ['uvoz_calc',  '🚢', 'Kalkulator uvoza',        'Carina + PDV + homologacija → ukupan uvozni trošak'],
             ['kasko_calc', '🛡️', 'Procena kasko premije',   'Okvirna godišnja premija kasko osiguranja'],
+            ['vin_check',  '🔢', 'VIN Validator',           'Provjeri VIN — marka, godište, check digit — offline'],
           ].map(function (row, i, arr) {
             return '<button onclick="DR.go(\'' + row[0] + '\')" style="display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;background:none;border:none;border-bottom:' + (i < arr.length-1 ? '1px solid rgba(255,255,255,.07)' : 'none') + ';cursor:pointer;text-align:left;color:inherit">' +
               '<span style="font-size:1.6rem;line-height:1">' + row[1] + '</span>' +
