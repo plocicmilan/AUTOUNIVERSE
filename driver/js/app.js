@@ -352,6 +352,7 @@
             (!isShared ? '<button class="btn btn-primary" onclick="DR.addEvent(\'' + esc(vid) + '\',false)" data-i18n="d.add_event"></button>' : '') +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'kalkulatori\')" style="background:#1e3a5f">🧮 Kalkulatori</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'timeline\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1c2a3a">📅 Timeline događaja</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'mechanic_stats\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1c2030">🔩 Troškovi po servisu</button>' +
             (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
@@ -501,6 +502,8 @@
             field("e_title", "d.event_title", e.title) +
             field("e_date", "common.date", (e.date || (retro ? "" : todayISO())), "date") +
             field("e_km", "common.mileage", e.mileage_km != null ? e.mileage_km : "", "number") +
+            '<label class="field"><span>Servis / radionica (opciono)</span>' +
+              '<input id="e_shop" type="text" placeholder="npr. Auto Servis Petar, Vulkanizer kod mosta…" value="' + esc(e.shop_name || "") + '"></label>' +
             '<label class="field"><span>' + t("d.event_desc") + '</span>' +
               '<textarea id="e_desc" rows="3">' + esc(e.description) + '</textarea></label>' +
             '<label class="btn btn-secondary mt8 filelabel"><span data-i18n="d.event_photo"></span>' +
@@ -1510,6 +1513,88 @@
       return html;
     },
 
+    /* ===== TROŠKOVI PO SERVISU ===== */
+    mechanic_stats: function (params) {
+      var vehId = (params && params.vehicle_id) || App.activeVehicleId;
+      return Promise.all([Store.get("vehicles", vehId), Store.byIndex("events", "vehicle_id", vehId)])
+        .then(function (res) {
+          var v = res[0], events = res[1];
+          if (!v) return '<div class="card"><p class="empty" data-i18n="d.need_vehicle"></p></div>';
+
+          // Agregacija po servisu/radionici
+          var byShop = {};
+          events.forEach(function (e) {
+            var shop = (e.shop_name && e.shop_name.trim()) ||
+                       (e.mechanic_name && e.mechanic_name.trim()) || null;
+            if (!shop) return; // preskačemo bez radionce
+            if (!byShop[shop]) byShop[shop] = { count: 0, rsd: 0, eur: 0, lastDate: "" };
+            byShop[shop].count++;
+            if (e.cost && e.cost.total) {
+              var amt = parseFloat(e.cost.total) || 0;
+              if ((e.cost.currency || "RSD").toUpperCase() === "EUR") byShop[shop].eur += amt;
+              else byShop[shop].rsd += amt;
+            }
+            var d = (e.event_date || e.date || "").slice(0, 10);
+            if (d && d > byShop[shop].lastDate) byShop[shop].lastDate = d;
+          });
+
+          var shops = Object.keys(byShop);
+          // Sortiraj: prvo po ukupnom RSD trosku (EUR×120), pa po broju poseta
+          shops.sort(function (a, b) {
+            var totA = byShop[a].rsd + byShop[a].eur * 120;
+            var totB = byShop[b].rsd + byShop[b].eur * 120;
+            return totB - totA;
+          });
+
+          var vLabel = esc((v.make || "") + " " + (v.model || "") + (v.plate ? " • " + v.plate : ""));
+          var html = '<button class="linkback" onclick="DR.go(\'vehicle\')" data-i18n="common.back"></button>' +
+            '<h1>🔩 Troškovi po servisu</h1>' +
+            '<p style="color:#64748b;font-size:.83rem;padding:0 0 8px">' + vLabel + '</p>';
+
+          if (!shops.length) {
+            html += '<div class="card"><p class="empty">Nema evidentiranih servisa. Dodaj "Servis / radionice" pri unosu događaja.</p></div>';
+          } else {
+            // Ukupan sažetak
+            var grandRSD = shops.reduce(function (s, k) { return s + byShop[k].rsd; }, 0);
+            var grandEUR = shops.reduce(function (s, k) { return s + byShop[k].eur; }, 0);
+            var totStr = [];
+            if (grandRSD) totStr.push(grandRSD.toLocaleString("sr") + " RSD");
+            if (grandEUR) totStr.push(grandEUR.toLocaleString("sr", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " EUR");
+            html += '<div class="card" style="margin-bottom:.6rem;background:#1a2a1a">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center">' +
+                '<span style="font-weight:600;font-size:.9rem">Ukupno evidentirano</span>' +
+                '<span style="font-weight:700;color:#4ade80">' + (totStr.join(" + ") || "0") + '</span>' +
+              '</div>' +
+              '<div style="color:#64748b;font-size:.8rem;margin-top:4px">' + shops.length + ' ' +
+                (shops.length === 1 ? "servis" : shops.length < 5 ? "servisa" : "servisa") + ' • ' +
+                events.filter(function (e) { return e.shop_name || e.mechanic_name; }).length + ' poseta' +
+              '</div>' +
+            '</div>';
+
+            shops.forEach(function (shop) {
+              var s = byShop[shop];
+              var amtParts = [];
+              if (s.rsd) amtParts.push('<b>' + Math.round(s.rsd).toLocaleString("sr") + ' RSD</b>');
+              if (s.eur) amtParts.push('<b>' + s.eur.toLocaleString("sr", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' EUR</b>');
+              var amtStr = amtParts.join(" + ") || '<span style="color:#64748b">bez iznosa</span>';
+              html += '<div class="card" style="margin-bottom:.5rem">' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">' +
+                  '<span style="font-weight:600;font-size:.9rem;flex:1">' + esc(shop) + '</span>' +
+                  '<span style="font-size:.88rem;text-align:right">' + amtStr + '</span>' +
+                '</div>' +
+                '<div style="color:#64748b;font-size:.78rem;margin-top:5px;display:flex;gap:12px">' +
+                  '<span>' + s.count + ' ' + (s.count === 1 ? "poseta" : "poseta") + '</span>' +
+                  (s.lastDate ? '<span>Poslednji: ' + s.lastDate + '</span>' : '') +
+                '</div>' +
+              '</div>';
+            });
+          }
+
+          html += '<p style="color:#475569;font-size:.78rem;margin-top:12px">Prikazani su samo događaji sa upisanom radionicom. Dodaj radionice u prethodne zapise kroz Istoriju → Izmeni.</p>';
+          return html;
+        });
+    },
+
     /* ===== VIN VALIDATOR ===== */
     vin_check: function () {
       // WMI baza: prva 3 znaka VIN-a → { make, country }
@@ -2290,6 +2375,7 @@
       base.type = el("e_type").value;
       base.title = val("e_title");
       base.description = val("e_desc");
+      base.shop_name = val("e_shop") || null;
       base.mileage_km = val("e_km") ? parseInt(val("e_km"), 10) : null;
       base.photos = (App._eventPhotos || []).slice();
       var retro = checked("e_retro");
