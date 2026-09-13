@@ -3,23 +3,13 @@ const fs     = require('fs');
 const path   = require('path');
 const { getDb } = require('../db');
 const { send, tplSellerToken, tplWelcome } = require('../email');
+const { CATEGORIES, CONDITIONS, CURRENCIES } = require('./enums');
 
 const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
 
 function genToken() {
   return crypto.randomBytes(16).toString('hex');
 }
-
-// Dozvoljene kategorije (v2 — 24)
-const CATEGORIES = [
-  // Originalne (11)
-  'motor', 'menjac', 'kocnice', 'trap', 'karoserija',
-  'elektrika', 'klima', 'filteri', 'gume', 'stakla', 'enterijer',
-  // Nove (13)
-  'airbag', 'audio', 'branik', 'felne', 'auspuh',
-  'kljucevi', 'ceo_auto', 'zaptivaci', 'alati', 'servisni',
-  'usluge', 'svetla', 'ostalo',
-];
 
 module.exports = function (router) {
 
@@ -66,11 +56,11 @@ module.exports = function (router) {
       seller_token,
       title,
       CATEGORIES.includes(category) ? category : 'ostalo',
-      ['nov', 'polovan', 'renoviran', 'neispravan'].includes(condition) ? condition : 'polovan',
+      CONDITIONS.includes(condition) ? condition : 'polovan',
       part_number ?? null,
       JSON.stringify(Array.isArray(compatible) ? compatible : []),
       price != null ? Number(price) : null,
-      currency ?? 'EUR',
+      CURRENCIES.includes(currency) ? currency : 'EUR',
       description ?? null,
       city ?? null,
       contact_name,
