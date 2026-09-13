@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR Razmena — Garage i Driver Toolbox | AutoUniverse</title>
+<meta name="description" content="Kako funkcioniše QR razmena između Garage Toolbox (mehaničar) i Driver Toolbox (vlasnik vozila). Korak po korak uputstvo.">
+<link rel="canonical" href="https://autouniverse.rs/qr-uputstvo">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#fff;color:#1C1F24;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:#ef4444;text-decoration:none}
+a:hover{text-decoration:underline}
+:root{
+  --red:#ef4444;--red-dark:#b91c1c;--red-light:#fff1f2;
+  --blue:#0ea5e9;--blue-dark:#0369a1;--blue-light:#f0f9ff;
+  --green:#059669;
+  --navy:#0f1d35;
+  --dark:#1C1F24;--mid:#4A4E58;--muted:#6B7280;
+  --line:#E5E7EB;--bg:#F8F7F3;--radius:12px
+}
+
+.nav{background:#fff;border-bottom:1px solid var(--line);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem;color:var(--navy)}
+.nav-logo .dot{width:10px;height:10px;background:var(--red);border-radius:50%}
+.nav-links{display:flex;gap:20px;font-size:.88rem}
+.nav-links a{color:var(--mid)}
+
+.hero{background:var(--navy);color:#fff;padding:56px 24px 48px;text-align:center}
+.hero-badge{display:inline-block;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.3rem .9rem;border-radius:20px;margin-bottom:1rem}
+.hero h1{font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;line-height:1.2;margin-bottom:.8rem}
+.hero h1 span{color:#fca5a5}
+.hero p{color:#94a3b8;max-width:520px;margin:0 auto;font-size:1rem}
+
+.container{max-width:800px;margin:0 auto;padding:0 20px}
+.section{padding:56px 0}
+.section+.section{border-top:1px solid var(--line)}
+
+/* FLOW DIAGRAM */
+.flow{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:40px 0;padding:28px;background:var(--bg);border-radius:var(--radius)}
+.flow-app{text-align:center;padding:16px 20px;border-radius:10px;min-width:120px}
+.flow-app.garage{background:#fff1f2;border:2px solid #fca5a5}
+.flow-app.driver{background:#f0f9ff;border:2px solid #7dd3fc}
+.flow-app .app-icon{font-size:2rem;margin-bottom:6px}
+.flow-app .app-name{font-weight:700;font-size:.9rem;color:var(--dark)}
+.flow-app .app-role{font-size:.75rem;color:var(--muted);margin-top:2px}
+.flow-arrow{font-size:1.5rem;color:var(--muted)}
+
+/* ROLE SECTIONS */
+.role-header{display:flex;align-items:center;gap:14px;margin-bottom:28px}
+.role-badge{padding:.4rem 1rem;border-radius:20px;font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.role-badge.garage{background:var(--red-light);color:var(--red-dark)}
+.role-badge.driver{background:var(--blue-light);color:var(--blue-dark)}
+.role-title{font-size:1.4rem;font-weight:800;color:var(--navy)}
+
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:20px;padding:20px 0}
+.step+.step{border-top:1px solid var(--line)}
+.step-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;flex-shrink:0;margin-top:2px}
+.step-num.red{background:var(--red);color:#fff}
+.step-num.blue{background:var(--blue);color:#fff}
+.step-num.green{background:var(--green);color:#fff}
+.step-content h3{font-size:1rem;font-weight:700;color:var(--dark);margin-bottom:6px}
+.step-content p{font-size:.9rem;color:var(--mid);line-height:1.6}
+.step-content p+p{margin-top:6px}
+
+.tip{background:var(--bg);border-left:3px solid var(--red);border-radius:0 8px 8px 0;padding:12px 16px;margin:10px 0;font-size:.85rem;color:var(--mid)}
+.tip.blue{border-left-color:var(--blue)}
+.tip.green{background:#f0fdf4;border-left-color:var(--green);color:#065f46}
+.tip strong{color:var(--dark)}
+
+/* FAQ */
+.faq-item{border-bottom:1px solid var(--line)}
+.faq-q{width:100%;background:none;border:none;text-align:left;padding:18px 0;font-size:.95rem;font-weight:600;color:var(--dark);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq-q .arr{font-size:1.1rem;color:var(--muted);transition:transform .2s;flex-shrink:0}
+.faq-q.open .arr{transform:rotate(45deg)}
+.faq-a{display:none;padding:0 0 16px;font-size:.9rem;color:var(--mid);line-height:1.7}
+.faq-a.open{display:block}
+
+/* CTA */
+.cta-bar{background:var(--navy);color:#fff;text-align:center;padding:56px 24px}
+.cta-bar h2{font-size:1.6rem;font-weight:800;margin-bottom:.6rem}
+.cta-bar p{color:#94a3b8;margin-bottom:1.8rem;max-width:500px;margin-left:auto;margin-right:auto}
+.btn-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-block;padding:.75rem 1.8rem;border-radius:10px;font-weight:700;font-size:.9rem}
+.btn-red{background:var(--red);color:#fff}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-outline{border:2px solid rgba(255,255,255,.3);color:#fff}
+
+.footer{background:var(--bg);border-top:1px solid var(--line);text-align:center;padding:28px 20px;font-size:.85rem;color:var(--muted)}
+.footer a{color:var(--red)}
+
+@media(max-width:520px){
+  .flow-arrow{transform:rotate(90deg)}
+  .flow{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo"><span class="dot"></span>AutoUniverse</a>
+  <div class="nav-links">
+    <a href="/garage-uputstvo">Garage uputstvo</a>
+    <a href="/driver-uputstvo">Driver uputstvo</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">📖 QR Uputstvo</div>
+  <h1>QR razmena između<br><span>Garage i Driver</span></h1>
+  <p>Mehaničar zatvori nalog → skenira vlasnik → servis automatski ulazi u istoriju vozila. Bez kucanja, bez papira.</p>
+</section>
+
+<!-- FLOW DIAGRAM -->
+<div class="container">
+  <div class="flow">
+    <div class="flow-app garage">
+      <div class="app-icon">🔧</div>
+      <div class="app-name">Garage Toolbox</div>
+      <div class="app-role">Mehaničar</div>
+    </div>
+    <div class="flow-arrow">⟶</div>
+    <div style="text-align:center;padding:0 8px">
+      <div style="font-size:1.8rem;margin-bottom:4px">📱</div>
+      <div style="font-size:.78rem;color:var(--muted);font-weight:600">QR kod / link<br>važi 30 dana</div>
+    </div>
+    <div class="flow-arrow">⟶</div>
+    <div class="flow-app driver">
+      <div class="app-icon">🚗</div>
+      <div class="app-name">Driver Toolbox</div>
+      <div class="app-role">Vlasnik vozila</div>
+    </div>
+  </div>
+</div>
+
+<!-- SEKCIJA A: MEHANIČAR -->
+<div class="container">
+<section class="section" id="mehanicari">
+  <div class="role-header">
+    <span class="role-badge garage">🔧 Garage — Mehaničar</span>
+  </div>
+  <div class="role-title" style="margin-bottom:24px">Šta radi mehaničar</div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num red">1</div>
+      <div class="step-content">
+        <h3>Otvorite i zatvorite radni nalog</h3>
+        <p>Dodajte sve urađene radove i ugrađene delove u radni nalog. Kada završite — pritisnite <strong>Zatvori nalog</strong>.</p>
+        <div class="tip">Cene delova i radova se <strong>ne prenose</strong> vlasniku — prenosi se samo naziv radova, datum i kilometraža.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num red">2</div>
+      <div class="step-content">
+        <h3>Pritisnite "Podeli sa vlasnikom"</h3>
+        <p>Na zatvorenom radnom nalogu pojavljuje se dugme <strong>Podeli sa vlasnikom</strong> (ikona QR). Pritisnite ga.</p>
+        <p>App se poveže sa AU Core serverom i generiše jedinstveni link za taj nalog.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num red">3</div>
+      <div class="step-content">
+        <h3>Pokažite QR kod ili pošaljite link</h3>
+        <p>Na ekranu se pojavljuje <strong>QR kod</strong> i link koji možete kopirati.</p>
+        <p><strong>Opcija A — QR kod:</strong> Okrenite telefon prema vlasniku. Vlasnik otvori Driver i skenira QR direktno iz app-a.</p>
+        <p><strong>Opcija B — link:</strong> Pritisnite <em>Podeli</em> i pošaljite link Viberom, WhatsApp-om ili SMS-om. Vlasnik ga otvori u browseru, pa pritisne "Dodaj u Driver".</p>
+        <div class="tip"><strong>Link važi 30 dana.</strong> Ako vlasnik ne odreaguje odmah, može ga koristiti i sledećeg dana.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num green">✓</div>
+      <div class="step-content">
+        <h3>Završeno — servis je prosleđen</h3>
+        <p>Kada vlasnik skenira QR ili otvori link, dobijate potvrdu u Dnevniku ako ste oba prijavljena na AU Core.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- SEKCIJA B: VLASNIK -->
+<div class="container">
+<section class="section" id="vlasnici">
+  <div class="role-header">
+    <span class="role-badge driver">🚗 Driver — Vlasnik vozila</span>
+  </div>
+  <div class="role-title" style="margin-bottom:24px">Šta radi vlasnik vozila</div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num blue">1</div>
+      <div class="step-content">
+        <h3>Instalirajte Driver Toolbox</h3>
+        <p>Ako još niste — otvorite <a href="https://driver.autouniverse.rs/" target="_blank">driver.autouniverse.rs</a> u browser-u na telefonu i instalirajte kao aplikaciju (dugme "Dodaj na početni ekran").</p>
+        <div class="tip blue"><strong>Android:</strong> Chrome → tri tačke → "Dodaj na početni ekran".<br><strong>iPhone:</strong> Safari → dugme deljenja → "Dodaj na početni ekran".</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num blue">2</div>
+      <div class="step-content">
+        <h3>Otvorite app i skenirajte QR</h3>
+        <p>Mehaničar vam pokazuje QR kod na svom telefonu. U Driver app-u pritisnite dugme <strong>📷 Skeniraj QR</strong> (u glavnom meniju ili na ekranu vozila) i uperite kameru prema QR kodu.</p>
+        <div class="tip blue">Nemате dugme za skeniranje? Mehaničar može da vam pošalje link Viberom — otvorite link u browseru, pa pritisnite <strong>"Dodaj u Driver Toolbox"</strong>.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num blue">3</div>
+      <div class="step-content">
+        <h3>Potvrdite dodavanje zapisa</h3>
+        <p>App prikazuje pregled servisnog zapisa — naziv radova, datum, kilometraža. Pritisnite <strong>Dodaj u istoriju</strong> da sačuvate.</p>
+        <p>Možete izabrati na koje vozilo da dodate zapis ako ih imate više.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num green">✓</div>
+      <div class="step-content">
+        <h3>Zapis je u vašoj istoriji</h3>
+        <p>Servisni zapis se pojavljuje u <strong>Istoriji vozila</strong> u Driver-u — sa datumom, kilometražom i listom urađenih radova. Bez cena (cene su poslovna tajna mehaničara).</p>
+        <div class="tip green">Svi zapisi se čuvaju <strong>offline na vašem telefonu</strong>. Nema cloud-a, nema treće strane.</div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- FAQ -->
+<div class="container">
+<section class="section" id="faq">
+  <h2 style="font-size:1.4rem;font-weight:800;color:var(--navy);margin-bottom:24px">Česta pitanja</h2>
+  <div class="faq-list">
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Da li i mehaničar i vlasnik moraju imati nalog? <span class="arr">+</span></button>
+      <div class="faq-a">Ne. QR razmena radi bez registracije na oba kraja. Nalog na AU Core je opcioni — daje dodatne funkcije kao cloud sync i deljenje vozila, ali nije uslov za QR.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Koliko dugo važi QR kod? <span class="arr">+</span></button>
+      <div class="faq-a">Link i QR kod važe <strong>30 dana</strong> od momenta kreiranja. Posle toga link ističe — mehaničar može da generiše novi za isti radni nalog.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Vlasnik vidi cene radova? <span class="arr">+</span></button>
+      <div class="faq-a">Ne. Prenose se samo: naziv urađenog rada, ugrađeni delovi (naziv i količina), datum, kilometraža i napomena. Cene su isključene — to je poslovna informacija mehaničara.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Mehaničar nema internet u radionici — radi li QR? <span class="arr">+</span></button>
+      <div class="faq-a">Za generisanje QR koda potrebna je internet konekcija jer se token kreira na AU Core serveru. Kad je link jednom kreiran, vlasnik ga može skenirati sa bilo koje veze.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Vlasnik nema pametni telefon — šta onda? <span class="arr">+</span></button>
+      <div class="faq-a">Mehaničar može odštampati ili ručno prepisati opis radova. QR razmena je digitalni kanal — ne zamenjuje servisnu knjižicu, već je dopunjuje.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Može li vlasnik da izmeni zapis koji je dobio QR-om? <span class="arr">+</span></button>
+      <div class="faq-a">Ne. Zapisi primljeni QR-om su zaključani za izmenu — vlasnik može samo da ih vidi i briše. Nije moguće promeniti podatke koje je mehaničar uneo.</div>
+    </div>
+
+  </div>
+</section>
+</div>
+
+<!-- CTA -->
+<section class="cta-bar">
+  <div class="container">
+    <h2>Instalirajte aplikacije</h2>
+    <p>Garage za mehaničare, Driver za vlasnike. Oba besplatno, oba offline.</p>
+    <div class="btn-row">
+      <a href="https://garage.autouniverse.rs/" class="btn btn-red" target="_blank">🔧 Garage Toolbox</a>
+      <a href="https://driver.autouniverse.rs/" class="btn btn-blue" target="_blank">🚗 Driver Toolbox</a>
+      <a href="/garage-uputstvo" class="btn btn-outline">Detaljno Garage uputstvo</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <a href="/">AutoUniverse</a> &nbsp;·&nbsp;
+  <a href="/garage-uputstvo">Garage uputstvo</a> &nbsp;·&nbsp;
+  <a href="/driver-uputstvo">Driver uputstvo</a> &nbsp;·&nbsp;
+  <a href="/kontakt">Kontakt</a>
+  <br><br>© 2026 AutoUniverse · Kruševac, Srbija
+</footer>
+
+<script>
+function toggleFaq(btn) {
+  var a = btn.nextElementSibling;
+  var open = a.classList.contains("open");
+  document.querySelectorAll(".faq-a.open").forEach(function(el){ el.classList.remove("open"); });
+  document.querySelectorAll(".faq-q.open").forEach(function(el){ el.classList.remove("open"); });
+  if (!open) { a.classList.add("open"); btn.classList.add("open"); }
+}
+</script>
+</body>
+</html>

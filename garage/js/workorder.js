@@ -677,6 +677,14 @@
     shareWithOwner: function () {
       captureStep();
       if (!window.AUCore) { toast("AUCore modul nije učitan."); return; }
+      if (!localStorage.getItem("qr_guide_seen")) {
+        WOgo.showQRGuideModal();
+        return;
+      }
+      WOgo._runShare();
+    },
+
+    _runShare: function () {
       var v = byId(WO.vehicles, WO.draft.vehicle_id);
       var profile = window.Store.settings.get("profile", { name: "" });
       // Payload BEZ cena (FEEDBACK #10)
@@ -707,6 +715,50 @@
         }).catch(function (e) {
           toast("Greška: " + (e.message || "AUCore nije dostupan"));
         });
+      });
+    },
+
+    showQRGuideModal: function () {
+      var existing = document.getElementById("wo-qr-guide-modal");
+      if (existing) existing.remove();
+      var modal = document.createElement("div");
+      modal.id = "wo-qr-guide-modal";
+      modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;";
+      modal.innerHTML = [
+        '<div style="background:#1a1a2e;border-radius:16px;padding:24px;max-width:340px;width:100%;color:#e0e0ff;">',
+          '<p style="margin:0 0 4px;font-size:11px;opacity:.55;text-align:center;text-transform:uppercase;letter-spacing:.06em;">Kako funkcioniše</p>',
+          '<h3 style="margin:0 0 20px;text-align:center;font-size:1.05rem;font-weight:700;">🔗 QR Servisni zapis</h3>',
+          '<div style="display:flex;flex-direction:column;gap:14px;margin-bottom:22px;">',
+            '<div style="display:flex;gap:12px;align-items:flex-start;">',
+              '<div style="background:#ef4444;color:#fff;border-radius:50%;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">1</div>',
+              '<p style="margin:0;font-size:.86rem;line-height:1.5;opacity:.9;">Vlasnik mora imati instaliran <strong>Driver Toolbox</strong> na svom telefonu.</p>',
+            '</div>',
+            '<div style="display:flex;gap:12px;align-items:flex-start;">',
+              '<div style="background:#ef4444;color:#fff;border-radius:50%;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">2</div>',
+              '<p style="margin:0;font-size:.86rem;line-height:1.5;opacity:.9;">Zatvorite radni nalog → pritisnite <strong>Podeli sa vlasnikom</strong> — pojavljuje se QR kod.</p>',
+            '</div>',
+            '<div style="display:flex;gap:12px;align-items:flex-start;">',
+              '<div style="background:#ef4444;color:#fff;border-radius:50%;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">3</div>',
+              '<p style="margin:0;font-size:.86rem;line-height:1.5;opacity:.9;">Vlasnik otvori Driver → <strong>skenira QR kod</strong> kamerom, ili mu pošaljete link.</p>',
+            '</div>',
+            '<div style="display:flex;gap:12px;align-items:flex-start;">',
+              '<div style="background:#059669;color:#fff;border-radius:50%;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">✓</div>',
+              '<p style="margin:0;font-size:.86rem;line-height:1.5;opacity:.9;">Servisni zapis automatski ulazi u <strong>istoriju vozila</strong> u Driver-u.</p>',
+            '</div>',
+          '</div>',
+          '<div style="background:rgba(255,255,255,.05);border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:.8rem;opacity:.75;line-height:1.5;">',
+            '💡 Link važi <strong>30 dana</strong>. Bez registracije — radi odmah.',
+          '</div>',
+          '<button id="qr-guide-ok" style="background:#ef4444;color:#fff;border:none;padding:12px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;">Razumem — prikaži QR</button>',
+          '<a href="https://autouniverse.rs/qr-uputstvo" target="_blank" style="display:block;text-align:center;color:#64748b;font-size:.78rem;">Detaljno uputstvo →</a>',
+        '</div>'
+      ].join("");
+      modal.addEventListener("click", function (e) { if (e.target === modal) modal.remove(); });
+      document.body.appendChild(modal);
+      document.getElementById("qr-guide-ok").addEventListener("click", function () {
+        localStorage.setItem("qr_guide_seen", "1");
+        modal.remove();
+        WOgo._runShare();
       });
     }
   };
