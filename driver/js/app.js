@@ -360,6 +360,7 @@
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'belt_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#0a1a0a">⚙️ Istorija kaišа/lanca</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'coolant_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#0a1020">🌡️ Istorija rashladne tečnosti</button>' +
             '<button class="btn btn-secondary mt8" onclick="DR.go(\'spark_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1505">✨ Istorija svećica</button>' +
+            '<button class="btn btn-secondary mt8" onclick="DR.go(\'trans_log\',{vehicle_id:\'' + esc(vid) + '\'})" style="background:#1a1020">⚙ Istorija menjačkog ulja</button>' +
             (hubServerId ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'hub_notes\',{sid:' + hubServerId + '})" style="background:#1a2640">📝 Beleške</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'car_check\')" style="background:#1a3a2f">🔎 Šta proveriti pri kupovini</button>' : '') +
             (!isShared ? '<button class="btn btn-secondary mt8" onclick="DR.go(\'initial_state\',{vehicle_id:\'' + esc(vid) + '\'})" data-i18n="d.initial_cta"></button>' : '') +
@@ -5271,5 +5272,6 @@
   };
 
   window.DR = Actions;
+  window.App = App;
   document.addEventListener("DOMContentLoaded", boot);
 })();
