@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kako koristiti Driver Toolbox — Kompletno uputstvo v2 | AutoUniverse</title>
-<meta name="description" content="Korak po korak uputstvo za Driver Toolbox v1.45 — vozila, servisna istorija, podsetnici, kalkulatori, cloud sync sa Garage Toolbox.">
+<title>Kako koristiti Driver Toolbox — Kompletno uputstvo v1.61 | AutoUniverse</title>
+<meta name="description" content="Korak po korak uputstvo za Driver Toolbox v1.61 — vozila, servisni trackeri, VIN validator, servisni pasoš PDF, trade dashboard, cloud sync.">
 <link rel="canonical" href="https://autouniverse.rs/driver-uputstvo">
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <style>
@@ -108,9 +108,9 @@ a:hover{text-decoration:underline}
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-badge">📖 Uputstvo za korisnike · v1.45</div>
+  <div class="hero-badge">📖 Uputstvo za korisnike · v1.61</div>
   <h1>Kako koristiti<br><span>Driver Toolbox</span></h1>
-  <p>Korak po korak — od instalacije do prvog sačuvanog servisa. Čita se za 5 minuta.</p>
+  <p>Korak po korak — od instalacije do svih funkcija. Čita se za 8 minuta.</p>
   <a href="https://driver.autouniverse.rs/" class="hero-btn" target="_blank">Otvori Driver Toolbox</a>
 </section>
 
@@ -129,8 +129,11 @@ a:hover{text-decoration:underline}
       <li><a href="#dokumenta">Dokumenta vozila</a></li>
       <li><a href="#kalkulatori">Kalkulatori</a></li>
       <li><a href="#kupovina">Šta proveriti pri kupovini</a></li>
-      <li><a href="#prodaj">Prodaj vozilo i pretraži delove <span class="new-badge">novo</span></a></li>
-      <li><a href="#sync">Sync sa Garage Toolbox mehaničara <span class="new-badge">novo</span></a></li>
+      <li><a href="#trackeri">Servisni dnevnik — trackeri <span class="new-badge">novo</span></a></li>
+      <li><a href="#vin">VIN validator i servisni pasoš <span class="new-badge">novo</span></a></li>
+      <li><a href="#prodaj">Prodaj vozilo i pretraži delove</a></li>
+      <li><a href="#trade">Trade Dashboard — za preprodavce <span class="new-badge">novo</span></a></li>
+      <li><a href="#sync">Sync sa Garage Toolbox mehaničara</a></li>
       <li><a href="#backup">Backup i podešavanja</a></li>
     </ol>
   </div>
@@ -454,18 +457,91 @@ a:hover{text-decoration:underline}
   </div>
 </section>
 
-<!-- 11. PRODAJ VOZILO -->
+<!-- 11. TRACKERI -->
+<section class="section" id="trackeri">
+  <div class="step-header">
+    <div class="step-num">11</div>
+    <div>
+      <div class="step-title">Servisni dnevnik — trackeri <span class="new-badge">novo</span></div>
+      <div class="step-sub">Zasebna istorija za svaki sklop — gume, ulje, akumulator, kočnice i još 4 sistema</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Iz kartice vozila, skrolujte do obojenih dugmadi. Svaki tracker vodi <strong>zasebnu istoriju</strong> za jedan sklop vozila:</p>
+      <div class="chips">
+        <span class="chip">🔄 Istorija guma</span>
+        <span class="chip">🔋 Istorija akumulatora</span>
+        <span class="chip">📋 Istorija zamene ulja</span>
+        <span class="chip">🔴 Istorija kočnica</span>
+        <span class="chip">⚙ Istorija menjačkog ulja</span>
+        <span class="chip">⚙ Istorija kaiša/lanca</span>
+        <span class="chip">🌡 Istorija rashladne tečnosti</span>
+        <span class="chip">✨ Istorija svećica</span>
+        <span class="chip">⛽ Evidencija goriva</span>
+      </div>
+      <p>Svaki unos pamti datum, kilometražu i napomene. Primeri šta možete pratiti:</p>
+      <ul class="steps-list">
+        <li><span class="num">🔋</span><span><strong>Akumulator</strong> — marka, kapacitet (Ah), CCA, datum ugradnje. App računa starost akumulatora u godinama.</span></li>
+        <li><span class="num">🔄</span><span><strong>Gume</strong> — dimenzije, tip (letnje/zimske/all-season), datum i km montaže, strana (prednje/zadnje).</span></li>
+        <li><span class="num">📋</span><span><strong>Zamena ulja</strong> — specifikacija ulja, interval i datum sledeće zamene.</span></li>
+        <li><span class="num">⛽</span><span><strong>Gorivo</strong> — svako tankovanje sa litrima, cenom i km — kalkulator potrošnje radi automatski.</span></li>
+      </ul>
+      <div class="tip"><strong>Savet:</strong> Tracker podatke unesite jednom — app ih prikazuje i u Servisnom pasošu (PDF) koji možete podeliti pri prodaji vozila.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/15-trackers-list.png" alt="Lista tracker dugmadi na kartici vozila">
+      <div class="img-caption">Tracker dugmad na kartici vozila</div>
+    </div>
+  </div>
+</section>
+
+<!-- 12. VIN VALIDATOR + SERVISNI PASOS -->
+<section class="section" id="vin">
+  <div class="step-header">
+    <div class="step-num">12</div>
+    <div>
+      <div class="step-title">VIN validator i servisni pasoš <span class="new-badge">novo</span></div>
+      <div class="step-sub">Dekodirajte VIN broj i izvezite kompletnu servisnu istoriju kao PDF</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p><strong>VIN Validator</strong> — iz kartice vozila → <em>VIN Validator</em>. Unesite 17-cifreni VIN i dodirnite <strong>Analiziraj</strong>:</p>
+      <ul class="steps-list">
+        <li><span class="num">1</span><span>Provera formata i kontrolne cifre (offline, trenutno)</span></li>
+        <li><span class="num">2</span><span>Dekodovanje proizvođača (WMI prefiks) — marka i zemlja porekla</span></li>
+        <li><span class="num">3</span><span>Dekodovanje godišta iz 10. znaka VIN-a</span></li>
+      </ul>
+      <div class="tip"><strong>Radi potpuno offline</strong> — bez interneta, bez slanja podataka nikuda.</div>
+      <p style="margin-top:12px"><strong>Servisni pasoš (PDF)</strong> — iz kartice vozila → dugme <em>Servisni pasoš (PDF)</em>. App generiše dokument koji sadrži:</p>
+      <ul class="steps-list">
+        <li><span class="num">✓</span><span>Osnovne podatke o vozilu (marka, model, godište, VIN, tablica)</span></li>
+        <li><span class="num">✓</span><span>Kompletnu servisnu istoriju — svi upisani servisi i događaji</span></li>
+        <li><span class="num">✓</span><span>Tracker podatke — stanje guma, akumulatora, ulja, kočnica</span></li>
+        <li><span class="num">✓</span><span>Ukupne troškove po kategorijama</span></li>
+      </ul>
+      <div class="tip green"><strong>Korisno pri prodaji:</strong> Podelite PDF kupcu kao dokaz servicirane istorije. Štampajte ili pošaljite direktno iz app-a.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/16-vin-check.png" alt="VIN Validator ekran">
+      <div class="img-caption">VIN Validator — offline analiza</div>
+    </div>
+  </div>
+</section>
+
+<!-- 13. PRODAJ VOZILO -->
 <section class="section" id="prodaj">
   <div class="step-header">
-    <div class="step-num optional">11</div>
+    <div class="step-num optional">13</div>
     <div>
-      <div class="step-title">Prodaj vozilo i pretraži delove <span class="new-badge">novo</span></div>
+      <div class="step-title">Prodaj vozilo i pretraži delove</div>
       <div class="step-sub">Direktno iz kartice vozila — Autodelovi marketplace</div>
     </div>
   </div>
   <div class="step-body">
     <div class="step-text">
-      <p>Na dnu kartice vozila nalaze se tri dugmeta koja vas povezuju sa AutoUniverse tržištem:</p>
+      <p>Na dnu kartice vozila nalaze se dugmeta koja vas povezuju sa AutoUniverse tržištem:</p>
       <ul class="steps-list">
         <li><span class="num">🏷️</span><span><strong>Prodaj vozilo</strong> — oglašavate vozilo na prodaju direktno iz app-a. Podaci o vozilu (marka, model, godište, tablica) se automatski prenose u formu oglasa.</span></li>
         <li><span class="num">🔍</span><span><strong>Pretraži vozila na prodaju</strong> — pregledajte dostupna vozila na AutoUniverse tržištu.</span></li>
@@ -480,12 +556,41 @@ a:hover{text-decoration:underline}
   </div>
 </section>
 
-<!-- 12. SYNC SA GARAGE -->
+<!-- 14. TRADE DASHBOARD -->
+<section class="section" id="trade">
+  <div class="step-header">
+    <div class="step-num optional">14</div>
+    <div>
+      <div class="step-title">Trade Dashboard — za preprodavce <span class="new-badge">novo</span></div>
+      <div class="step-sub">Pratite profit, obrt i stanje flote ako preprodajete automobile</div>
+    </div>
+  </div>
+  <div class="step-body">
+    <div class="step-text">
+      <p>Iz kartice vozila → dugme <strong>📊 Trade sažetak</strong>. Trade Dashboard je namenjen korisnicima koji kupuju i preprodaju vozila.</p>
+      <p>Dashboard prikazuje za tekuću godinu:</p>
+      <ul class="steps-list">
+        <li><span class="num">+</span><span><strong>Neto profit</strong> — zbir zarade od svih prodatih vozila u godini</span></li>
+        <li><span class="num">#</span><span><strong>Prodato vozila</strong> — broj vozila prodatih u tekućoj godini</span></li>
+        <li><span class="num">~</span><span><strong>Prosečan profit po vozilu</strong> — ukupan profit ÷ broj prodatih</span></li>
+        <li><span class="num">🔄</span><span><strong>U obrtu</strong> — vozila koja su trenutno u kupoprodajnom procesu (status "active")</span></li>
+      </ul>
+      <p>Za svako vozilo u obrtu vidi se uneta nabavna cena i status. Kad prodate vozilo, unesite prodajnu cenu — app automatski računa zaradu.</p>
+      <div class="tip"><strong>Savet:</strong> Koristite polje "Nabavna cena" pri dodavanju vozila i "Prodaj vozilo" za unos prodajne cene — to su dva ulaza koja chranish profit kalkulatoru.</div>
+    </div>
+    <div class="phone-img">
+      <img src="/docs/driver-guide/18-trade-dashboard.png" alt="Trade Dashboard">
+      <div class="img-caption">Trade Dashboard — godišnji pregled</div>
+    </div>
+  </div>
+</section>
+
+<!-- 15. SYNC SA GARAGE -->
 <section class="section" id="sync">
   <div class="step-header">
-    <div class="step-num optional">12</div>
+    <div class="step-num optional">15</div>
     <div>
-      <div class="step-title">Sync sa Garage Toolbox mehaničara <span class="new-badge">novo</span></div>
+      <div class="step-title">Sync sa Garage Toolbox mehaničara</div>
       <div class="step-sub">Vidite servisnu istoriju vašeg vozila onako kako je vaš mehaničar evidentirao</div>
     </div>
   </div>
@@ -510,10 +615,10 @@ a:hover{text-decoration:underline}
   </div>
 </section>
 
-<!-- 12. BACKUP -->
+<!-- 16. BACKUP -->
 <section class="section" id="backup">
   <div class="step-header">
-    <div class="step-num">13</div>
+    <div class="step-num">16</div>
     <div>
       <div class="step-title">Backup i podešavanja</div>
       <div class="step-sub">Sačuvajte podatke pre promene telefona</div>
